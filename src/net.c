@@ -33,13 +33,17 @@
 #include "http.h"
 #include "net.h"
 
-	/* FIXME */
+	/*
+	 * FIXME 
+	 */
 #ifndef HAVE_MKSTEMPS
-int mkstemps(char *template, int suffixlen)
+int
+mkstemps (char *template, int suffixlen)
 {
-	int f;
-	f=open(template,O_WRONLY|O_CREAT,0600);
-	return f;
+    int f;
+
+    f = open (template, O_WRONLY | O_CREAT, 0600);
+    return f;
 }
 #endif
 
@@ -112,7 +116,8 @@ net_suck (url_t * u)
 	len = read (u->conn, buf, BUFSIZ);
 	if (write (u->file, buf, len) != len)
 	    return -1;
-    } while (len);
+    }
+    while (len);
     return 0;
 }
 

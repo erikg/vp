@@ -75,7 +75,7 @@ oops (char *msg)
 int
 main (int argc, char **argv)
 {
-    int x, imgcount = 0, i, count, c, wait=2500;
+    int x, imgcount = 0, i, count, c, wait = 2500;
     static struct option optlist[] = {
 	{"fullscreen", 0, NULL, 'f'},
 	{"help", 0, NULL, 'h'},
@@ -110,7 +110,7 @@ main (int argc, char **argv)
 	    set_state_int (LOUD);
 	    break;
 	case 's':
-	    wait = atoi(optarg);
+	    wait = atoi (optarg);
 	    break;
 	case 'v':
 	    exit (printf ("%s %s (C) 2001 Erik Greenwald <erik@smluc.org>\n",

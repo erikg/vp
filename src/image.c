@@ -90,6 +90,7 @@ center_window ()
 	    x = (w - screen->w) >> 1;
 	    y = (h - screen->h) >> 1;
 	    XMoveWindow (info.info.x11.display, info.info.x11.wmwindow, x, y);
+
 /*
 	    if (get_state_int (GRAB_FOCUS))
 		XSetInputFocus (info.info.x11.display, info.info.x11.wmwindow,
