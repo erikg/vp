@@ -103,13 +103,52 @@ center_window ()
 }
 
 void
+show_image ()
+{
+    struct image_table_s *it = get_image_table ();
+    SDL_Rect r;
+    SDL_Surface *s;
+
+    if (get_state_int (LOUD))
+	fprintf (stdout, "%s\n", it->image[it->current].resource),
+	    fflush (stdout);
+
+    s = it->image[it->current].surface;
+    if (get_state_int (FULLSCREEN))
+    {
+	SDL_FillRect (screen, NULL, 0);
+	if (get_state_int (ZOOM))
+	    s = it->image[it->current].scaled;
+    } else
+    {
+	static char buffer[1024];
+
+	screen = SDL_SetVideoMode (s->w, s->h, vid_depth (), SDL_DOUBLEBUF);
+	sprintf (buffer, "vp - %s", it->image[it->current].resource);
+	SDL_WM_SetCaption (buffer, "vp");
+	center_window ();
+    }
+    if (s && s->format)
+    {
+	r.x = (Sint16) (screen->w - s->w) / 2;
+	r.y = (Sint16) (screen->h - s->h) / 2;
+	r.w = (Uint16) s->w;
+	r.h = (Uint16) s->h;
+    } else
+	printf ("Image \"%s\" failed\n", it->image[it->current].resource);
+    SDL_BlitSurface (s, NULL, screen, &r);
+    SDL_Flip (screen);
+    return;
+}
+
+void
 image_freshen_sub (struct image_s *i)
 {
     if (i->surface == NULL)
     {
 	i->surface = IMG_Load (i->resource);
     }
-    if (get_state_int (ZOOM))
+    if (i->scaled == NULL && get_state_int (ZOOM))
     {
 	double scale =
 	    getscale (screen->w, screen->h, i->surface->w, i->surface->h);
@@ -134,6 +173,9 @@ image_freshen ()
     struct image_table_s *it = get_image_table ();
     int c = it->current;
 
+    printf ("current: %d\n", c);
+
+/*
     if (c > 1 && it->image[c - 2].surface != NULL)
     {
 	SDL_FreeSurface (it->image[c - 2].surface);
@@ -151,11 +193,17 @@ image_freshen ()
 	it->image[c + 2].surface = NULL;
 	it->image[c + 2].scaled = NULL;
     }
+*/
     image_freshen_sub (&it->image[c]);
+
+/*
     if (c > 0)
 	image_freshen_sub (&it->image[c - 1]);
     if (c < (it->count - 1))
 	image_freshen_sub (&it->image[c + 1]);
+    it->image[c-1].scaled=0;
+*/
+    show_image ();
     return 1;
 }
 
@@ -165,7 +213,7 @@ image_next ()
     struct image_table_s *it = get_image_table ();
 
     if (it->current < (it->count - 1))
-	it->count++;
+	it->current++;
     else
 	return 0;
     image_freshen ();
@@ -178,49 +226,9 @@ image_prev ()
     struct image_table_s *it = get_image_table ();
 
     if (it->current > 0)
-	it->count--;
+	it->current--;
     else
 	return 0;
     image_freshen ();
     return 1;
-}
-
-void
-show_image ()
-{
-    struct image_table_s *it = get_image_table ();
-    SDL_Rect r;
-
-    if (get_state_int (LOUD))
-	fprintf (stdout, "%s\n", it->image[it->current].resource),
-	    fflush (stdout);
-
-    if (get_state_int (FULLSCREEN))
-    {
-	SDL_FillRect (screen, NULL, 0);
-    } else
-    {
-	static char buffer[1024];
-
-	screen =
-	    SDL_SetVideoMode (it->image[it->current].surface->w,
-	    it->image[it->current].surface->h, vid_depth (), SDL_DOUBLEBUF);
-	sprintf (buffer, "vp - %s", it->image[it->current].resource);
-	SDL_WM_SetCaption (buffer, "vp");
-	center_window ();
-	if (it->image[it->current].surface
-	    && it->image[it->current].surface->format)
-	{
-	    r.x = (Sint16) (screen->w - it->image[it->current].scaled->w) / 2;
-	    r.y = (Sint16) (screen->h - it->image[it->current].scaled->h) / 2;
-	    r.w = (Uint16) it->image[it->current].scaled->w;
-	    r.h = (Uint16) it->image[it->current].scaled->h;
-	} else
-	    printf ("Image \"%s\" failed\n", it->image[it->current].resource);
-    }
-    SDL_BlitSurface (it->image[it->current].scaled ? it->image[it->current].
-	scaled : it->image[it->current].surface, NULL, screen, &r);
-    SDL_Flip (screen);
-
-    return;
 }

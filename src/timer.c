@@ -41,9 +41,12 @@ timer_stub ()
      * thanks to Ted Mielczarek <tam4@lehigh.edu> for this, fixes the X
      * Async request errors 
      */
+
     ev.type = SDL_USEREVENT;
     ev.user.code = SHOW_IMAGE;
+/*
     SDL_PushEvent (&ev);
+*/
     return wait;
 }
 
