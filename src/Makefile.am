@@ -1,3 +1,5 @@
+# $Id: Makefile.am,v 1.7 2002/12/11 04:22:22 erik Exp $
+
 bin_PROGRAMS = vp
 
 vp_SOURCES = ftp.c http.c image.c input.c vp.c net.c timer.c

@@ -1,3 +1,5 @@
+/* $Id: http.c,v 1.11 2002/12/11 04:22:22 erik Exp $ */
+
 
 /*****************************************************************************
  * vp    -    SDL based image viewer for linux and fbsd. (X and console)  *

@@ -1,3 +1,5 @@
+# $Id: Makefile.am,v 1.3 2002/12/11 04:22:22 erik Exp $
+
 SUBDIRS = @GETOPT_LONG_DIR@ doc src
 
 EXTRA_DIST=ChangeLog $(PACKAGE).spec TODO
