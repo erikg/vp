@@ -1,3 +1,8 @@
+
+20050401:
+	* Copyright update
+	* fixed up changelog
+
 20050110:
 	* added missing includes
 	* force shutdown of network socket
@@ -91,4 +96,4 @@
 20010314:
 	* Initial release (1.0)
 
-$Id: ChangeLog,v 1.7 2005/04/01 11:08:44 erik Exp $
+$Id: ChangeLog,v 1.8 2005/04/01 11:28:46 erik Exp $
