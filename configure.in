@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.14 2002/12/11 04:30:00 erik Exp $
+dnl $Id: configure.in,v 1.15 2003/10/11 17:19:12 erik Exp $
 
 AC_INIT(src/vp.c)
 AC_CANONICAL_TARGET
@@ -7,7 +7,6 @@ AM_INIT_AUTOMAKE(vp, 1.6)
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_ISC_POSIX
-AC_PROG_LIBTOOL
 
 AC_C_CONST
 AC_STDC_HEADERS
