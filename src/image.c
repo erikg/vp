@@ -34,6 +34,7 @@ extern SDL_Surface *screen;
 SDL_Surface *img = NULL;
 static char *imgname = NULL;
 char *newname = NULL;
+float scale=2;
 
 	/*
 	 * dangerous floating point comparison. 
@@ -213,6 +214,7 @@ show_image ()
     if (get_state_int (ZOOM))
     {
 	scale = getscale (screen->w, screen->h, img->w, img->h);
+}
 	if (img && img->format)
 	    buf = SDL_CreateRGBSurface (SDL_SWSURFACE,
 		img->w * scale,
@@ -221,8 +223,6 @@ show_image ()
 		img->format->Rmask,
 		img->format->Gmask, img->format->Bmask, img->format->Amask);
 	zoom_blit (buf, img, scale);
-    } else
-	buf = img;
     SDL_FillRect (screen, NULL, 0);
     r.x = (Sint16) (screen->w - buf->w) / 2;
     r.y = (Sint16) (screen->h - buf->h) / 2;

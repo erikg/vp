@@ -28,7 +28,7 @@
 	 * these are ugly and shouldn't be here. Must redesign. 
 	 */
 extern SDL_Surface *screen, *img;
-
+extern float scale;
 	/*
 	 * instead of actually exiting, we just fake the escape key 
 	 */
@@ -102,6 +102,15 @@ handle_input ()
 		screen = SDL_SetVideoMode (1280, 1024, 32, SDL_FULLSCREEN);
 	    show_image ();
 	    break;
+        case '+':
+	case '=':
+	    scale+=.1;
+	    show_image ();
+		break;
+        case '-':
+	    scale-=.1;
+	    show_image ();
+		break;
 	default:
 	    /*
 	     * do nothing 

@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_syswm.h>
+
 
 #include "input.h"
 #include "image.h"
@@ -28,11 +30,12 @@
 #include "ll.h"
 #include "timer.h"
 
-#include <getopt.h>
+#include "getopt.h"
 
 SDL_Surface *screen;
 static void *imglist;		/* linked list */
 static int state;
+int swidth, sheight, sdepth;
 
 int
 get_state_int (int name)
@@ -76,6 +79,8 @@ int
 main (int argc, char **argv)
 {
     int x, imgcount = 0, i, count, c, wait = 2500;
+    SDL_SysWMinfo info;
+
     static struct option optlist[] = {
 	{"fullscreen", 0, NULL, 'f'},
 	{"help", 0, NULL, 'h'},
@@ -85,12 +90,6 @@ main (int argc, char **argv)
 	{"zoom", 0, NULL, 'z'},
 	{0, 0, 0, 0}
     };
-
-    SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
-    atexit (SDL_Quit);		/* as much as I hate doing this, it's necessary.
-				 * libjpeg seems to like to exit() on bad image,
-				 * instead of doing the right thing and returning an
-				 * error code. :/  */
 
     x = SDL_DOUBLEBUF;
     unset_state_int (FULLSCREEN);
@@ -135,9 +134,26 @@ main (int argc, char **argv)
 	return 0;
     }
     x |= get_state_int (FULLSCREEN);
-
+printf("Going\n");
+    SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
+    atexit (SDL_Quit);		/* as much as I hate doing this, it's necessary.
+				 * libjpeg seems to like to exit() on bad image,
+				 * instead of doing the right thing and returning an
+				 * error code. :/  */
+screen = SDL_SetVideoMode(10,10,32,0);
+    if (SDL_GetWMInfo (&info) > 0 /*&& info.subsystem==SDL_SYSWM_X11*/)
+    {
+	    swidth = DisplayWidth (info.info.x11.display,
+		DefaultScreen (info.info.x11.display));
+	    sheight = DisplayHeight (info.info.x11.display,
+		DefaultScreen (info.info.x11.display));
+	    sdepth = BitmapUnit (info.info.x11.display);
+	printf("sdepth: %d\n", sdepth);
+    }
+//printf("gone\n");
+//return 0;
     if (x & FULLSCREEN)
-	screen = SDL_SetVideoMode (1280, 1024, 32, x);
+	screen = SDL_SetVideoMode (swidth, sheight, sdepth, x);
     SDL_ShowCursor (0);
 
     show_image ();

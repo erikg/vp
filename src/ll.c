@@ -61,19 +61,7 @@ ll_next (void *this)
     x = (list *) this;
     if (x == NULL || x->current == NULL || x->current->next == NULL)
 	return 0;
-
-/*
-    printf ("nextA: \"%s\" [\"%s\"] \"%s\"\n",
-	x->current->prev ? x->current->prev->line : "(null)", x->current->line,
-	x->current->next ? x->current->next->line : "(null)");
-*/
     x->current = x->current->next;
-
-/*
-    printf ("nextB: \"%s\" [\"%s\"] \"%s\"\n",
-	x->current->prev ? x->current->prev->line : "(null)", x->current->line,
-	x->current->next ? x->current->next->line : "(null)");
-*/
     return 1;
 }
 
@@ -85,21 +73,7 @@ ll_prev (void *this)
     x = (list *) this;
     if (x == NULL || x->current == NULL || x->current->prev == NULL)
 	return 0;
-
-/*
-    printf ("prevA: \"%s\" [\"%s\"] \"%s\"\n",
-	x->current->prev ? x->current->prev->line : "(null)", 
-	x->current->line,
-	x->current->next ? x->current->next->line : "(null)");
-*/
     x->current = x->current->prev;
-
-/*
-    printf ("prevB: \"%s\" [\"%s\"] \"%s\"\n",
-	x->current->prev ? x->current->prev->line : "(null)", 
-	x->current->line,
-	x->current->next ? x->current->next->line : "(null)");
-*/
     return 1;
 }
 

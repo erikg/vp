@@ -82,7 +82,6 @@ net_url (char *name)
     char *n;
 
     n = name;
-    printf ("%s\n", n);
     n += strlen ("http://") + 1;
     while (*n != '/')
 	n++;
@@ -94,7 +93,6 @@ net_url (char *name)
     u->filename = strdup (n);
     u->ext = strdup (n + strlen (n) - 3);
     u->proto = HTTP;
-    printf ("getting %s (%s) from %s\n", u->filename, u->ext, u->server);
     return u;
 }
 
@@ -149,7 +147,6 @@ net_download (char *name)
     char *filename;
     url_t *url;
 
-    printf ("Download %s\n", name);
     if ((url = net_url (name)) == NULL || net_connect (url) == -1)
 	return NULL;
     filename =
