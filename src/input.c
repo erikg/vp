@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: input.c,v 1.24 2004/03/27 00:53:48 erik Exp $
+ * $Id: input.c,v 1.25 2004/12/28 04:07:21 erik Exp $
  */
 
 #include <SDL.h>
@@ -83,12 +83,10 @@ handle_input ()
 	case SDLK_RIGHT:
 	    timer_stop ();
 	    image_next (0);
-	    image_freshen ();
 	    break;
 	case SDLK_LEFT:
 	    timer_stop ();
 	    image_prev (0);
-	    image_freshen ();
 	    break;
 	case 'z':
 	    timer_stop ();
