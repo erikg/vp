@@ -1,6 +1,6 @@
 
 /*****************************************************************************
- * siview    -    SDL based image viewer for linux and fbsd. (X and console)  *
+ * vp    -    SDL based image viewer for linux and fbsd. (X and console)  *
  * Copyright (C) 2001 Erik Greenwald <erik@smluc.org>                        *
  *                                                                           *
  * This program is free software; you can redistribute it and/or modify      *
@@ -106,12 +106,12 @@ net_connect (url_t * u)
     memset (&s, 0, sizeof (s));
     if ((u->conn = socket (AF_INET, SOCK_STREAM, 0)) == -1)
     {
-	perror ("siview:net.c:net_connect:socket");
+	perror ("vp:net.c:net_connect:socket");
 	return -1;
     }
     if ((h = gethostbyname (u->server)) == NULL)
     {
-	perror ("siview:net.c:net_connect:gethostbyname");
+	perror ("vp:net.c:net_connect:gethostbyname");
 	return -1;
     }
     s.sin_family = AF_INET;
@@ -119,7 +119,7 @@ net_connect (url_t * u)
     s.sin_addr = *((struct in_addr *)h->h_addr_list[0]);
     if (connect (u->conn, ss, sizeof (struct sockaddr)) == -1)
     {
-	perror ("siview:net.c:net_connect:connect");
+	perror ("vp:net.c:net_connect:connect");
 	return -1;
     }
     return 0;
@@ -150,8 +150,8 @@ net_download (char *name)
     if ((url = net_url (name)) == NULL || net_connect (url) == -1)
 	return NULL;
     filename =
-	(char *)malloc (strlen ("/tmp/siview.XXXX.") + strlen (url->ext) + 1);
-    sprintf (filename, "/tmp/siview.XXXX.%s", url->ext);
+	(char *)malloc (strlen ("/tmp/vp.XXXX.") + strlen (url->ext) + 1);
+    sprintf (filename, "/tmp/vp.XXXX.%s", url->ext);
     url->file = mkstemps (filename, strlen (url->ext) + 1);
     switch (url->proto)
     {

@@ -1,6 +1,6 @@
 
 /*****************************************************************************
- * siview    -    SDL based image viewer for linux and fbsd. (X and console)  *
+ * vp    -    SDL based image viewer for linux and fbsd. (X and console)  *
  * Copyright (C) 2001 Erik Greenwald <erik@smluc.org>                        *
  *                                                                           *
  * This program is free software; you can redistribute it and/or modify      *
@@ -27,7 +27,7 @@
 #include <SDL_image.h>
 
 #include "input.h"
-#include "siview.h"
+#include "vp.h"
 #include "ll.h"
 #include "net.h"
 
@@ -228,8 +228,8 @@ show_image ()
 	    static char buffer[1024];
 
 	    screen = SDL_SetVideoMode (img->w, img->h, 32, SDL_DOUBLEBUF);
-	    sprintf (buffer, "siview - %s", imgname);
-	    SDL_WM_SetCaption (buffer, "siview");
+	    sprintf (buffer, "vp - %s", imgname);
+	    SDL_WM_SetCaption (buffer, "vp");
 	}
 	buf = img;
 	center_window ();

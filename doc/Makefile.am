@@ -1,3 +1,3 @@
-man_MANS = siview.1
-EXTRA_DIST = siview.1
+man_MANS = vp.1
+EXTRA_DIST = vp.1
 
