@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: net.c,v 1.22 2004/09/29 14:55:53 erik Exp $
+ * $Id: net.c,v 1.23 2005/01/10 15:47:15 erik Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -186,6 +186,7 @@ net_download (char *name)
     }
     if (net_suck (url) == -1)
 	printf ("Some problem reading file (suck blew)...\n");
+    shutdown (url->conn, SHUT_RDWR);
     close (url->conn);
     close (url->file);
     free (url);
