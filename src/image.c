@@ -34,7 +34,7 @@ extern SDL_Surface *screen;
 SDL_Surface *img = NULL;
 static char *imgname = NULL;
 char *newname = NULL;
-float scale=2;
+float scale = 2;
 
 	/*
 	 * dangerous floating point comparison. 
@@ -184,7 +184,7 @@ void
 show_image ()
 {
     SDL_Surface *buf = NULL;
-    float scale;
+    float scale = 1.0;
     SDL_Rect r;
 
     if (img == NULL)
@@ -198,11 +198,14 @@ show_image ()
     if (get_state_int (LOUD))
 	fprintf (stdout, "%s\n", imgname), fflush (stdout);
 
+    if (get_state_int (ZOOM))
+	scale = getscale (screen->w, screen->h, img->w, img->h);
+
     if (!get_state_int (SDL_FULLSCREEN))
     {
 	if (img)
 	{
-	    char buffer[1024];
+	    static char buffer[1024];
 
 	    screen = SDL_SetVideoMode (img->w, img->h, 32, SDL_DOUBLEBUF);
 	    sprintf (buffer, "siview - %s", imgname);
@@ -210,24 +213,27 @@ show_image ()
 	}
 	buf = img;
 	center_window ();
-    }
-    if (get_state_int (ZOOM))
+    } else
     {
-	scale = getscale (screen->w, screen->h, img->w, img->h);
-}
-	if (img && img->format)
-	    buf = SDL_CreateRGBSurface (SDL_SWSURFACE,
-		img->w * scale,
-		img->h * scale,
-		img->format->BytesPerPixel * 8,
-		img->format->Rmask,
-		img->format->Gmask, img->format->Bmask, img->format->Amask);
+	buf = SDL_CreateRGBSurface (SDL_SWSURFACE,
+	    img->w * scale,
+	    img->h * scale,
+	    img->format->BytesPerPixel * 8,
+	    img->format->Rmask,
+	    img->format->Gmask, img->format->Bmask, img->format->Amask);
+
 	zoom_blit (buf, img, scale);
-    SDL_FillRect (screen, NULL, 0);
-    r.x = (Sint16) (screen->w - buf->w) / 2;
-    r.y = (Sint16) (screen->h - buf->h) / 2;
-    r.w = (Uint16) buf->w;
-    r.h = (Uint16) buf->h;
+	SDL_FillRect (screen, NULL, 0);
+    }
+    if (img && img->format)
+    {
+	r.x = (Sint16) (screen->w - buf->w) / 2;
+	r.y = (Sint16) (screen->h - buf->h) / 2;
+	r.w = (Uint16) buf->w;
+	r.h = (Uint16) buf->h;
+    } else
+	printf ("Image \"%s\" failed\n", imgname);
+
     SDL_BlitSurface (buf, NULL, screen, &r);
     SDL_Flip (screen);
     if (buf != img)

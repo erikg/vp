@@ -1,6 +1,6 @@
 
 /*****************************************************************************
- * siview    -    SDL based image viewer for linux and fbsd. (X and console)  *
+ * siview   -    SDL based image viewer for linux and fbsd. (X and console)  *
  * Copyright (C) 2001 Erik Greenwald <erik@smluc.org>                        *
  *                                                                           *
  * This program is free software; you can redistribute it and/or modify      *
@@ -134,7 +134,7 @@ main (int argc, char **argv)
 	return 0;
     }
     x |= get_state_int (FULLSCREEN);
-printf("Going\n");
+
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
     atexit (SDL_Quit);		/* as much as I hate doing this, it's necessary.
 				 * libjpeg seems to like to exit() on bad image,
@@ -150,8 +150,7 @@ screen = SDL_SetVideoMode(10,10,32,0);
 	    sdepth = BitmapUnit (info.info.x11.display);
 	printf("sdepth: %d\n", sdepth);
     }
-//printf("gone\n");
-//return 0;
+
     if (x & FULLSCREEN)
 	screen = SDL_SetVideoMode (swidth, sheight, sdepth, x);
     SDL_ShowCursor (0);
