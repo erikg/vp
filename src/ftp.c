@@ -21,8 +21,8 @@
 #include <stdio.h>
 #include "ftp.h"
 
-int ftp_init(url_t *u)
+int
+ftp_init (url_t * u)
 {
-	return 0;
+    return 0;
 }
-

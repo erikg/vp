@@ -42,32 +42,17 @@ extern int ll_prev (void *list);
 extern int ll_rewind (void *list);
 
 extern int ll_addatend (void *list, char *line);
-extern int ll_addatbeginning (void *list, char *line);
-extern int ll_addbeforecurrent (void *list, char *line);
-extern int ll_addaftercurrent (void *list, char *line);
 
 	/** delete the current node, place pointer at next node
 	  * a->B->c->d    =>    a->C->d   (cap is current)  */
 extern int ll_deletenode (void *list);
 
 	/** returns the line in the current node. does NOT change current. */
-
-/*
- * @null@
- */
 extern char *ll_showline (void *this);
-extern char *ll_shownext (void *this);
-extern char *ll_showprev (void *this);
 
 	/** purge the list, do this when you're done with the list */
 extern int ll_clearlist (void *list);
 
-	/** returns 1 if the list has no elements, 0 if it does */
-extern int ll_empty (void *list);
-
-	/** returns 1 if the current node is the last node of the list
-	 */
-extern int ll_end (void *list);
-extern int ll_beginning (void *list);
+extern void ll_showall(void *);
 
 #endif

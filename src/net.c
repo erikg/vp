@@ -19,6 +19,7 @@
  ****************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -39,7 +40,7 @@ char *filename;
 int
 net_is_url (char *name)
 {
-    return strcmp (name, "http://") && strcmp (name, "ftp://");
+    return !strncmp (name, "http://", 7) || !strncmp(name, "ftp://", 7);
 }
 
 url_t *
@@ -110,15 +111,18 @@ net_suck (url_t * u)
 char *
 net_download (char *name)
 {
+/*
     int socket, file;
+*/
     url_t *url;
-
+printf("Download %s\n", name);
     if ((url = net_url (name)) == NULL || net_connect (url) == -1)
 	return NULL;
     filename =
 	(char *) malloc (strlen ("/tmp/iview.XXXX.") + strlen (url->ext) + 1);
     sprintf (filename, "/tmp/iview.XXXX.%s", url->ext);
     url->file = mkstemps (filename, strlen (url->ext) + 1);
+    printf("saving to %s\n", filename);
     switch (url->proto)
     {
     case HTTP:

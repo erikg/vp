@@ -20,27 +20,13 @@
 
 #include <stdio.h>		/* for NULL */
 #include <stdlib.h>
+#include <string.h>
 #include "ll.h"
 
 
-	/*
-	 * singly linked list 
-	 */
-typedef struct anode {
-    char *line;
-    struct anode *prev;
-    struct anode *next;
-} node;
+typedef struct anode { char *line; struct anode *prev; struct anode *next; } node;
+typedef struct alist { node *head; node *current; node *last; } list;
 
-typedef struct alist {
-    node *head;
-    node *current;
-    node *last;
-} list;
-
-/*
- * @null@
- */
 void *
 ll_newlist ()
 {
@@ -67,7 +53,17 @@ ll_next (void *this)
     x = (list *) this;
     if (x == NULL || x->current == NULL || x->current->next == NULL)
 	return 0;
+/*
+    printf ("nextA: \"%s\" [\"%s\"] \"%s\"\n",
+	x->current->prev ? x->current->prev->line : "(null)", x->current->line,
+	x->current->next ? x->current->next->line : "(null)");
+*/
     x->current = x->current->next;
+/*
+    printf ("nextB: \"%s\" [\"%s\"] \"%s\"\n",
+	x->current->prev ? x->current->prev->line : "(null)", x->current->line,
+	x->current->next ? x->current->next->line : "(null)");
+*/
     return 1;
 }
 
@@ -79,7 +75,19 @@ ll_prev (void *this)
     x = (list *) this;
     if (x == NULL || x->current == NULL || x->current->prev == NULL)
 	return 0;
+/*
+    printf ("prevA: \"%s\" [\"%s\"] \"%s\"\n",
+	x->current->prev ? x->current->prev->line : "(null)", 
+	x->current->line,
+	x->current->next ? x->current->next->line : "(null)");
+*/
     x->current = x->current->prev;
+/*
+    printf ("prevB: \"%s\" [\"%s\"] \"%s\"\n",
+	x->current->prev ? x->current->prev->line : "(null)", 
+	x->current->line,
+	x->current->next ? x->current->next->line : "(null)");
+*/
     return 1;
 }
 
@@ -104,6 +112,8 @@ ll_addatend (void *this, char *line)
     if (this == NULL || line == NULL)	/* bad list */
 	return 0;
 
+    l = (list *) this;
+
     /*
      * generate node 
      */
@@ -111,15 +121,8 @@ ll_addatend (void *this, char *line)
     if (x == NULL)
 	return 0;
 
-    x->line = (char *) malloc (sizeof (char) * (strlen (line) + 1));
-    if (x->line == NULL)
-	return 0;		/* no malloc */
-
-    strcpy (x->line, line);
+    x->line = (char *)strdup(line);
     x->next = NULL;
-
-    l = (list *) this;
-
     x->prev = l->last;
 
     /*
@@ -130,9 +133,8 @@ ll_addatend (void *this, char *line)
     else
     {
 	l->last->next = x;
-	l->last = x;
     }
-
+    l->last = x;
     return 1;
 }
 
@@ -145,30 +147,6 @@ ll_showline (void *this)
     if (l == NULL || l->current == NULL || l->current->line == NULL)
 	return NULL;
     return l->current->line;
-}
-
-extern char *
-ll_shownext (void *this)
-{
-    list *l;
-
-    l = (list *) this;
-    if (l == NULL || l->current == NULL || l->current->next == NULL
-	|| l->current->next->line == NULL)
-	return NULL;
-    return l->current->next->line;
-}
-
-extern char *
-ll_showprev (void *this)
-{
-    list *l;
-
-    l = (list *) this;
-    if (l == NULL || l->current == NULL || l->current->prev == NULL
-	|| l->current->prev->line == NULL)
-	return NULL;
-    return l->current->prev->line;
 }
 
 static void
@@ -239,149 +217,21 @@ ll_deletenode (void *v)
     return 1;
 }
 
-int
-ll_beginning (void *n)
+void
+ll_showall(void *imglist)
 {
-    list *l;
+	list *l;
+	node *n;
 
-    l = (list *) n;
-    if (l->current == l->head)
-	return 1;
-    return 0;
-}
-
-int
-ll_end (void *n)
-{
-    list *l;
-
-    l = (list *) n;
-    if (l->current == NULL || l->current->next == NULL)
-	return 1;
-    return 0;
-}
-
-int
-ll_addatbeginning (void *this, char *line)
-{
-    node *x;
-    list *l;
-
-    if (this == NULL || line == NULL)	/* bad list */
-	return 0;
-
-    /*
-     * generate node 
-     */
-    x = (node *) malloc (sizeof (node));
-    if (x == NULL)
-	return 0;
-
-    x->line = (char *) malloc (sizeof (char) * (strlen (line) + 1));
-    if (x->line == NULL)
-	return 0;		/* no malloc */
-
-    strcpy (x->line, line);
-    x->next = NULL;
-
-    l = (list *) this;
-
-    x->next = l->head;
-
-    /*
-     * attach node to list 
-     */
-    if (l->head == NULL)
-	l->head = l->current = l->last = x;
-    else
-    {
-	l->head->prev = x;
-	l->head = x;
-    }
-
-    return 1;
-}
-
-	/*** TODO ***/
-int
-ll_addbeforecurrent (void *this, char *line)
-{
-    node *x;
-    list *l;
-
-    if (this == NULL || line == NULL)	/* bad list */
-	return 0;
-
-    /*
-     * generate node 
-     */
-    x = (node *) malloc (sizeof (node));
-    if (x == NULL)
-	return 0;
-
-    x->line = (char *) malloc (sizeof (char) * (strlen (line) + 1));
-    if (x->line == NULL)
-	return 0;		/* no malloc */
-
-    strcpy (x->line, line);
-    x->next = NULL;
-
-    l = (list *) this;
-
-    x->prev = l->last;
-
-    /*
-     * attach node to list 
-     */
-    if (l->head == NULL)
-	l->head = l->current = l->last = x;
-    else
-    {
-	l->last->next = x;
-	l->last = x;
-    }
-
-    return 1;
-}
-
-	/*** TODO ***/
-int
-ll_addaftercurrent (void *this, char *line)
-{
-    node *x;
-    list *l;
-
-    if (this == NULL || line == NULL)	/* bad list */
-	return 0;
-
-    /*
-     * generate node 
-     */
-    x = (node *) malloc (sizeof (node));
-    if (x == NULL)
-	return 0;
-
-    x->line = (char *) malloc (sizeof (char) * (strlen (line) + 1));
-    if (x->line == NULL)
-	return 0;		/* no malloc */
-
-    strcpy (x->line, line);
-    x->next = NULL;
-
-    l = (list *) this;
-
-    x->prev = l->last;
-
-    /*
-     * attach node to list 
-     */
-    if (l->head == NULL)
-	l->head = l->current = l->last = x;
-    else
-    {
-	l->last->next = x;
-	l->last = x;
-    }
-
-    return 1;
+	l = (list *)imglist;
+	n=l->head;
+	printf("==============================================================================\n");
+	while(n!=NULL)
+	{
+		printf(n==l->current?"[%s]\n":"%s\n", n->line);
+		fflush(stdout);
+		n=n->next;
+	}
+	printf("==============================================================================\n");
+	return;
 }

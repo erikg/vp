@@ -18,6 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  ****************************************************************************/
 
+#include <stdlib.h>
 #include <SDL.h>
 #include <SDL_image.h>
 
@@ -77,6 +78,18 @@ parse_control_block (char *word)
 	/*
 	 * long options 
 	 */
+	word++;
+	if (!strcmp (word , "version"))
+	    exit (printf
+		("%s %s (C) 2001 Erik Greenwald <erik@smluc.org>\n",
+		    PACKAGE, VERSION));
+
+	if (!strcmp (word, "fullscreen"))
+	    set_state_int (FULLSCREEN);
+	if (!strcmp (word, "loud"))
+	    set_state_int (LOUD);
+	if (!strcmp (word, "zoom"))
+	    set_state_int (ZOOM);
     } else
 	while (word[0] != 0)
 	{
@@ -97,8 +110,8 @@ parse_control_block (char *word)
 	    case 'v':
 	    case 'V':
 		exit (printf
-		      ("%s %s (C) 2001 Erik Greenwald <erik@smluc.org>\n",
-		       PACKAGE, VERSION));
+		    ("%s %s (C) 2001 Erik Greenwald <erik@smluc.org>\n",
+			PACKAGE, VERSION));
 		break;
 	    default:
 		printf ("Unknown command\n");
@@ -115,10 +128,10 @@ main (int argc, char **argv)
     int count;
 
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
-    atexit(SDL_Quit);	/* as much as I hate doing this, it's necessary.
-			 * libjpeg seems to like to exit() on bad image,
-			 * instead of doing the right thing and returning an
-			 * error code. :/  */
+    atexit (SDL_Quit);		/* as much as I hate doing this, it's necessary.
+				 * libjpeg seems to like to exit() on bad image,
+				 * instead of doing the right thing and returning an
+				 * error code. :/  */
 
     x = SDL_DOUBLEBUF;
     unset_state_int (FULLSCREEN);
@@ -147,15 +160,13 @@ main (int argc, char **argv)
     }
     x |= get_state_int (FULLSCREEN);
 
-//    img_freshen ();
-
     if (x & FULLSCREEN)
 	screen = SDL_SetVideoMode (1280, 1024, 32, x);
     SDL_ShowCursor (0);
 
     show_image ();
     if (imgcount >= 2)
-	timer_start ();
+	timer_start (2500);
 
     while (handle_input ());
 

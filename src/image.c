@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <SDL_image.h>
@@ -32,6 +33,7 @@
 extern SDL_Surface *screen;
 SDL_Surface *img = NULL;
 static char *imgname = NULL;
+char *newname = NULL;
 
 	/*
 	 * dangerous floating point comparison. 
@@ -55,11 +57,11 @@ zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
 
     for (y = 0; y < d->h; y++)
 	for (x = 0; x < (d->pitch / 3); x++)
-	    memcpy ((void *) ((int) (d->pixels) + ((int) (d->pitch) * y) +
-			      x * 3),
-		    (void *) ((int) (s->pixels) +
-			      (int) ((int) (s->pitch) * (int) (y / scale)) +
-			      (3 * (int) ((x) / scale))), 3);
+	    memcpy ((void *)((int)(d->pixels) + ((int)(d->pitch) * y) +
+		    x * 3),
+		(void *)((int)(s->pixels) +
+		    (int)((int)(s->pitch) * (int)(y / scale)) +
+		    (3 * (int)((x) / scale))), 3);
     return;
 }
 
@@ -82,15 +84,15 @@ center_window ()
 	{
 	    info.info.x11.lock_func ();
 	    w = DisplayWidth (info.info.x11.display,
-			      DefaultScreen (info.info.x11.display));
+		DefaultScreen (info.info.x11.display));
 	    h = DisplayHeight (info.info.x11.display,
-			       DefaultScreen (info.info.x11.display));
+		DefaultScreen (info.info.x11.display));
 	    x = (w - screen->w) >> 1;
 	    y = (h - screen->h) >> 1;
 	    XMoveWindow (info.info.x11.display, info.info.x11.wmwindow, x, y);
-if(get_state_int(GRAB_FOCUS))
-//	XSetInputFocus(info.info.x11.display,info.info.x11.wmwindow,RevertToNone,CurrentTime);
-	    info.info.x11.unlock_func ();
+	    if (get_state_int (GRAB_FOCUS))
+      XSetInputFocus(info.info.x11.display,info.info.x11.wmwindow,RevertToNone,CurrentTime);
+		info.info.x11.unlock_func ();
 	}
     }
     return;
@@ -100,14 +102,18 @@ SDL_Surface *
 image_load (char *name)
 {
     SDL_Surface *s;
-    char *newname;
-    if (net_is_url (name))
-	newname = net_download (name);
-    else
-	newname = name;
-    s = IMG_Load (newname);
-    if (newname != name)
+
+    if (newname == NULL){
+	if (net_is_url (name))
+	    newname = net_download (name);
+	else
+	    newname = (char *)strdup(name);
+    }
+    s = IMG_Load (name);
+
+    if (strcmp(newname ,name))
 	net_purge (newname);
+
     return s;
 }
 
@@ -124,14 +130,15 @@ image_init (int terminate)
     return 0;
 }
 
-void
+int
 img_freshen ()
 {
     void *imglist = get_imglist ();
-    while ((img = image_load (ll_showline (imglist))) == NULL)
-	if (ll_next (imglist) == 0)
-	    return;
+    if (newname == NULL)
+	if ((img = image_load (ll_showline (imglist))) == NULL)
+	    return 0;
     imgname = ll_showline (imglist);
+    return 1;
 }
 
 int
@@ -139,27 +146,34 @@ image_next (int terminate)
 {
     void *imglist = get_imglist ();
 
+    free (newname);
+    newname = NULL;
     if (ll_next (imglist) == 0 && terminate == 1)
-	return (int) (img = NULL);
-    img_freshen ();
+	return (int)(img = NULL);
+    while (!img_freshen ())
+	if (ll_next (imglist) == 0 && terminate == 1)
+	    return (int)(img = NULL);
     return 1;
 }
 
 int
-image_prev ()
+image_prev (int nothing)
 {
     void *imglist = get_imglist ();
 
-    if (ll_prev (imglist) == 0)
-	return 0;
-    img_freshen ();
+    free (newname);
+    newname = NULL;
+    ll_prev (imglist);
+    while (!img_freshen ())
+	if (ll_prev (imglist) == 0)
+	    return 1;
     return 1;
 }
 
 void
 show_image ()
 {
-    SDL_Surface *buf;
+    SDL_Surface *buf=NULL;
     float scale;
     SDL_Rect r;
 
@@ -178,11 +192,11 @@ show_image ()
     {
 	if (img)
 	{
-	    char buf[1024];
+	    char buffer[1024];
 
 	    screen = SDL_SetVideoMode (img->w, img->h, 32, SDL_DOUBLEBUF);
-	    sprintf (buf, "iview - %s", imgname);
-	    SDL_WM_SetCaption (buf, "iview");
+	    sprintf (buffer, "iview - %s", imgname);
+	    SDL_WM_SetCaption (buffer, "iview");
 	}
 	buf = img;
 	center_window ();
@@ -192,13 +206,11 @@ show_image ()
 	scale = getscale (screen->w, screen->h, img->w, img->h);
 	if (img && img->format)
 	    buf = SDL_CreateRGBSurface (SDL_SWSURFACE,
-					img->w * scale,
-					img->h * scale,
-					img->format->BytesPerPixel * 8,
-					img->format->Rmask,
-					img->format->Gmask,
-					img->format->Bmask,
-					img->format->Amask);
+		img->w * scale,
+		img->h * scale,
+		img->format->BytesPerPixel * 8,
+		img->format->Rmask,
+		img->format->Gmask, img->format->Bmask, img->format->Amask);
 	zoom_blit (buf, img, scale);
     } else
 	buf = img;

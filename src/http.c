@@ -19,25 +19,27 @@
  ****************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "http.h"
 
 int
-http_init(url_t *u)
+http_init (url_t * u)
 {
-	char *buf;
-	int e=0;
-	buf=(char *)malloc(BUFSIZ);
-	sprintf(buf,"GET /%s HTTP/1.1\nHost: %s\n\n\n",u->filename,u->server);
-	write(u->conn,buf,strlen(buf));
-	while(e<4)
-	{
-		read(u->conn,buf,1);
-		if(*buf=='\n'||*buf=='\r')
-			e++;
-		else
-			e=0;
-	}
-	free(buf);
-	return 0;
-}
+    char *buf;
+    int e = 0;
 
+    buf = (char *)malloc (BUFSIZ);
+    sprintf (buf, "GET /%s HTTP/1.1\nHost: %s\n\n\n", u->filename, u->server);
+    write (u->conn, buf, strlen (buf));
+    while (e < 4)
+    {
+	read (u->conn, buf, 1);
+	if (*buf == '\n' || *buf == '\r')
+	    e++;
+	else
+	    e = 0;
+    }
+    free (buf);
+    return 0;
+}

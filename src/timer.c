@@ -26,10 +26,9 @@
 #include "ll.h"
 #include "timer.h"
 
-#define MILLIS 2500
+static int wait=2500;
 
 SDL_TimerID timer_id;
-extern void *imglist;
 
 int
 timer_stub ()
@@ -46,7 +45,7 @@ timer_stub ()
     ev.type = SDL_USEREVENT;
     ev.user.code = SHOW_IMAGE;
     SDL_PushEvent (&ev);
-    return MILLIS;
+    return wait;
 }
 
 void
@@ -71,10 +70,11 @@ timer_stop ()
 }
 
 void
-timer_start ()
+timer_start (int MILLIS)
 {
+	wait = MILLIS;
     if (timer_id == 0)
 	timer_id =
-	    SDL_AddTimer (MILLIS, (SDL_NewTimerCallback) timer_stub, NULL);
+	    SDL_AddTimer (wait, (SDL_NewTimerCallback) timer_stub, NULL);
     return;
 }
