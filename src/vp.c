@@ -1,5 +1,5 @@
 
-/* $Id: vp.c,v 1.14 2002/12/11 04:40:45 erik Exp $ */
+/* $Id: vp.c,v 1.15 2003/06/27 11:02:32 erik Exp $ */
 
 
 /*****************************************************************************
@@ -171,13 +171,13 @@ main (int argc, char **argv)
     }
 
     image_table.image = malloc (sizeof (struct image_s) * (argc - optind));
-    memset (image_table.image, 0, sizeof (struct image_table_s));
     memset (image_table.image, 0, sizeof (struct image_s) * (argc - optind));
+    printf("Scanning for images, %d possible\n", argc);
     for (count = optind; count < argc; count++)
     {
 	struct stat sb[1];
 
-	if (stat (argv[count], sb) != -1 && sb->st_mode & S_IFREG)
+	if (stat (argv[count], sb) != -1 && !(sb->st_mode & S_IFDIR))
 	{
 	    image_table.image[image_table.count].resource = argv[count];
 	    image_table.count++;

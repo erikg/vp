@@ -1,5 +1,5 @@
 
-/* $Id: image.c,v 1.37 2002/12/11 04:40:45 erik Exp $ */
+/* $Id: image.c,v 1.38 2003/06/27 11:02:32 erik Exp $ */
 
 
 /*****************************************************************************
@@ -127,6 +127,8 @@ show_image ()
     }
 
     s = it->image[it->current].surface;
+    if(s==NULL)
+	    return;
     if (get_state_int (FULLSCREEN))
     {
 	SDL_FillRect (screen, NULL, 0);
