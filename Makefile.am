@@ -1,4 +1,4 @@
-SUBDIRS = doc src
+SUBDIRS = @GETOPT_LONG_DIR@ doc src
 
 EXTRA_DIST=ChangeLog $(PACKAGE).spec TODO
 

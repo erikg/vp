@@ -4,12 +4,15 @@ AM_INIT_AUTOMAKE(iview, 1.5)
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_ISC_POSIX
+AC_PROG_LIBTOOL
 
 AC_C_CONST
 AC_STDC_HEADERS
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS(unistd.h stdio.h stdlib.h string.h time.h)
+
+AC_CHECK_FUNC(mkstemps,AC_DEFINE(HAVE_MKSTEMPS),)
 
 AM_PATH_SDL(1.2.0,,AC_ERROR("SDL 1.2.0 or better is required. Get it at http://libsdl.org."))
 
@@ -27,5 +30,15 @@ AC_TRY_LINK([
 	echo "           ***********************************************************"
 	exit
 ])
+
+GETOPT_LONG_DIR=
+AC_CHECK_FUNCS(getopt_long , [GETOPT_LONG_DIR=""], [
+        GETOPT_LONG_DIR="getopt_long"
+        CFLAGS="$CFLAGS -I../getopt_long"
+        LIBS="$LIBS ../getopt_long/libgetopt_long.a"
+        AC_DEFINE(NO_GETOPT_LONG)
+        ] )
+AC_SUBST(GETOPT_LONG_DIR)
+
 
 AC_OUTPUT(Makefile doc/Makefile src/Makefile)

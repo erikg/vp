@@ -1,5 +1,4 @@
-HTTP/FTP access
 image caching
 surface buffering
 filename rendering (on display)
-
+arbitrary zooming and panning
