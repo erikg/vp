@@ -96,7 +96,9 @@ oops (char *msg)
 int
 main (int argc, char **argv)
 {
-    int i, count, c, wait = 2500;
+    int i, count, c, wait = 2500, width = 0, height = 0, depth = 0, haveres =
+	0;
+
 /*
     SDL_SysWMinfo info;
 */
@@ -109,17 +111,16 @@ main (int argc, char **argv)
 	{"sleep", 1, NULL, 's'},
 	{"version", 0, NULL, 'v'},
 	{"zoom", 0, NULL, 'z'},
+	{"resolution", 1, NULL, 'r'},
 	{0, 0, 0, 0}
     };
 
-    while ((c = getopt_long (argc, argv, "vhlzfs:", optlist, &i)) != -1)
+    while ((c = getopt_long (argc, argv, "vhlzfs:r:", optlist, &i)) != -1)
     {
 	switch (c)
 	{
 	case 'f':
 	    set_state_int (FULLSCREEN);
-	    break;
-	case 'h':
 	    break;
 	case 'l':
 	    set_state_int (LOUD);
@@ -134,6 +135,34 @@ main (int argc, char **argv)
 	    break;
 	case 'z':
 	    set_state_int (ZOOM);
+	    break;
+	case 'r':
+	    {
+		char *w = NULL, *h = NULL, *d = NULL, *p;
+
+		p = optarg;
+		w = p;
+		while (*p)
+		{
+		    if (*p == 'x')
+			h = p + 1;
+		    if (*p == '@')
+			d = p + 1;
+		    ++p;
+		}
+		width = atoi (w);
+		height = atoi (h);
+		if (d)
+		    depth = atoi (d);
+		haveres = 1;
+	    }
+	    break;
+	case 'h':
+	default:
+	    /*
+	     * show help 
+	     */
+	    return 0;
 	    break;
 	}
     }
@@ -157,7 +186,7 @@ main (int argc, char **argv)
 
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
     atexit (SDL_Quit);
-    mutex = SDL_CreateMutex();
+    mutex = SDL_CreateMutex ();
     disp = XOpenDisplay (NULL);
 
     if (disp)
@@ -166,12 +195,28 @@ main (int argc, char **argv)
 	sheight = DisplayHeight (disp, DefaultScreen (disp));
 	sdepth = BitmapUnit (disp);
     }
+    if (width)
+	swidth = width;
+    if (height)
+	sheight = height;
+    if (depth)
+	sdepth = depth;
+
     if (get_state_int (FULLSCREEN))
+    {
+	printf ("Fullscreen!\n");
+	printf ("%dx%d@%d\n", swidth, sheight, sdepth);
 	screen =
 	    SDL_SetVideoMode (swidth, sheight, sdepth,
 	    SDL_FULLSCREEN | SDL_DOUBLEBUF);
-    else
+	printf ("%s\n", SDL_GetError ());
+    } else
 	screen = SDL_SetVideoMode (1, 1, 32, SDL_DOUBLEBUF);
+    if (screen == NULL)
+    {
+	printf ("Unable to grab screen\n");
+	return EXIT_FAILURE;
+    }
 
     SDL_ShowCursor (0);
     image_freshen ();
