@@ -64,7 +64,6 @@ zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
 
 	/*
 	 * ripped from the libsdl faq, 'gtv' code 
-	 * this is where the async X reply comes from... why?
 	 */
 static void
 center_window ()
@@ -169,14 +168,12 @@ show_image ()
 	    char buf[1024];
 
 	    /*
-	     * um, is this bad? 
+	     * um, is this bad? There used to be an SDL_FreeSurface(screen); here but it caused X async errors I think...
 	     */
-	    // SDL_FreeSurface (screen);
 	    screen = SDL_SetVideoMode (img->w, img->h, 32, SDL_DOUBLEBUF);
 	    sprintf (buf, "iview - %s", imgname);
 	    SDL_WM_SetCaption (buf, "iview");
 	}
-
 	buf = img;
 	center_window ();
     }
