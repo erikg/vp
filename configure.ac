@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.5 2004/03/27 14:48:26 erik Exp $
+dnl $Id: configure.ac,v 1.6 2004/09/29 14:55:53 erik Exp $
 
 AC_INIT
 AC_CONFIG_SRCDIR([src/vp.c])
@@ -19,6 +19,8 @@ CFLAGS="$CFLAGS $SDL_CFLAGS -I/usr/X11R6/include"
 LIBS="$LIBS $SDL_LIBS -lSDL_image"
 
 AC_CHECK_LIB(SDL_image,IMG_Load,,AC_MSG_ERROR([SDL_image is required http://www.libsdl.org/projects/SDL_image/index.html]))
+
+AC_SEARCH_LIBS(socket,socket wsock32)
 
 GETOPT_LONG_DIR=
 AC_CHECK_FUNCS(getopt_long , [GETOPT_LONG_DIR=""], [

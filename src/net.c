@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: net.c,v 1.21 2004/03/27 14:48:26 erik Exp $
+ * $Id: net.c,v 1.22 2004/09/29 14:55:53 erik Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -30,12 +30,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/uio.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <netinet/in.h>
-#include <netdb.h>
+
+#ifdef WIN32
+# include <winsock.h>
+# include <winsock2h>
+#else
+# include <sys/socket.h>
+# include <sys/uio.h>
+# include <netinet/in.h>
+# include <netdb.h>
+#endif
 
 #include "ftp.h"
 #include "http.h"
