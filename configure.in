@@ -1,20 +1,20 @@
-dnl $Id: configure.in,v 1.15 2003/10/11 17:19:12 erik Exp $
+dnl $Id: configure.in,v 1.16 2003/11/19 21:01:16 erik Exp $
 
 AC_INIT(src/vp.c)
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE(vp, 1.6)
+
+AM_CONFIG_HEADER(config.h)
 
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_ISC_POSIX
 
 AC_C_CONST
-AC_STDC_HEADERS
 
-AC_HEADER_STDC
 AC_CHECK_HEADERS(unistd.h stdio.h stdlib.h string.h time.h)
 
-AC_CHECK_FUNC(mkstemps,AC_DEFINE(HAVE_MKSTEMPS),)
+AC_CHECK_FUNC(mkstemps,AC_DEFINE(HAVE_MKSTEMPS,,Safe mktemp))
 
 AM_PATH_SDL(1.2.0,,AC_ERROR("SDL 1.2.0 or better is required. Get it at http://libsdl.org."))
 
@@ -39,7 +39,7 @@ AC_CHECK_FUNCS(getopt_long , [GETOPT_LONG_DIR=""], [
         GETOPT_LONG_DIR="getopt_long"
         CFLAGS="$CFLAGS -I../getopt_long"
         LIBS="$LIBS ../getopt_long/libgetopt_long.a"
-        AC_DEFINE(NO_GETOPT_LONG)])])
+        AC_DEFINE(NO_GETOPT_LONG,,[Missing getopt_long])])])
 AC_SUBST(GETOPT_LONG_DIR)
 
-AC_OUTPUT(Makefile doc/Makefile src/Makefile)
+AC_OUTPUT([Makefile doc/Makefile src/Makefile])

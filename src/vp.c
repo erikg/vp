@@ -1,5 +1,5 @@
 
-/* $Id: vp.c,v 1.15 2003/06/27 11:02:32 erik Exp $ */
+/* $Id: vp.c,v 1.16 2003/11/19 21:01:16 erik Exp $ */
 
 
 /*****************************************************************************
@@ -28,6 +28,8 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_syswm.h>
+
+#include "config.h"
 
 #include "input.h"
 #include "image.h"
