@@ -21,6 +21,8 @@
 #ifndef __HTTP_H_
 #define __HTTP_H_
 
-char *http_download(char *server, int port, char *file);
+#include "net.h"
+
+int http_init(url_t *);
 
 #endif

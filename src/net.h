@@ -26,16 +26,23 @@
 
 typedef struct
 {
-	int proto;
-	char *server;
-	int port;
-	char *file;
+	/* file descriptors */
+	int file;
+	int conn;
+	/* connection info */
+	int proto;	/* uh */
+	char *server;	/* DNS name of server */
+	int port;	/* numeric port value */
+	char *filename;	/* file on server to get... */
+	/* mime info */
+	char *mimetype;
+	char *ext;
 }
 url_t;
 
 int net_is_url (char *name);
 char *net_download (char *name);
 void net_purge (char *file);
-void net_url(char *name);
+url_t *net_url(char *name);
 
 #endif

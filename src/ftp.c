@@ -21,8 +21,8 @@
 #include <stdio.h>
 #include "ftp.h"
 
-char *ftp_download(char *server, int port, char *file)
+int ftp_init(url_t *u)
 {
-	return NULL;
+	return 0;
 }
 

@@ -20,7 +20,8 @@
 
 #ifndef __FTP_H_
 #define __FTP_H_
+#include "net.h"
 
-char *ftp_download(char *server, int port, char *file);
+int ftp_init(url_t *);
 
 #endif

@@ -21,8 +21,16 @@
 #include <stdio.h>
 #include "http.h"
 
-char *http_download(char *server, int port, char *file)
+int
+http_init(url_t *u)
 {
-	return NULL;
+	/* connect to the http server */
+	/* make the request */
+	/* read the header */
+	/* if an error occured */
+	/*    print the error message and return a fail */
+	/* read the file, saving into a temporary file */
+	/* close the connection */
+	return 0;
 }
 

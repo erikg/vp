@@ -19,38 +19,80 @@
  ****************************************************************************/
 
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/uio.h>
 #include <unistd.h>
 #include "ftp.h"
 #include "http.h"
 #include "net.h"
 
-url_t url;
+	/*
+	 * ick 
+	 */
+char *filename;
 
 int
 net_is_url (char *name)
 {
-	return !strcmp(name,"http://")||!strcmp(name,"ftp://");
+    return !strcmp (name, "http://") || !strcmp (name, "ftp://");
 }
 
-void
-net_url(char *name)
+url_t *
+net_url (char *name)
 {
-	url.server=NULL;
-	url.port=0;
-	url.file=NULL;
-	return;
+    url_t *u;
+
+    u = (url_t *) malloc (sizeof (url_t));
+    u->server = NULL;
+    u->port = 0;
+    u->file = NULL;
+    return u;
+}
+
+int
+net_connect (url_t * u)
+{
+    return 0;
+}
+
+int
+net_suck(url_t *u)
+{
+	char buf[BUFSIZ];
+	int len;
+	while(len=read(u->conn,buf,BUFSIZ))
+		if(write(u->conn,buf,len)!=len)
+			return -1;
+	return 0;
 }
 
 char *
 net_download (char *name)
 {
-	net_url(name);
-    if (url.proto == HTTP)
-	return http_download (url.server, url.port, url.file);
-    else if (url.proto == FTP)
-	return ftp_download (url.server, url.port, url.file);
-    else
+    int socket, file;
+    url_t *url;
+
+    if ((url = net_url (name)) == NULL || net_connect (url) == 0)
 	return NULL;
+    switch (url->proto)
+    {
+    case HTTP:
+	http_init (url);
+	break;
+    case FTP:
+	ftp_init (url);
+	break;
+    }
+    filename =
+	(char *) malloc (strlen ("iview.XXXX.") + strlen (url->ext) + 1);
+    sprintf (filename, "iview.XXXX.%s", url->ext);
+    url->file = mkstemps (filename, strlen (url->ext) + 1);
+    if(net_suck (url)==-1)
+		printf("Some problem reading file (suck blew)...\n");
+	close(url->conn);
+	close(url->file);
+    free (url);
+    return filename;
 }
 
 void
