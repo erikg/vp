@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <SDL_image.h>
@@ -54,15 +55,20 @@ getscale (double sw, double sh, double iw, double ih)
 void
 zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
 {
-    int x, y = 0;
+    static int x, y, bpp, doff, soff;
+
+    bpp = s->format->BytesPerPixel;
 
     for (y = 0; y < d->h; y++)
-	for (x = 0; x < (d->pitch / 3); x++)
-	    memcpy ((void *)((int)(d->pixels) + ((int)(d->pitch) * y) +
-		    x * 3),
-		(void *)((int)(s->pixels) +
-		    (int)((int)(s->pitch) * (int)(y / scale)) +
-		    (3 * (int)((x) / scale))), 3);
+	for (x = 0; x < (d->pitch / bpp); x++)
+	{
+	    doff = d->pitch * y + x * bpp;
+	    soff =
+		(int)((int)(s->pitch) * (int)(y / scale)) +
+		(bpp * (int)((x) / scale));
+	    memcpy ((void *)((int)d->pixels + doff),
+		(void *)((int)s->pixels + soff), bpp);
+	}
     return;
 }
 
@@ -201,7 +207,21 @@ show_image ()
     if (get_state_int (ZOOM))
 	scale = getscale (screen->w, screen->h, img->w, img->h);
 
-    if (!get_state_int (SDL_FULLSCREEN))
+    if (get_state_int (SDL_FULLSCREEN))
+    {
+	if (get_state_int (ZOOM))
+	{
+	    buf = SDL_CreateRGBSurface (SDL_SWSURFACE,
+		(int)ceil ((double)img->w * (double)scale),
+		(int)ceil ((double)img->h * (double)scale),
+		img->format->BytesPerPixel * 8,
+		img->format->Rmask, img->format->Gmask, img->format->Bmask,
+		img->format->Amask);
+	    zoom_blit (buf, img, scale);
+	} else
+	    buf = img;
+	SDL_FillRect (screen, NULL, 0);
+    } else
     {
 	if (img)
 	{
@@ -213,17 +233,6 @@ show_image ()
 	}
 	buf = img;
 	center_window ();
-    } else
-    {
-	buf = SDL_CreateRGBSurface (SDL_SWSURFACE,
-	    img->w * scale,
-	    img->h * scale,
-	    img->format->BytesPerPixel * 8,
-	    img->format->Rmask,
-	    img->format->Gmask, img->format->Bmask, img->format->Amask);
-
-	zoom_blit (buf, img, scale);
-	SDL_FillRect (screen, NULL, 0);
     }
     if (img && img->format)
     {

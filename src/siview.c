@@ -166,7 +166,7 @@ main (int argc, char **argv)
 
 	/* this is a message loop, it should be signalled or interrupted, not spin-polled */
     while (handle_input ())
-	sleep(0);	/* surrender to the kernel */
+	SDL_Delay(1);	/* surrender to the kernel */
 
     SDL_Quit ();
     return 0;
