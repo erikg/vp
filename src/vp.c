@@ -1,5 +1,5 @@
 
-/* $Id: vp.c,v 1.16 2003/11/19 21:01:16 erik Exp $ */
+/* $Id: vp.c,v 1.17 2004/03/03 14:05:41 erik Exp $ */
 
 
 /*****************************************************************************
@@ -107,7 +107,9 @@ main (int argc, char **argv)
 /*
     SDL_SysWMinfo info;
 */
+#ifdef SDL_SYSWM_X11
     Display *disp = NULL;
+#endif
 
     static struct option optlist[] = {
 	{"fullscreen", 0, NULL, 'f'},
@@ -192,6 +194,8 @@ main (int argc, char **argv)
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
     atexit (SDL_Quit);
     mutex = SDL_CreateMutex ();
+
+#ifdef SDL_SYSWM_X11
     disp = XOpenDisplay (NULL);
 
     if (disp)
@@ -200,6 +204,8 @@ main (int argc, char **argv)
 	sheight = DisplayHeight (disp, DefaultScreen (disp));
 	sdepth = BitmapUnit (disp);
     }
+#endif
+
     if (width)
 	swidth = width;
     if (height)

@@ -1,5 +1,5 @@
 
-/* $Id: image.c,v 1.38 2003/06/27 11:02:32 erik Exp $ */
+/* $Id: image.c,v 1.39 2004/03/03 14:05:41 erik Exp $ */
 
 
 /*****************************************************************************
@@ -37,6 +37,7 @@ extern SDL_mutex *mutex;
 void
 sync ()
 {
+#ifdef SDL_SYSWM_X11
     SDL_SysWMinfo info;
 
     SDL_VERSION (&info.version);
@@ -45,6 +46,7 @@ sync ()
 	if (info.subsystem == SDL_SYSWM_X11)
 	    XSync (info.info.x11.display, False);
     }
+#endif
     return;
 }
 
@@ -91,6 +93,7 @@ center_window ()
     {
 	int x, y, w, h;
 
+#ifdef SDL_SYSWM_X11
 	if (info.subsystem == SDL_SYSWM_X11)
 	{
 	    info.info.x11.lock_func ();
@@ -109,6 +112,7 @@ center_window ()
 */
 	    info.info.x11.unlock_func ();
 	}
+#endif
     }
     return;
 }
