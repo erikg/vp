@@ -34,6 +34,7 @@
 #include "getopt.h"
 
 SDL_Surface *screen;
+SDL_mutex *mutex;
 static int state;
 int swidth = 640, sheight = 480, sdepth = 8;
 struct image_table_s image_table;
@@ -156,6 +157,7 @@ main (int argc, char **argv)
 
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
     atexit (SDL_Quit);
+    mutex = SDL_CreateMutex();
     disp = XOpenDisplay (NULL);
 
     if (disp)

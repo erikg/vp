@@ -26,15 +26,25 @@
 #include <SDL_syswm.h>
 #include <SDL_image.h>
 
-#include "input.h"
 #include "vp.h"
-#include "net.h"
 
 extern SDL_Surface *screen;
+extern SDL_mutex *mutex;
 
-	/*
-	 * dangerous floating point comparison. 
-	 */
+void
+sync ()
+{
+    SDL_SysWMinfo info;
+
+    SDL_VERSION (&info.version);
+    if (SDL_GetWMInfo (&info) > 0)
+    {
+	if (info.subsystem == SDL_SYSWM_X11)
+	    XSync (info.info.x11.display, False);
+    }
+    return;
+}
+
 static double
 getscale (double sw, double sh, double iw, double ih)
 {
@@ -74,11 +84,9 @@ center_window ()
     SDL_SysWMinfo info;
 
     SDL_VERSION (&info.version);
-
     if (SDL_GetWMInfo (&info) > 0)
     {
-	int x, y;
-	int w, h;
+	int x, y, w, h;
 
 	if (info.subsystem == SDL_SYSWM_X11)
 	{
@@ -87,8 +95,8 @@ center_window ()
 		DefaultScreen (info.info.x11.display));
 	    h = DisplayHeight (info.info.x11.display,
 		DefaultScreen (info.info.x11.display));
-	    x = (w - screen->w) >> 1;
-	    y = (h - screen->h) >> 1;
+	    x = (w - screen->w) / 2;
+	    y = (h - screen->h) / 2;
 	    XMoveWindow (info.info.x11.display, info.info.x11.wmwindow, x, y);
 
 /*
@@ -171,37 +179,38 @@ int
 image_freshen ()
 {
     struct image_table_s *it = get_image_table ();
-    int c = it->current;
+    int c;
 
-/*
-    if (c > 1 && it->image[c - 2].surface != NULL)
-    {
-	SDL_FreeSurface (it->image[c - 2].surface);
-	if (it->image[c - 2].scaled)
-	    SDL_FreeSurface (it->image[c - 2].scaled);
-	it->image[c - 2].surface = NULL;
-	it->image[c - 2].scaled = NULL;
-    }
+    SDL_LockMutex (mutex);
 
-    if (c < (it->count - 2) && it->image[c + 2].surface != NULL)
-    {
-	SDL_FreeSurface (it->image[c + 2].surface);
-	if (it->image[c + 2].scaled)
-	    SDL_FreeSurface (it->image[c + 2].scaled);
-	it->image[c + 2].surface = NULL;
-	it->image[c + 2].scaled = NULL;
-    }
-*/
-    image_freshen_sub (&it->image[c]);
+    sync ();
+    c = it->current;
 
-/*
     if (c > 0)
-	image_freshen_sub (&it->image[c - 1]);
+    {
+	struct image_s *i = &it->image[c - 1];
+
+	if (i->surface)
+	    SDL_FreeSurface (i->surface);
+	if (i->scaled)
+	    SDL_FreeSurface (i->scaled);
+	i->surface = i->scaled = NULL;
+    }
     if (c < (it->count - 1))
-	image_freshen_sub (&it->image[c + 1]);
-    it->image[c-1].scaled=0;
-*/
+    {
+	struct image_s *i = &it->image[c + 1];
+
+	if (i->surface)
+	    SDL_FreeSurface (i->surface);
+	if (i->scaled)
+	    SDL_FreeSurface (i->scaled);
+	i->surface = i->scaled = NULL;
+    }
+
+    image_freshen_sub (&it->image[c]);
     show_image ();
+    sync ();
+    SDL_UnlockMutex (mutex);
     return 1;
 }
 
@@ -210,10 +219,13 @@ image_next ()
 {
     struct image_table_s *it = get_image_table ();
 
+    SDL_LockMutex (mutex);
+
     if (it->current < (it->count - 1))
 	it->current++;
     else
 	return 0;
+    SDL_UnlockMutex (mutex);
     image_freshen ();
     return 1;
 }
@@ -223,10 +235,13 @@ image_prev ()
 {
     struct image_table_s *it = get_image_table ();
 
+    SDL_LockMutex (mutex);
+
     if (it->current > 0)
 	it->current--;
     else
 	return 0;
+    SDL_UnlockMutex (mutex);
     image_freshen ();
     return 1;
 }
