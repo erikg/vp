@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /* 
- * $Id: image.c,v 1.41 2004/07/25 14:53:24 erik Exp $
+ * $Id: image.c,v 1.42 2005/01/10 15:48:36 erik Exp $
  */
 
 #include <stdio.h>
@@ -93,9 +93,9 @@ center_window ()
     SDL_VERSION (&info.version);
     if (SDL_GetWMInfo (&info) > 0)
     {
+#ifdef SDL_SYSWM_X11
 	int x, y, w, h;
 
-#ifdef SDL_SYSWM_X11
 	if (info.subsystem == SDL_SYSWM_X11)
 	{
 	    info.info.x11.lock_func ();
