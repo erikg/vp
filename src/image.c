@@ -112,7 +112,10 @@ image_next (int terminate)
     void *imglist = get_imglist ();
 
     if (ll_next (imglist) == 0 && terminate == 1)
+    {
+	img = NULL;
 	return 0;
+    }
     while ((img = IMG_Load (ll_showline (imglist))) == NULL)
 	ll_next (imglist);
     imgname = ll_showline (imglist);
@@ -153,14 +156,14 @@ show_image ()
 	{
 	    char buf[1024];
 
-	    SDL_FreeSurface (screen);
-	    screen = SDL_SetVideoMode (img->w, img->h, 16, 0);
+//	    SDL_FreeSurface (screen);
+//	    screen = SDL_SetVideoMode (img->w, img->h, 16, 0);
 	    sprintf (buf, "iview - %s", imgname);
 	    SDL_WM_SetCaption (buf, "iview");
 	}
 
 	buf = img;
-	center_window ();
+//	center_window ();
     }
     if (get_state_int (ZOOM))
     {
