@@ -1,5 +1,5 @@
 AC_INIT(src/iview.c)
-AM_INIT_AUTOMAKE(iview, 1.3)
+AM_INIT_AUTOMAKE(iview, 1.4)
 
 AC_PROG_CC
 AC_PROG_INSTALL
