@@ -1,4 +1,4 @@
-# $Id: vp.spec.in,v 1.2 2004/01/02 13:03:16 erik Exp $
+# $Id: vp.spec.in,v 1.3 2004/01/02 13:44:56 erik Exp $
 #
 Summary: View image files.
 Name: @PACKAGE@
@@ -9,7 +9,7 @@ Vendor: Erik Greenwald
 Url: http://math.smsu.edu/~erik/software.php?id=63
 Group: Amusements/Graphics
 Source0: http://math.smsu.edu/~erik/files/@PACKAGE@-@VERSION@.tar.gz
-Buildroot: /var/tmp
+Buildroot: /var/tmp/@PACKAGE@
 
 %description
 Image viewer based on SDL that can read and display a wide variety of formats.
