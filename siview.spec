@@ -1,12 +1,12 @@
 Summary: view image files.
-Name: iview
+Name: siview
 Version: 1.5
 Release: 1
 Copyright: GPL
 Vendor: Erik Greenwald
 Url: http://math.smsu.edu/~erik/software.php?id=63
 Group: Amusements/Graphics
-Source0: http://math.smsu.edu/~erik/files/iview-1.5.tar.gz
+Source0: http://math.smsu.edu/~erik/files/siview-1.5.tar.gz
 Buildroot: /usr/src/redhat/BUILD/view
 
 %description
