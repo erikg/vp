@@ -1,15 +1,15 @@
-# $Id: vp.spec.in,v 1.1 2004/01/02 13:02:12 erik Exp $
+# $Id: vp.spec.in,v 1.2 2004/01/02 13:03:16 erik Exp $
 #
-Summary: view image files.
-Name: vp
-Version: 1.6
+Summary: View image files.
+Name: @PACKAGE@
+Version: @VERSION@
 Release: 1
 Copyright: GPL
 Vendor: Erik Greenwald
 Url: http://math.smsu.edu/~erik/software.php?id=63
 Group: Amusements/Graphics
-Source0: http://math.smsu.edu/~erik/files/vp-1.6.tar.gz
-Buildroot: /usr/src/redhat/BUILD/view
+Source0: http://math.smsu.edu/~erik/files/@PACKAGE@-@VERSION@.tar.gz
+Buildroot: /var/tmp
 
 %description
 Image viewer based on SDL that can read and display a wide variety of formats.
