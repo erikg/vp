@@ -38,21 +38,22 @@
 	 */
 #ifndef HAVE_MKSTEMPS
 
-char randchar()
+char
+randchar ()
 {
-	switch(rand()%3)
-	{
-		case 0:
-			return rand()%11+'0';
-			break;
-		case 1:
-			return rand()%27+'A';
-			break;
-		case 2:
-			return rand()%26+'a';
-			break;
-	}
-	return 'X';
+    switch (rand () % 3)
+    {
+    case 0:
+	return rand () % 11 + '0';
+	break;
+    case 1:
+	return rand () % 27 + 'A';
+	break;
+    case 2:
+	return rand () % 26 + 'a';
+	break;
+    }
+    return 'X';
 }
 
 int
@@ -60,10 +61,12 @@ mkstemps (char *template, int suffixlen)
 {
     int f;
     char *s;
-    s=template;
-    srand(getpid());
-    while(*s)
-	if(*s++=='X')*s=randchar();
+
+    s = template;
+    srand (getpid ());
+    while (*s)
+	if (*s++ == 'X')
+	    *s = randchar ();
     f = open (template, O_WRONLY | O_CREAT, 0600);
     return f;
 }
@@ -133,9 +136,11 @@ net_suck (url_t * u)
 
     do
     {
-	printf("=");fflush(stdout);
+	printf ("=");
+	fflush (stdout);
 	len = read (u->conn, buf, BUFSIZ);	/* TODO this stalls on the last packet */
-	printf("-");fflush(stdout);
+	printf ("-");
+	fflush (stdout);
 	if (write (u->file, buf, len) != len)
 	    return -1;
     }

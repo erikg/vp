@@ -26,19 +26,17 @@
 #define LOUD		4
 #define GRAB_FOCUS	8
 
-struct image_s
-{
-	char *resource;
-	char *file;
-	SDL_Surface *surface;
-	SDL_Surface *scaled_surface;
+struct image_s {
+    char *resource;
+    char *file;
+    SDL_Surface *surface;
+    SDL_Surface *scaled;
 };
 
-struct image_table_s
-{
-	int count;
-	int current;
-	struct image_s *image;
+struct image_table_s {
+    int count;
+    int current;
+    struct image_s *image;
 };
 
 
@@ -47,9 +45,9 @@ int get_state_int (int);
 int toggle_state (int);
 int set_state_int (int);
 int unset_state_int (int);
-void *get_imglist ();
-unsigned int vid_width();
-unsigned int vid_height();
-unsigned int vid_depth();
+struct image_table_s *get_image_table ();
+unsigned int vid_width ();
+unsigned int vid_height ();
+unsigned int vid_depth ();
 
 #endif

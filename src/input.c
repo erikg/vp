@@ -29,6 +29,7 @@
 	 */
 extern SDL_Surface *screen, *img;
 extern float scale;
+
 	/*
 	 * instead of actually exiting, we just fake the escape key 
 	 */
@@ -99,19 +100,21 @@ handle_input ()
 	    timer_stop ();
 	    toggle_state (SDL_FULLSCREEN);
 	    if (get_state_int (SDL_FULLSCREEN))
-		screen = SDL_SetVideoMode (vid_width(), vid_height(), vid_depth(), SDL_FULLSCREEN|SDL_DOUBLEBUF);
+		screen =
+		    SDL_SetVideoMode (vid_width (), vid_height (),
+		    vid_depth (), SDL_FULLSCREEN | SDL_DOUBLEBUF);
 	    show_image ();
 	    break;
 #if 0
-        case '+':
+	case '+':
 	case '=':
-	    scale+=.1;
+	    scale += .1;
 	    show_image ();
-		break;
-        case '-':
-	    scale-=.1;
+	    break;
+	case '-':
+	    scale -= .1;
 	    show_image ();
-		break;
+	    break;
 #endif
 	default:
 	    /*

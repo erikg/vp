@@ -78,9 +78,10 @@ toggle_state (name)
     return (state ^= name);
 }
 
-struct image_table_s *get_image_table()
+struct image_table_s *
+get_image_table ()
 {
-	return &image_table;
+    return &image_table;
 }
 
 void
@@ -169,7 +170,7 @@ main (int argc, char **argv)
 	screen = SDL_SetVideoMode (1, 1, 32, SDL_DOUBLEBUF);
 
     SDL_ShowCursor (0);
-    image_freshen();
+    image_freshen ();
 
     if (image_table.count > 1)
 	timer_start (wait);
