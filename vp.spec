@@ -1,12 +1,12 @@
 Summary: view image files.
 Name: vp
-Version: 1.5
+Version: 1.6
 Release: 1
 Copyright: GPL
 Vendor: Erik Greenwald
 Url: http://math.smsu.edu/~erik/software.php?id=63
 Group: Amusements/Graphics
-Source0: http://math.smsu.edu/~erik/files/vp-1.5.tar.gz
+Source0: http://math.smsu.edu/~erik/files/vp-1.6.tar.gz
 Buildroot: /usr/src/redhat/BUILD/view
 
 %description
