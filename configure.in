@@ -1,6 +1,7 @@
-dnl $Id: configure.in,v 1.17 2004/01/02 13:03:16 erik Exp $
+dnl $Id: configure.in,v 1.18 2004/01/02 13:43:38 erik Exp $
 
 AC_INIT(src/vp.c)
+AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE(vp, 1.6)
 
