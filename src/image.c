@@ -207,7 +207,7 @@ show_image ()
     if (get_state_int (ZOOM))
 	scale = getscale (screen->w, screen->h, img->w, img->h);
 
-    if (get_state_int (SDL_FULLSCREEN))
+    if (get_state_int (FULLSCREEN))
     {
 	if (get_state_int (ZOOM))
 	{

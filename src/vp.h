@@ -21,10 +21,17 @@
 #ifndef __VP_H_
 #define __VP_H_
 
-#define ZOOM		0x01
-#define FULLSCREEN	SDL_FULLSCREEN
-#define LOUD		0x04
-#define GRAB_FOCUS	0x08
+#define ZOOM		1
+#define FULLSCREEN	2
+#define LOUD		4
+#define GRAB_FOCUS	8
+
+typedef struct
+{
+	char *resource;
+	char *name;
+	SDL_Surface *img; 
+} img_t;
 
 void oops (char *);
 int get_state_int (int);
@@ -32,5 +39,8 @@ int toggle_state (int);
 int set_state_int (int);
 int unset_state_int (int);
 void *get_imglist ();
+unsigned int vid_width();
+unsigned int vid_height();
+unsigned int vid_depth();
 
 #endif

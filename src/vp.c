@@ -36,6 +36,10 @@ static void *imglist;		/* linked list */
 static int state;
 int swidth, sheight, sdepth;
 
+unsigned int vid_width(){return swidth;}
+unsigned int vid_height(){return sheight;}
+unsigned int vid_depth(){return sdepth;}
+
 int
 get_state_int (int name)
 {
@@ -55,7 +59,7 @@ unset_state_int (int name)
 }
 
 int
-toggle_state (int name)
+toggle_state (name)
 {
     return (state ^= name);
 }
@@ -78,9 +82,9 @@ int
 main (int argc, char **argv)
 {
     int x, imgcount = 0, i, count, c, wait = 2500;
-/*
     SDL_SysWMinfo info;
-*/
+    Display *disp = NULL;
+
     static struct option optlist[] = {
 	{"fullscreen", 0, NULL, 'f'},
 	{"help", 0, NULL, 'h'},
@@ -92,8 +96,6 @@ main (int argc, char **argv)
     };
 
     x = SDL_DOUBLEBUF;
-    unset_state_int (FULLSCREEN);
-    unset_state_int (GRAB_FOCUS);
     imglist = ll_newlist ();
 
     while ((c = getopt_long (argc, argv, "vhlzfs:", optlist, &i)) != -1)
@@ -133,33 +135,18 @@ main (int argc, char **argv)
 	printf ("No images selected... aborting.\n");
 	return 0;
     }
+
     x |= get_state_int (FULLSCREEN);
-
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
-    atexit (SDL_Quit);		/* as much as I hate doing this, it's necessary.
-				 * libjpeg seems to like to exit() on bad image,
-				 * instead of doing the right thing and returning an
-				 * error code. :/  */
+    atexit (SDL_Quit);	/* as much as I hate doing this, it's necessary.
+			 * libjpeg seems to like to exit() on bad image,
+			 * instead of doing the right thing and returning an
+			 * error code. :/  */
 
-    /*
-     * this attempts to extrapolate the current display settings (resolutions and
-     * depth) and tries to match it with fullscreen mode. This should make things a
-     * little easier on the monitor, and if a display is currently running in a mode,
-     * then it's probably safe to assume that mode is legal. If it cannot successfully
-     * extrapolate the information, it 'guesses' at 1280x1024x24, which is probly a
-     * big dangerous. There should be some testing, and there should probably be cli
-     * switches to override. It seems to work for me, using X and svgalib.
-     */
+/* this attempts to extrapolate the current display settings (resolutions and depth) and tries to match it with fullscreen mode. This should make things a little easier on the monitor, and if a display is currently running in a mode, then it's probably safe to assume that mode is legal. If it cannot successfully extrapolate the information, it 'guesses' at 1280x1024x24, which is probly a big dangerous. There should be some testing, and there should probably be cli switches to override. It seems to work for me, using X and svgalib.  */
 
-    if (get_state_int (FULLSCREEN))
-    {
-	Display *disp;
 
-#if QUERY_DISP
 	disp = XOpenDisplay (NULL);
-#else
-	disp = 0x0;
-#endif
 
 	/*
 	 * this fails, why? 
@@ -174,19 +161,13 @@ main (int argc, char **argv)
 	    printf ("display: %dx%d@%d\n", swidth, sheight, sdepth);
 	} else
 	{
-	    /*
-	     * fake it. 
-	     */
-	    swidth = 1600;
-	   sheight = 1200;
-/*
-	    swidth = 1024;
-	    sheight = 768;
-*/
-	    sdepth = 24;
+	    swidth = 640;
+	    sheight = 480;
+	    sdepth = 8;
 	}
-	screen = SDL_SetVideoMode (swidth, sheight, sdepth, x);
-    } else
+    if (get_state_int (FULLSCREEN))
+	screen = SDL_SetVideoMode (swidth, sheight, sdepth, SDL_FULLSCREEN);
+    else
 	screen = SDL_SetVideoMode (10, 10, 32, 0);	/* windowed */
 
     SDL_ShowCursor (0);
@@ -195,11 +176,7 @@ main (int argc, char **argv)
     if (imgcount >= 2)
 	timer_start (wait);
 
-    /*
-     * this is a message loop, it should be signalled or interrupted, not spin-polled 
-     */
-    while (handle_input ())
-	SDL_Delay (1);		/* surrender to the kernel */
+    while (handle_input ());
 
     SDL_Quit ();
     return 0;
