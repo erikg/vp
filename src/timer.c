@@ -23,7 +23,6 @@
 #include "image.h"
 #include "input.h"
 #include "vp.h"
-#include "ll.h"
 #include "timer.h"
 
 static int wait = 2500;

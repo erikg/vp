@@ -29,13 +29,11 @@
 #include "input.h"
 #include "image.h"
 #include "vp.h"
-#include "ll.h"
 #include "timer.h"
 
 #include "getopt.h"
 
 SDL_Surface *screen;
-static void *imglist;		/* linked list */
 static int state;
 int swidth = 640, sheight = 480, sdepth = 8;
 struct image_table_s image_table;
@@ -80,10 +78,9 @@ toggle_state (name)
     return (state ^= name);
 }
 
-void *
-get_imglist ()
+struct image_table_s *get_image_table()
 {
-    return (void *)imglist;
+	return &image_table;
 }
 
 void
@@ -110,8 +107,6 @@ main (int argc, char **argv)
 	{"zoom", 0, NULL, 'z'},
 	{0, 0, 0, 0}
     };
-
-    imglist = ll_newlist ();
 
     while ((c = getopt_long (argc, argv, "vhlzfs:", optlist, &i)) != -1)
     {
@@ -174,7 +169,7 @@ main (int argc, char **argv)
 	screen = SDL_SetVideoMode (1, 1, 32, SDL_DOUBLEBUF);
 
     SDL_ShowCursor (0);
-    show_image ();
+    image_freshen();
 
     if (image_table.count > 1)
 	timer_start (wait);

@@ -92,7 +92,7 @@ handle_input ()
 	    timer_stop ();
 	    toggle_state (ZOOM);
 	    if (get_state_int (SDL_FULLSCREEN))
-		img_freshen (), show_image ();
+		image_freshen (), show_image ();
 	    break;
 	case 'f':
 	case 'F':

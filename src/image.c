@@ -28,13 +28,9 @@
 
 #include "input.h"
 #include "vp.h"
-#include "ll.h"
 #include "net.h"
 
 extern SDL_Surface *screen;
-SDL_Surface *img = NULL;
-static char *imgname = NULL;
-char *newname = NULL;
 
 	/*
 	 * dangerous floating point comparison. 
@@ -49,7 +45,7 @@ getscale (double sw, double sh, double iw, double ih)
 	 * hideous. This should be made more readable, and probably faster.
 	 * be nice if it did multi-sampling to get cleaner zooming?
 	 */
-void
+SDL_Surface *
 zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
 {
     static int x, y, bpp, doff, soff;
@@ -66,7 +62,7 @@ zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
 	    memcpy ((void *)((int)d->pixels + doff),
 		(void *)((int)s->pixels + soff), bpp);
 	}
-    return;
+    return d;
 }
 
 	/*
@@ -106,152 +102,125 @@ center_window ()
     return;
 }
 
-SDL_Surface *
-image_load (char *name)
+void
+image_freshen_sub (struct image_s *i)
 {
-    SDL_Surface *s;
-
-    if (newname == NULL)
+    if (i->surface == NULL)
     {
-	if (net_is_url (name))
-	    newname = net_download (name);
-	else
-	    newname = (char *)strdup (name);
+	i->surface = IMG_Load (i->resource);
     }
-    s = IMG_Load (newname);
-    if(s)
-    s->pixels = (void *)realloc(s->pixels, s->pitch*s->h*4);
+    if (get_state_int (ZOOM))
+    {
+	double scale =
+	    getscale (screen->w, screen->h, i->surface->w, i->surface->h);
 
-/*
-    if (strcmp (newname, name))
-	net_purge (newname);
-*/
-    return s;
+	i->scaled = SDL_CreateRGBSurface (SDL_SWSURFACE,
+	    (int)ceil ((double)i->surface->w * (double)scale) + 1,
+	    (int)ceil ((double)i->surface->h * (double)scale) + 1,
+	    i->surface->format->BytesPerPixel * 8,
+	    i->surface->format->Rmask, i->surface->format->Gmask,
+	    i->surface->format->Bmask, i->surface->format->Amask);
+	if (i->scaled->format->BytesPerPixel == 1)
+	    memcpy (i->scaled->format->palette, i->surface->format->palette,
+		sizeof (SDL_Palette));
+	zoom_blit (i->scaled, i->surface, scale);
+    }
+    return;
 }
 
 int
-image_init (int terminate)
+image_freshen ()
 {
-    void *imglist = get_imglist ();
-terminate=0;
-    ll_rewind (imglist);
-    while ((img = image_load (ll_showline (imglist))) == NULL)
-	if (ll_next (imglist) == 0)
-	    return -1;
-    imgname = ll_showline (imglist);
-    return 0;
-}
+    struct image_table_s *it = get_image_table ();
+    int i, c = it->current;
 
-int
-img_freshen ()
-{
-    void *imglist = get_imglist ();
+    if (c > 1 && it->image[c - 2].surface != NULL)
+    {
+	SDL_FreeSurface (it->image[c - 2].surface);
+	if (it->image[c - 2].scaled)
+	    SDL_FreeSurface (it->image[c - 2].scaled);
+	it->image[c - 2].surface = NULL;
+	it->image[c - 2].scaled = NULL;
+    }
 
-    imgname = ll_showline (imglist);
-    if (newname == NULL)
-	if ((img = image_load (imgname)) == NULL)
-	    return 0;
+    if (c < (it->count - 2) && it->image[c + 2].surface != NULL)
+    {
+	SDL_FreeSurface (it->image[c + 2].surface);
+	if (it->image[c + 2].scaled)
+	    SDL_FreeSurface (it->image[c + 2].scaled);
+	it->image[c + 2].surface = NULL;
+	it->image[c + 2].scaled = NULL;
+    }
+    image_freshen_sub (&it->image[c]);
+    if (c > 0)
+	image_freshen_sub (&it->image[c - 1]);
+    if (c < (it->count - 1))
+	image_freshen_sub (&it->image[c + 1]);
     return 1;
 }
 
 int
-image_next (int terminate)
+image_next ()
 {
-    void *imglist = get_imglist ();
+    struct image_table_s *it = get_image_table ();
 
-    free (newname);
-    newname = NULL;
-    SDL_FreeSurface (img);
-    if (ll_next (imglist) == 0 && terminate == 1)
-		return (int)(img = NULL);
-    while (!img_freshen ())
-		if (ll_next (imglist) == 0 && terminate == 1)
-			return (int)(img = NULL);
+    if (it->current < (it->count - 1))
+	it->count++;
+    else
+	return 0;
+    image_freshen ();
     return 1;
 }
 
 int
-image_prev (int nothing)
+image_prev ()
 {
-    void *imglist = get_imglist ();
+    struct image_table_s *it = get_image_table ();
 
-nothing=0;
-    free (newname);
-    newname = NULL;
-    SDL_FreeSurface (img);
-    ll_prev (imglist);
-    while (!img_freshen ())
-	if (ll_prev (imglist) == 0)
-	    return 1;
+    if (it->current > 0)
+	it->count--;
+    else
+	return 0;
+    image_freshen ();
     return 1;
 }
 
 void
 show_image ()
 {
-    SDL_Surface *buf = NULL;
-    float scale = 1.0;
+    struct image_table_s *it = get_image_table ();
     SDL_Rect r;
 
-    if (img == NULL)
-    {
-	throw_exit ();
-	return;
-    }
-    /*
-     * maybe this should be elsewhere? 
-     */
     if (get_state_int (LOUD))
-	fprintf (stdout, "%s\n", imgname), fflush (stdout);
-
-    if (get_state_int (ZOOM))
-	scale = getscale (screen->w, screen->h, img->w, img->h);
+	fprintf (stdout, "%s\n", it->image[it->current].resource),
+	    fflush (stdout);
 
     if (get_state_int (FULLSCREEN))
     {
-	if (get_state_int (ZOOM))
-	{
-	    buf = SDL_CreateRGBSurface (SDL_SWSURFACE,
-		(int)ceil ((double)img->w * (double)scale) + 1,
-		(int)ceil ((double)img->h * (double)scale) + 1,
-		img->format->BytesPerPixel * 8,
-		img->format->Rmask, img->format->Gmask, img->format->Bmask,
-		img->format->Amask);
-	    if (buf->format->BytesPerPixel == 1)
-		memcpy (buf->format->palette, img->format->palette,
-		    sizeof (SDL_Palette));
-	    zoom_blit (buf, img, scale);
-	} else
-	    buf = img;
 	SDL_FillRect (screen, NULL, 0);
     } else
     {
-	if (img)
-	{
-	    static char buffer[1024];
+	static char buffer[1024];
 
-	    screen = SDL_SetVideoMode (img->w, img->h, 32, SDL_DOUBLEBUF);
-	    sprintf (buffer, "vp - %s", imgname);
-	    SDL_WM_SetCaption (buffer, "vp");
-	}
-	buf = img;
+	screen =
+	    SDL_SetVideoMode (it->image[it->current].surface->w,
+	    it->image[it->current].surface->h, vid_depth (), SDL_DOUBLEBUF);
+	sprintf (buffer, "vp - %s", it->image[it->current].resource);
+	SDL_WM_SetCaption (buffer, "vp");
 	center_window ();
+	if (it->image[it->current].surface
+	    && it->image[it->current].surface->format)
+	{
+	    r.x = (Sint16) (screen->w - it->image[it->current].scaled->w) / 2;
+	    r.y = (Sint16) (screen->h - it->image[it->current].scaled->h) / 2;
+	    r.w = (Uint16) it->image[it->current].scaled->w;
+	    r.h = (Uint16) it->image[it->current].scaled->h;
+	} else
+	    printf ("Image \"%s\" failed\n", it->image[it->current].resource);
     }
-    if (img && img->format)
-    {
-	r.x = (Sint16) (screen->w - buf->w) / 2;
-	r.y = (Sint16) (screen->h - buf->h) / 2;
-	r.w = (Uint16) buf->w;
-	r.h = (Uint16) buf->h;
-    } else
-	printf ("Image \"%s\" failed\n", imgname);
-
-    SDL_BlitSurface (buf, NULL, screen, &r);
+    SDL_BlitSurface (it->image[it->current].scaled ? it->image[it->current].
+	scaled : it->image[it->current].surface, NULL, screen, &r);
     SDL_Flip (screen);
-
-    if (buf != img)
-	SDL_FreeSurface (buf);
-    buf = NULL;
 
     return;
 }
