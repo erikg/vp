@@ -21,4 +21,6 @@
 #ifndef __FTP_H_
 #define __FTP_H_
 
+char *ftp_download(char *server, int port, char *file);
+
 #endif

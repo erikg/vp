@@ -21,8 +21,21 @@
 #ifndef __NET_H_
 #define __NET_H_
 
+#define HTTP 0x1
+#define FTP  0x2
+
+typedef struct
+{
+	int proto;
+	char *server;
+	int port;
+	char *file;
+}
+url_t;
+
 int net_is_url (char *name);
 char *net_download (char *name);
 void net_purge (char *file);
+void net_url(char *name);
 
 #endif
