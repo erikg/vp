@@ -79,7 +79,7 @@ parse_control_block (char *word)
 	 * long options 
 	 */
 	word++;
-	if (!strcmp (word , "version"))
+	if (!strcmp (word, "version"))
 	    exit (printf
 		("%s %s (C) 2001 Erik Greenwald <erik@smluc.org>\n",
 		    PACKAGE, VERSION));

@@ -26,7 +26,7 @@
 #include "ll.h"
 #include "timer.h"
 
-static int wait=2500;
+static int wait = 2500;
 
 SDL_TimerID timer_id;
 
@@ -72,7 +72,7 @@ timer_stop ()
 void
 timer_start (int MILLIS)
 {
-	wait = MILLIS;
+    wait = MILLIS;
     if (timer_id == 0)
 	timer_id =
 	    SDL_AddTimer (wait, (SDL_NewTimerCallback) timer_stub, NULL);

@@ -36,7 +36,8 @@ void
 throw_exit ()
 {
     SDL_Event thrower;
-printf("Throwng ext\n");
+
+    printf ("Throwng ext\n");
     thrower.type = SDL_KEYDOWN;
     thrower.key.keysym.sym = 27;
     timer_stop ();

@@ -23,6 +23,6 @@
 
 #include "net.h"
 
-int http_init(url_t *);
+int http_init (url_t *);
 
 #endif

@@ -40,27 +40,29 @@ char *filename;
 int
 net_is_url (char *name)
 {
-    return !strncmp (name, "http://", 7) || !strncmp(name, "ftp://", 7);
+    return !strncmp (name, "http://", 7) || !strncmp (name, "ftp://", 7);
 }
 
 url_t *
 net_url (char *name)
 {
     url_t *u;
- char *n;
-    n=name;
-	printf("%s\n", n);
-    n+=strlen("http://")+1;
-	while(*n!='/')n++;
-	*n=0;
+    char *n;
+
+    n = name;
+    printf ("%s\n", n);
+    n += strlen ("http://") + 1;
+    while (*n != '/')
 	n++;
+    *n = 0;
+    n++;
     u = (url_t *) malloc (sizeof (url_t));
-    u->server = strdup (name+strlen("http://"));
+    u->server = strdup (name + strlen ("http://"));
     u->port = 80;
     u->filename = strdup (n);
-    u->ext = strdup (n+strlen(n)-3);
+    u->ext = strdup (n + strlen (n) - 3);
     u->proto = HTTP;
-	printf("getting %s (%s) from %s\n", u->filename, u->ext,u->server);
+    printf ("getting %s (%s) from %s\n", u->filename, u->ext, u->server);
     return u;
 }
 
@@ -68,7 +70,7 @@ int
 net_connect (url_t * u)
 {
     struct sockaddr_in s;
-    struct sockaddr *ss = (struct sockaddr *) &s;
+    struct sockaddr *ss = (struct sockaddr *)&s;
     struct hostent *h;
 
     memset (&s, 0, sizeof (s));
@@ -84,7 +86,7 @@ net_connect (url_t * u)
     }
     s.sin_family = AF_INET;
     s.sin_port = htons (u->port);
-    s.sin_addr = *((struct in_addr *) h->h_addr_list[0]);
+    s.sin_addr = *((struct in_addr *)h->h_addr_list[0]);
     if (connect (u->conn, ss, sizeof (struct sockaddr)) == -1)
     {
 	perror ("iview:net.c:net_connect:connect");
@@ -98,31 +100,35 @@ net_suck (url_t * u)
 {
     char buf[BUFSIZ];
     int len = BUFSIZ;
+
     do
     {
 	len = read (u->conn, buf, BUFSIZ);
 	if (write (u->file, buf, len) != len)
 	    return -1;
     }
-    while (len/*== BUFSIZ*/);
+
+    while (len /*== BUFSIZ*/ );
     return 0;
 }
 
 char *
 net_download (char *name)
 {
+
 /*
     int socket, file;
 */
     url_t *url;
-printf("Download %s\n", name);
+
+    printf ("Download %s\n", name);
     if ((url = net_url (name)) == NULL || net_connect (url) == -1)
 	return NULL;
     filename =
-	(char *) malloc (strlen ("/tmp/iview.XXXX.") + strlen (url->ext) + 1);
+	(char *)malloc (strlen ("/tmp/iview.XXXX.") + strlen (url->ext) + 1);
     sprintf (filename, "/tmp/iview.XXXX.%s", url->ext);
     url->file = mkstemps (filename, strlen (url->ext) + 1);
-    printf("saving to %s\n", filename);
+    printf ("saving to %s\n", filename);
     switch (url->proto)
     {
     case HTTP:

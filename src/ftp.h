@@ -22,6 +22,6 @@
 #define __FTP_H_
 #include "net.h"
 
-int ftp_init(url_t *);
+int ftp_init (url_t *);
 
 #endif

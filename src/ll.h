@@ -53,6 +53,6 @@ extern char *ll_showline (void *this);
 	/** purge the list, do this when you're done with the list */
 extern int ll_clearlist (void *list);
 
-extern void ll_showall(void *);
+extern void ll_showall (void *);
 
 #endif

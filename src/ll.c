@@ -24,8 +24,16 @@
 #include "ll.h"
 
 
-typedef struct anode { char *line; struct anode *prev; struct anode *next; } node;
-typedef struct alist { node *head; node *current; node *last; } list;
+typedef struct anode {
+    char *line;
+    struct anode *prev;
+    struct anode *next;
+} node;
+typedef struct alist {
+    node *head;
+    node *current;
+    node *last;
+} list;
 
 void *
 ll_newlist ()
@@ -53,12 +61,14 @@ ll_next (void *this)
     x = (list *) this;
     if (x == NULL || x->current == NULL || x->current->next == NULL)
 	return 0;
+
 /*
     printf ("nextA: \"%s\" [\"%s\"] \"%s\"\n",
 	x->current->prev ? x->current->prev->line : "(null)", x->current->line,
 	x->current->next ? x->current->next->line : "(null)");
 */
     x->current = x->current->next;
+
 /*
     printf ("nextB: \"%s\" [\"%s\"] \"%s\"\n",
 	x->current->prev ? x->current->prev->line : "(null)", x->current->line,
@@ -75,6 +85,7 @@ ll_prev (void *this)
     x = (list *) this;
     if (x == NULL || x->current == NULL || x->current->prev == NULL)
 	return 0;
+
 /*
     printf ("prevA: \"%s\" [\"%s\"] \"%s\"\n",
 	x->current->prev ? x->current->prev->line : "(null)", 
@@ -82,6 +93,7 @@ ll_prev (void *this)
 	x->current->next ? x->current->next->line : "(null)");
 */
     x->current = x->current->prev;
+
 /*
     printf ("prevB: \"%s\" [\"%s\"] \"%s\"\n",
 	x->current->prev ? x->current->prev->line : "(null)", 
@@ -121,7 +133,7 @@ ll_addatend (void *this, char *line)
     if (x == NULL)
 	return 0;
 
-    x->line = (char *)strdup(line);
+    x->line = (char *)strdup (line);
     x->next = NULL;
     x->prev = l->last;
 
@@ -218,20 +230,22 @@ ll_deletenode (void *v)
 }
 
 void
-ll_showall(void *imglist)
+ll_showall (void *imglist)
 {
-	list *l;
-	node *n;
+    list *l;
+    node *n;
 
-	l = (list *)imglist;
-	n=l->head;
-	printf("==============================================================================\n");
-	while(n!=NULL)
-	{
-		printf(n==l->current?"[%s]\n":"%s\n", n->line);
-		fflush(stdout);
-		n=n->next;
-	}
-	printf("==============================================================================\n");
-	return;
+    l = (list *) imglist;
+    n = l->head;
+    printf
+	("==============================================================================\n");
+    while (n != NULL)
+    {
+	printf (n == l->current ? "[%s]\n" : "%s\n", n->line);
+	fflush (stdout);
+	n = n->next;
+    }
+    printf
+	("==============================================================================\n");
+    return;
 }
