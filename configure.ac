@@ -1,7 +1,8 @@
-dnl $Id: configure.ac,v 1.2 2004/03/27 00:33:34 erik Exp $
+dnl $Id: configure.ac,v 1.3 2004/03/27 00:37:55 erik Exp $
 
 AC_INIT
 AC_CONFIG_SRCDIR([src/vp.c])
+AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE(vp, 1.6)
 AM_CONFIG_HEADER([config.h])
