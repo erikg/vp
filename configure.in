@@ -17,7 +17,7 @@ AC_CHECK_FUNC(mkstemps,AC_DEFINE(HAVE_MKSTEMPS),)
 AM_PATH_SDL(1.2.0,,AC_ERROR("SDL 1.2.0 or better is required. Get it at http://libsdl.org."))
 
 CFLAGS="$CFLAGS $SDL_CFLAGS -I/usr/X11R6/include"
-LIBS="$LIBS $SDL_LIBS -lSDL_image"
+LIBS="$LIBS $SDL_LIBS `sdl-config --libs` -lSDL_image"
 
 AC_MSG_CHECKING("SDL_image")
 AC_TRY_LINK([
@@ -40,4 +40,4 @@ AC_CHECK_FUNCS(getopt_long , [GETOPT_LONG_DIR=""], [
         ] )
 AC_SUBST(GETOPT_LONG_DIR)
 
-AC_OUTPUT(Makefile doc/Makefile src/Makefile getopt_long/Makefile)
+AC_OUTPUT(Makefile doc/Makefile src/Makefile)

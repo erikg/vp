@@ -119,6 +119,8 @@ image_load (char *name)
 	    newname = (char *)strdup (name);
     }
     s = IMG_Load (newname);
+    if(s)
+    s->pixels = (void *)realloc(s->pixels, s->pitch*s->h*4);
 
 /*
     if (strcmp (newname, name))

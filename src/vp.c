@@ -182,7 +182,7 @@ main (int argc, char **argv)
 //	    sheight = 768;
 	    sdepth = 24;
 	}
-	screen = SDL_SetVideoMode (swidth, sheight, sdepth, (x&!FULLSCREEN));
+	screen = SDL_SetVideoMode (swidth, sheight, sdepth, x);
     } else
 	screen = SDL_SetVideoMode (10, 10, 32, 0);	/* windowed */
 
