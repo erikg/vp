@@ -74,7 +74,6 @@ center_window ()
 
     if (SDL_GetWMInfo (&info) > 0)
     {
-#ifdef unix
 	int x, y;
 	int w, h;
 
@@ -90,7 +89,6 @@ center_window ()
 	    XMoveWindow (info.info.x11.display, info.info.x11.wmwindow, x, y);
 	    info.info.x11.unlock_func ();
 	}
-#endif
     }
     return;
 }
@@ -168,7 +166,7 @@ show_image ()
 	throw_exit ();
 	return;
     }
-
+do_lock();
     /*
      * maybe this should be elsewhere? 
      */
@@ -177,11 +175,9 @@ show_image ()
 
     if (!get_state_int (SDL_FULLSCREEN))
     {
-
 	if (img)
 	{
 	    char buf[1024];
-
 	    screen = SDL_SetVideoMode (img->w, img->h, 32, SDL_DOUBLEBUF);
 	    sprintf (buf, "iview - %s", imgname);
 	    SDL_WM_SetCaption (buf, "iview");
@@ -215,5 +211,6 @@ show_image ()
 	SDL_FreeSurface (buf);
     SDL_FreeSurface (img);
     buf = img = NULL;
+do_unlock();
     return;
 }

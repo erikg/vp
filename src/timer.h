@@ -21,6 +21,9 @@
 #ifndef __TIMER_H_
 #define __TIMER_H_
 
+void do_lock();
+void do_unlock();
+
 void timer_toggle ();
 void timer_stop ();
 void timer_start ();

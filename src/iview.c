@@ -120,7 +120,8 @@ main (int argc, char **argv)
 
     img_freshen ();
 
-    screen = SDL_SetVideoMode (1280, 1024, 32, x);
+    if(x&FULLSCREEN)
+      screen = SDL_SetVideoMode (1280, 1024, 32, x);
     SDL_ShowCursor (0);
 
     show_image ();
