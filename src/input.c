@@ -1,5 +1,5 @@
 
-/* $Id: input.c,v 1.22 2002/12/11 04:40:45 erik Exp $ */
+/* $Id: input.c,v 1.23 2003/10/04 12:35:36 erik Exp $ */
 
 
 /*****************************************************************************
@@ -65,11 +65,9 @@ handle_input ()
 	    image_freshen ();
 	break;
     case SDL_KEYDOWN:
-	switch (e.key.keysym.sym)
+	switch (tolower(e.key.keysym.sym))
 	{
-	case 'X':
 	case 'x':
-	case 'Q':
 	case 'q':
 	case SDLK_ESCAPE:
 	    return 0;
@@ -92,13 +90,11 @@ handle_input ()
 	    image_freshen ();
 	    break;
 	case 'z':
-	case 'Z':
 	    timer_stop ();
 	    toggle_state (ZOOM);
 	    image_freshen ();
 	    break;
 	case 'f':
-	case 'F':
 	    timer_stop ();
 	    toggle_state (FULLSCREEN);
 	    if (get_state_int (FULLSCREEN))
