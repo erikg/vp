@@ -19,10 +19,11 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.18 2004/03/27 00:53:49 erik Exp $
+ * $Id: vp.c,v 1.19 2005/01/10 15:47:26 erik Exp $
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 

@@ -19,9 +19,10 @@
  ****************************************************************************/
 
 /*
- * $Id: input.c,v 1.25 2004/12/28 04:07:21 erik Exp $
+ * $Id: input.c,v 1.26 2005/01/10 15:47:26 erik Exp $
  */
 
+#include <ctype.h>
 #include <SDL.h>
 #include "image.h"
 #include "input.h"

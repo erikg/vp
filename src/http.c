@@ -19,11 +19,12 @@
  ****************************************************************************/
 
 /*
- * $Id: http.c,v 1.13 2004/03/27 00:53:48 erik Exp $
+ * $Id: http.c,v 1.14 2005/01/10 15:47:26 erik Exp $
  */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include "http.h"
 
