@@ -1,36 +1,21 @@
-dnl $Id: configure.in,v 1.19 2004/01/10 18:28:57 erik Exp $
+dnl $Id: configure.in,v 1.20 2004/01/30 22:17:30 erik Exp $
 
 AC_INIT(src/vp.c)
 AM_INIT_AUTOMAKE(vp, 1.6)
-
 AM_CONFIG_HEADER(config.h)
 
 AC_PROG_CC
 AC_PROG_INSTALL
-AC_ISC_POSIX
-
-AC_C_CONST
 
 AC_CHECK_HEADERS(unistd.h stdio.h stdlib.h string.h time.h)
-
 AC_CHECK_FUNC(mkstemps,AC_DEFINE(HAVE_MKSTEMPS,,Safe mktemp))
 
 AM_PATH_SDL(1.2.0,,AC_ERROR("SDL 1.2.0 or better is required. Get it at http://libsdl.org."))
 
-CFLAGS="$CFLAGS $SDL_CFLAGS -I/usr/X11R6/include"
+CFLAGS="$CFLAGS $SDL_CFLAGS"
 LIBS="$LIBS $SDL_LIBS -lSDL_image"
 
-AC_MSG_CHECKING("SDL_image")
-AC_TRY_LINK([
-#include <SDL_image.h>
-], [ return 0 ; ],AC_MSG_RESULT("yes"),[
-	AC_MSG_RESULT("no")
-	echo "           ***********************************************************"
-	echo "           *** SDL_image is required. Get it at                    ***"
-	echo "           *** http://www.libsdl.org/projects/SDL_image/index.html ***"
-	echo "           ***********************************************************"
-	exit
-])
+AC_CHECK_LIB(SDL_image,IMG_Load,,AC_ERROR(SDL_image is required http://www.libsdl.org/projects/SDL_image/index.html))
 
 GETOPT_LONG_DIR=
 AC_CHECK_FUNCS(getopt_long , [GETOPT_LONG_DIR=""], [
