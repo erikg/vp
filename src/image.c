@@ -35,7 +35,6 @@ extern SDL_Surface *screen;
 SDL_Surface *img = NULL;
 static char *imgname = NULL;
 char *newname = NULL;
-float scale = 2;
 
 	/*
 	 * dangerous floating point comparison. 
@@ -43,7 +42,7 @@ float scale = 2;
 static double
 getscale (double sw, double sh, double iw, double ih)
 {
-    if ((sw / sh) > (iw / ih))
+    if (sh*iw < ih*sw)
 	return sh / ih;
     return sw / iw;
 }

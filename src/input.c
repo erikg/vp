@@ -102,6 +102,7 @@ handle_input ()
 		screen = SDL_SetVideoMode (1280, 1024, 32, SDL_FULLSCREEN);
 	    show_image ();
 	    break;
+#if 0
         case '+':
 	case '=':
 	    scale+=.1;
@@ -111,6 +112,7 @@ handle_input ()
 	    scale-=.1;
 	    show_image ();
 		break;
+#endif
 	default:
 	    /*
 	     * do nothing 
