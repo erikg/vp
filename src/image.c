@@ -217,6 +217,9 @@ show_image ()
 		img->format->BytesPerPixel * 8,
 		img->format->Rmask, img->format->Gmask, img->format->Bmask,
 		img->format->Amask);
+	    if (buf->format->BytesPerPixel == 1)
+		memcpy (buf->format->palette, img->format->palette,
+		    sizeof (SDL_Palette));
 	    zoom_blit (buf, img, scale);
 	} else
 	    buf = img;
@@ -245,8 +248,10 @@ show_image ()
 
     SDL_BlitSurface (buf, NULL, screen, &r);
     SDL_Flip (screen);
+
     if (buf != img)
 	SDL_FreeSurface (buf);
     buf = NULL;
+
     return;
 }
