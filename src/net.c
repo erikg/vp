@@ -19,8 +19,12 @@
  ****************************************************************************/
 
 /*
- * $Id: net.c,v 1.20 2004/03/27 00:53:48 erik Exp $
+ * $Id: net.c,v 1.21 2004/03/27 14:48:26 erik Exp $
  */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -74,6 +78,7 @@ mkstemps (char *template, int suffixlen)
     f = open (template, O_WRONLY | O_CREAT, 0600);
     return f;
 }
+
 #endif
 
 int

@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.4 2004/03/27 00:42:00 erik Exp $
+dnl $Id: configure.ac,v 1.5 2004/03/27 14:48:26 erik Exp $
 
 AC_INIT
 AC_CONFIG_SRCDIR([src/vp.c])
@@ -11,7 +11,7 @@ AC_PROG_CC
 AC_PROG_INSTALL
 
 AC_CHECK_HEADERS(unistd.h stdio.h stdlib.h string.h time.h)
-AC_CHECK_FUNC(mkstemps,AC_DEFINE(HAVE_MKSTEMPS,,Safe mktemp))
+AC_CHECK_FUNCS(mkstemps)
 
 AM_PATH_SDL(1.2.0,,AC_MSG_ERROR(["SDL 1.2.0 or better is required. Get it at http://libsdl.org."]))
 
