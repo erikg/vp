@@ -106,17 +106,18 @@ main (int argc, char **argv)
     if (imgcount == 0)
 	return 0;
     x |= get_state_int (SDL_FULLSCREEN);
-    screen = SDL_SetVideoMode (1024, 768, 16, x);
+    screen = SDL_SetVideoMode (1024, 768, 32, x);
 
     SDL_ShowCursor (0);
 
     ll_rewind (imglist);
     image_init ();
 
+    img_freshen();
+
+	show_image ();
     if (imgcount >= 2)
 	timer_start ();
-    else
-	show_image ();
 
     while (handle_input ());
 

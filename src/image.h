@@ -27,6 +27,7 @@ void zoomline (void *d, int dp, void *s, int sp, int depth);
 void zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale);
 void show_image ();
 int image_init ();
+int image_freshen ();
 int image_next ();
 int image_prev ();
 int recache (int);

@@ -80,6 +80,7 @@ handle_input ()
 	case 'Z':
 	    timer_stop ();
 	    toggle_state (ZOOM);
+img_freshen();
 	    show_image ();
 	    break;
 	case 'f':
@@ -87,9 +88,9 @@ handle_input ()
 	    timer_stop ();
 	    toggle_state (SDL_FULLSCREEN);
 	    if (!get_state_int (SDL_FULLSCREEN))
-		screen = SDL_SetVideoMode (img->w, img->h, 16, 0);
+		screen = SDL_SetVideoMode (img->w, img->h, 32, 0);
 	    else
-		screen = SDL_SetVideoMode (1024, 768, 16, SDL_FULLSCREEN);
+		screen = SDL_SetVideoMode (1024, 768, 32, SDL_FULLSCREEN);
 	    show_image ();
 	    break;
 	default:

@@ -106,6 +106,15 @@ image_init (int terminate)
     return 0;
 }
 
+void
+img_freshen()
+{
+    void *imglist = get_imglist ();
+    while ((img = IMG_Load (ll_showline (imglist))) == NULL)
+	ll_next (imglist);
+    imgname = ll_showline (imglist);
+}
+
 int
 image_next (int terminate)
 {
@@ -115,10 +124,8 @@ image_next (int terminate)
     {
 	img = NULL;
 	return 0;
-    }
-    while ((img = IMG_Load (ll_showline (imglist))) == NULL)
-	ll_next (imglist);
-    imgname = ll_showline (imglist);
+   }
+img_freshen();
     return 1;
 }
 
@@ -129,9 +136,7 @@ image_prev ()
 
     if (ll_prev (imglist) == 0)
 	return 0;
-    while ((img = IMG_Load (ll_showline (imglist))) == NULL)
-	ll_next (imglist);
-    imgname = ll_showline (imglist);
+img_freshen();
     return 1;
 }
 
@@ -141,6 +146,7 @@ show_image ()
     SDL_Surface *buf;
     float scale;
     SDL_Rect r;
+
 
     if (img == NULL)
     {
@@ -156,14 +162,14 @@ show_image ()
 	{
 	    char buf[1024];
 
-//	    SDL_FreeSurface (screen);
-//	    screen = SDL_SetVideoMode (img->w, img->h, 16, 0);
+	    SDL_FreeSurface (screen);
+	    screen = SDL_SetVideoMode (img->w, img->h, 32, 0);
 	    sprintf (buf, "iview - %s", imgname);
 	    SDL_WM_SetCaption (buf, "iview");
 	}
 
 	buf = img;
-//	center_window ();
+	center_window ();
     }
     if (get_state_int (ZOOM))
     {
@@ -190,5 +196,6 @@ show_image ()
     if (buf != img)
 	SDL_FreeSurface (buf);
     SDL_FreeSurface (img);
+    buf=img=NULL;
     return;
 }

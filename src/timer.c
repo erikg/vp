@@ -68,6 +68,6 @@ timer_start ()
     if (timer_id == 0)
 	timer_id =
 	    SDL_AddTimer (MILLIS, (SDL_NewTimerCallback) timer_stub, NULL);
-    show_image ();
+//    show_image ();
     return;
 }
