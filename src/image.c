@@ -1,4 +1,5 @@
-/* $Id: image.c,v 1.36 2002/12/11 04:22:22 erik Exp $ */
+
+/* $Id: image.c,v 1.37 2002/12/11 04:40:45 erik Exp $ */
 
 
 /*****************************************************************************
@@ -119,9 +120,11 @@ show_image ()
     SDL_Rect r;
     SDL_Surface *s;
 
-    if (get_state_int (LOUD)){
+    if (get_state_int (LOUD))
+    {
 	fprintf (stdout, "%s\n", it->image[it->current].resource);
-	    fflush (stdout);}
+	fflush (stdout);
+    }
 
     s = it->image[it->current].surface;
     if (get_state_int (FULLSCREEN))

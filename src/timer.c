@@ -1,4 +1,5 @@
-/* $Id: timer.c,v 1.14 2002/12/11 04:22:22 erik Exp $ */
+
+/* $Id: timer.c,v 1.15 2002/12/11 04:40:45 erik Exp $ */
 
 
 /*****************************************************************************
@@ -46,6 +47,7 @@ timer_stub ()
 
     ev.type = SDL_USEREVENT;
     ev.user.code = SHOW_IMAGE;
+
 /*
     SDL_PushEvent (&ev);
 */

@@ -1,4 +1,5 @@
-/* $Id: input.c,v 1.21 2002/12/11 04:22:22 erik Exp $ */
+
+/* $Id: input.c,v 1.22 2002/12/11 04:40:45 erik Exp $ */
 
 
 /*****************************************************************************
@@ -61,7 +62,7 @@ handle_input ()
 	 */
     case SDL_USEREVENT:
 	if (e.user.code == SHOW_IMAGE)
-	    image_freshen();
+	    image_freshen ();
 	break;
     case SDL_KEYDOWN:
 	switch (e.key.keysym.sym)
