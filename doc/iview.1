@@ -1,0 +1,41 @@
+.Dd Mar 8, 2001
+.Dt IVIEW 1
+.Os
+.Sh NAME
+.Nm iview 
+.Nd view image files 
+.Sh SYNOPSIS
+.Nm
+.Op Fl fhvz
+.Op Ar
+.Sh DESCRIPTION
+.Nm
+View image 
+.Ar files
+using SDL. Supported file types include jpeg, gif, png, bmp, ppm, xpm, pcx,
+tga, and anything else your install of sdl_image supports. Keyboard controls
+are escape or q to quit, f to toggle fullscreen, z to toggle zoom (only in
+fullscreen), left arrow to go to the previous image, right arrow to go to the
+next image, and space to toggle slideshow. Toggling the zoom and fullscreen or
+usign the arrow keys disables slideshow mode.
+.Sh OPTIONS
+.Bl -tag -width indent
+.It Fl f
+Start in fullscreen mode
+.It Fl h
+Show the help screen
+.It Fl v
+Print the version and exit
+.It Fl z
+Scale the images to fill the screen (zoom)
+.El
+.\".Sh DIAGNOSTICS
+.\"Filenames are sent to stderr. 
+.Sh BUGS
+Sometimes Async X errors occur when in windowed mode.
+
+Bad jpeg images force the program to exit.
+
+This manpage is inadequate.
+.Sh AUTHOR
+Erik Greenwald <erik@smluc.org>

@@ -1,0 +1,7 @@
+Mar 15:
+	Release 1.01
+	Fixed memleak bug
+	improved autoconf (now looks for SDL_image, too
+
+Mar 14:
+	Initial release (1.0)

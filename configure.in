@@ -1,0 +1,31 @@
+AC_INIT(src/iview.c)
+AM_INIT_AUTOMAKE(iview, 1.01)
+
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_ISC_POSIX
+
+AC_C_CONST
+AC_STDC_HEADERS
+
+AC_HEADER_STDC
+AC_CHECK_HEADERS(unistd.h stdio.h stdlib.h string.h time.h)
+
+AM_PATH_SDL(1.1.0,,AC_ERROR("SDL 1.1.0 or better is required. Get it at http://libsdl.org."))
+
+CFLAGS="$CFLAGS $SDL_CFLAGS -I/usr/X11R6/include"
+LIBS="$LIBS $SDL_LIBS -lSDL_image"
+
+AC_MSG_CHECKING("SDL_image")
+AC_TRY_LINK([
+#include <SDL_image.h>
+], [ return 0 ; ],AC_MSG_RESULT("yes"),[
+	AC_MSG_RESULT("no")
+	echo "           ***********************************************************"
+	echo "           *** SDL_image is required. Get it at                    ***"
+	echo "           *** http://www.libsdl.org/projects/SDL_image/index.html ***"
+	echo "           ***********************************************************"
+	exit
+])
+
+AC_OUTPUT(Makefile doc/Makefile src/Makefile)
