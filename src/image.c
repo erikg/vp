@@ -117,9 +117,9 @@ show_image ()
     SDL_Rect r;
     SDL_Surface *s;
 
-    if (get_state_int (LOUD))
-	fprintf (stdout, "%s\n", it->image[it->current].resource),
-	    fflush (stdout);
+    if (get_state_int (LOUD)){
+	fprintf (stdout, "%s\n", it->image[it->current].resource);
+	    fflush (stdout);}
 
     s = it->image[it->current].surface;
     if (get_state_int (FULLSCREEN))
