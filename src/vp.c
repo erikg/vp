@@ -19,6 +19,9 @@
  ****************************************************************************/
 
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_syswm.h>
@@ -34,11 +37,24 @@
 SDL_Surface *screen;
 static void *imglist;		/* linked list */
 static int state;
-int swidth, sheight, sdepth;
+int swidth = 640, sheight = 480, sdepth = 8;
+struct image_table_s image_table;
 
-unsigned int vid_width(){return swidth;}
-unsigned int vid_height(){return sheight;}
-unsigned int vid_depth(){return sdepth;}
+unsigned int
+vid_width ()
+{
+    return swidth;
+}
+unsigned int
+vid_height ()
+{
+    return sheight;
+}
+unsigned int
+vid_depth ()
+{
+    return sdepth;
+}
 
 int
 get_state_int (int name)
@@ -81,7 +97,7 @@ oops (char *msg)
 int
 main (int argc, char **argv)
 {
-    int x, imgcount = 0, i, count, c, wait = 2500;
+    int imgcount = 0, i, count, c, wait = 2500;
     SDL_SysWMinfo info;
     Display *disp = NULL;
 
@@ -95,7 +111,6 @@ main (int argc, char **argv)
 	{0, 0, 0, 0}
     };
 
-    x = SDL_DOUBLEBUF;
     imglist = ll_newlist ();
 
     while ((c = getopt_long (argc, argv, "vhlzfs:", optlist, &i)) != -1)
@@ -114,7 +129,8 @@ main (int argc, char **argv)
 	    wait = atoi (optarg);
 	    break;
 	case 'v':
-	    exit (printf ("%s %s (C) 2001 Erik Greenwald <erik@smluc.org>\n",
+	    exit (printf
+		("%s %s (C) 2001 Erik Greenwald <erik@smluc.org>\n",
 		    PACKAGE, VERSION));
 	    break;
 	case 'z':
@@ -123,57 +139,44 @@ main (int argc, char **argv)
 	}
     }
 
+    image_table.image = malloc (sizeof (struct image_s) * (argc - optind));
+    memset (image_table.image, 0, sizeof (struct image_table_s));
+    memset (image_table.image, 0, sizeof (struct image_s) * (argc - optind));
     for (count = optind; count < argc; count++)
     {
-	ll_addatend (imglist, argv[count]);
-	imgcount++;
-    }
+	struct stat sb[1];
 
-    ll_rewind (imglist);
-    if (imgcount == 0 || image_init () != 0)
-    {
-	printf ("No images selected... aborting.\n");
-	return 0;
-    }
-
-    x |= get_state_int (FULLSCREEN);
-    SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
-    atexit (SDL_Quit);	/* as much as I hate doing this, it's necessary.
-			 * libjpeg seems to like to exit() on bad image,
-			 * instead of doing the right thing and returning an
-			 * error code. :/  */
-
-/* this attempts to extrapolate the current display settings (resolutions and depth) and tries to match it with fullscreen mode. This should make things a little easier on the monitor, and if a display is currently running in a mode, then it's probably safe to assume that mode is legal. If it cannot successfully extrapolate the information, it 'guesses' at 1280x1024x24, which is probly a big dangerous. There should be some testing, and there should probably be cli switches to override. It seems to work for me, using X and svgalib.  */
-
-
-	disp = XOpenDisplay (NULL);
-
-	/*
-	 * this fails, why? 
-	 */
-/*	if (SDL_GetWMInfo (&info) > 0 && info.subsystem==SDL_SYSWM_X11 ) */
-	if (disp)
+	if (stat (argv[count], sb) != -1 && sb->st_mode & S_IFREG)
 	{
-		/* the X server seems to be talking to us */
-	    swidth = DisplayWidth (disp, DefaultScreen (disp));
-	    sheight = DisplayHeight (disp, DefaultScreen (disp));
-	    sdepth = BitmapUnit (disp);
-	    printf ("display: %dx%d@%d\n", swidth, sheight, sdepth);
-	} else
-	{
-	    swidth = 640;
-	    sheight = 480;
-	    sdepth = 8;
+	    image_table.image[image_table.count].resource = argv[count];
+	    image_table.count++;
 	}
+    }
+
+    if (image_table.count == 0)
+	oops ("No images selected... aborting.\n");
+
+    SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
+    atexit (SDL_Quit);
+    disp = XOpenDisplay (NULL);
+
+    if (disp)
+    {
+	swidth = DisplayWidth (disp, DefaultScreen (disp));
+	sheight = DisplayHeight (disp, DefaultScreen (disp));
+	sdepth = BitmapUnit (disp);
+    }
     if (get_state_int (FULLSCREEN))
-	screen = SDL_SetVideoMode (swidth, sheight, sdepth, SDL_FULLSCREEN);
+	screen =
+	    SDL_SetVideoMode (swidth, sheight, sdepth,
+	    SDL_FULLSCREEN | SDL_DOUBLEBUF);
     else
-	screen = SDL_SetVideoMode (10, 10, 32, 0);	/* windowed */
+	screen = SDL_SetVideoMode (1, 1, 32, SDL_DOUBLEBUF);
 
     SDL_ShowCursor (0);
     show_image ();
 
-    if (imgcount >= 2)
+    if (image_table.count > 1)
 	timer_start (wait);
 
     while (handle_input ());

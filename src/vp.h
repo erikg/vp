@@ -26,12 +26,21 @@
 #define LOUD		4
 #define GRAB_FOCUS	8
 
-typedef struct
+struct image_s
 {
 	char *resource;
-	char *name;
-	SDL_Surface *img; 
-} img_t;
+	char *file;
+	SDL_Surface *surface;
+	SDL_Surface *scaled_surface;
+};
+
+struct image_table_s
+{
+	int count;
+	int current;
+	struct image_s *image;
+};
+
 
 void oops (char *);
 int get_state_int (int);
