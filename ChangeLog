@@ -6,6 +6,7 @@ September 14 2001:
 	8b zoom error fixed
 	NAME CHANGE due to legal issues.
 	fullscreen toggle no longer crashes
+	attempts to match current resolution when going fullscreen
 
 June 01 2001: 
 	Released 1.4

@@ -63,7 +63,7 @@ toggle_state (name)
 void *
 get_imglist ()
 {
-    return imglist;
+    return (void *)imglist;
 }
 
 void
@@ -71,7 +71,7 @@ oops (char *msg)
 {
     fprintf (stderr, "%s\n", msg);
     SDL_Quit ();
-    exit (-1);
+    exit (EXIT_FAILURE);
 }
 
 int
@@ -139,24 +139,46 @@ main (int argc, char **argv)
 				 * libjpeg seems to like to exit() on bad image,
 				 * instead of doing the right thing and returning an
 				 * error code. :/  */
+
+    /*
+     * this attempts to extrapolate the current display settings (resolutions and
+     * depth) and tries to match it with fullscreen mode. This should make things a
+     * little easier on the monitor, and if a display is currently running in a mode,
+     * then it's probably safe to assume that mode is legal. If it cannot successfully
+     * extrapolate the information, it 'guesses' at 1280x1024x24, which is probly a
+     * big dangerous. There should be some testing, and there should probably be cli
+     * switches to override. It seems to work for me, using X and svgalib.
+     */
+
     if (get_state_int (FULLSCREEN))
     {
-		/* this fails, why? */
-	if (SDL_GetWMInfo (&info) > 0 /*&& info.subsystem==SDL_SYSWM_X11 */ )
+	Display *disp;
+
+	disp = XOpenDisplay (NULL);
+
+	/*
+	 * this fails, why? 
+	 */
+/*	if (SDL_GetWMInfo (&info) > 0 && info.subsystem==SDL_SYSWM_X11 ) */
+	if (disp)
 	{
-	    swidth = DisplayWidth (info.info.x11.display,
-		DefaultScreen (info.info.x11.display));
-	    sheight = DisplayHeight (info.info.x11.display,
-		DefaultScreen (info.info.x11.display));
-	    sdepth = BitmapUnit (info.info.x11.display);
+		/* the X server seems to be talking to us */
+	    swidth = DisplayWidth (disp, DefaultScreen (disp));
+	    sheight = DisplayHeight (disp, DefaultScreen (disp));
+	    sdepth = BitmapUnit (disp);
 	    printf ("display: %dx%d@%d\n", swidth, sheight, sdepth);
+	} else
+	{
+	    /*
+	     * fake it. 
+	     */
+	    swidth = 1280;
+	    sheight = 1024;
+	    sdepth = 24;
 	}
-	swidth = 1280;
-	sheight = 1024;
-	sdepth = 24;
 	screen = SDL_SetVideoMode (swidth, sheight, sdepth, x);
     } else
-	screen = SDL_SetVideoMode (10, 10, 32, 0);
+	screen = SDL_SetVideoMode (10, 10, 32, 0);	/* windowed */
 
     SDL_ShowCursor (0);
     show_image ();
@@ -164,9 +186,11 @@ main (int argc, char **argv)
     if (imgcount >= 2)
 	timer_start (wait);
 
-	/* this is a message loop, it should be signalled or interrupted, not spin-polled */
+    /*
+     * this is a message loop, it should be signalled or interrupted, not spin-polled 
+     */
     while (handle_input ())
-	SDL_Delay(1);	/* surrender to the kernel */
+	SDL_Delay (1);		/* surrender to the kernel */
 
     SDL_Quit ();
     return 0;
