@@ -37,6 +37,15 @@
 	 */
 char *filename;
 
+#ifndef mkstemps
+int mkstemps(char *template, int suffixlen)
+{
+	printf("mkstemps says.. \'%s\' with %d\n",
+		template, suffixlen);
+	return 0;
+}
+#endif
+
 int
 net_is_url (char *name)
 {
