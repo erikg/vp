@@ -89,7 +89,7 @@ center_window ()
 	    y = (h - screen->h) >> 1;
 	    XMoveWindow (info.info.x11.display, info.info.x11.wmwindow, x, y);
 if(get_state_int(GRAB_FOCUS))
-	XSetInputFocus(info.info.x11.display,info.info.x11.wmwindow,RevertToNone,CurrentTime);
+//	XSetInputFocus(info.info.x11.display,info.info.x11.wmwindow,RevertToNone,CurrentTime);
 	    info.info.x11.unlock_func ();
 	}
     }
@@ -101,12 +101,10 @@ image_load (char *name)
 {
     SDL_Surface *s;
     char *newname;
-
     if (net_is_url (name))
 	newname = net_download (name);
     else
 	newname = name;
-	printf("image_load: %s (%s)\n",newname,name); 
     s = IMG_Load (newname);
     if (newname != name)
 	net_purge (newname);
@@ -130,7 +128,6 @@ void
 img_freshen ()
 {
     void *imglist = get_imglist ();
-
     while ((img = image_load (ll_showline (imglist))) == NULL)
 	if (ll_next (imglist) == 0)
 	    return;

@@ -25,13 +25,18 @@ int
 http_init(url_t *u)
 {
 	char *buf;
+	int e=0;
 	buf=(char *)malloc(BUFSIZ);
-	sprintf(buf,"GET %s HTTP/1.1\nHost: %s\n\n\n",u->filename,u->server);
+	sprintf(buf,"GET /%s HTTP/1.1\nHost: %s\n\n\n",u->filename,u->server);
 	write(u->conn,buf,strlen(buf));
-	/* read the header */
-	read(u->conn,buf,255);
-	/* if an error occured */
-	/*    print the error message and return a fail */
+	while(e<4)
+	{
+		read(u->conn,buf,1);
+		if(*buf=='\n'||*buf=='\r')
+			e++;
+		else
+			e=0;
+	}
 	free(buf);
 	return 0;
 }

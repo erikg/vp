@@ -136,7 +136,6 @@ main (int argc, char **argv)
 	else
 	{
 	    ll_addatend (imglist, argv[count]);
-		printf("Adding %s\n", argv[count]);
 	    imgcount++;
 	}
     }
@@ -148,7 +147,7 @@ main (int argc, char **argv)
     }
     x |= get_state_int (FULLSCREEN);
 
-    img_freshen ();
+//    img_freshen ();
 
     if (x & FULLSCREEN)
 	screen = SDL_SetVideoMode (1280, 1024, 32, x);

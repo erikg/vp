@@ -46,16 +46,20 @@ url_t *
 net_url (char *name)
 {
     url_t *u;
-
+ char *n;
+    n=name;
+	printf("%s\n", n);
+    n+=strlen("http://")+1;
+	while(*n!='/')n++;
+	*n=0;
+	n++;
     u = (url_t *) malloc (sizeof (url_t));
-    u->server = NULL;
-    u->port = 0;
-    u->filename = NULL;
-    u->server = strdup ("freya");
+    u->server = strdup (name+strlen("http://"));
     u->port = 80;
-    u->filename = strdup ("/icons/jhe061.gif");
-    u->ext = strdup ("gif");
+    u->filename = strdup (n);
+    u->ext = strdup (n+strlen(n)-3);
     u->proto = HTTP;
+	printf("getting %s (%s) from %s\n", u->filename, u->ext,u->server);
     return u;
 }
 
@@ -92,11 +96,14 @@ int
 net_suck (url_t * u)
 {
     char buf[BUFSIZ];
-    int len;
-
-    while (len = read (u->conn, buf, BUFSIZ))
+    int len = BUFSIZ;
+    do
+    {
+	len = read (u->conn, buf, BUFSIZ);
 	if (write (u->file, buf, len) != len)
 	    return -1;
+    }
+    while (len/*== BUFSIZ*/);
     return 0;
 }
 
@@ -132,6 +139,6 @@ net_download (char *name)
 void
 net_purge (char *file)
 {
-    // unlink (file);
+    unlink (file);
     return;
 }
