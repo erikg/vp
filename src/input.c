@@ -59,7 +59,7 @@ handle_input ()
 	 */
     case SDL_USEREVENT:
 	if (e.user.code == SHOW_IMAGE)
-	    show_image ();
+	    image_freshen();
 	break;
     case SDL_KEYDOWN:
 	switch (e.key.keysym.sym)
@@ -75,25 +75,25 @@ handle_input ()
 	    timer_toggle ();
 	    break;
 	case SDLK_RETURN:
-	    show_image ();
+	    image_freshen ();
 	    timer_stop ();
 	    break;
 	case SDLK_RIGHT:
 	    timer_stop ();
 	    image_next (0);
-	    show_image ();
+	    image_freshen ();
 	    break;
 	case SDLK_LEFT:
 	    timer_stop ();
 	    image_prev (0);
-	    show_image ();
+	    image_freshen ();
 	    break;
 	case 'z':
 	case 'Z':
 	    timer_stop ();
 	    toggle_state (ZOOM);
 	    if (get_state_int (SDL_FULLSCREEN))
-		image_freshen (), show_image ();
+		image_freshen ();
 	    break;
 	case 'f':
 	case 'F':
@@ -103,17 +103,17 @@ handle_input ()
 		screen =
 		    SDL_SetVideoMode (vid_width (), vid_height (),
 		    vid_depth (), SDL_FULLSCREEN | SDL_DOUBLEBUF);
-	    show_image ();
+	    image_freshen ();
 	    break;
 #if 0
 	case '+':
 	case '=':
 	    scale += .1;
-	    show_image ();
+	    image_freshen ();
 	    break;
 	case '-':
 	    scale -= .1;
-	    show_image ();
+	    image_freshen ();
 	    break;
 #endif
 	default:

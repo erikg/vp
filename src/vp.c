@@ -73,7 +73,7 @@ unset_state_int (int name)
 }
 
 int
-toggle_state (name)
+toggle_state (int name)
 {
     return (state ^= name);
 }
@@ -95,8 +95,10 @@ oops (char *msg)
 int
 main (int argc, char **argv)
 {
-    int imgcount = 0, i, count, c, wait = 2500;
+    int i, count, c, wait = 2500;
+/*
     SDL_SysWMinfo info;
+*/
     Display *disp = NULL;
 
     static struct option optlist[] = {
