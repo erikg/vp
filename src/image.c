@@ -133,7 +133,7 @@ int
 image_init (int terminate)
 {
     void *imglist = get_imglist ();
-
+terminate=0;
     ll_rewind (imglist);
     while ((img = image_load (ll_showline (imglist))) == NULL)
 	if (ll_next (imglist) == 0)
@@ -175,6 +175,7 @@ image_prev (int nothing)
 {
     void *imglist = get_imglist ();
 
+nothing=0;
     free (newname);
     newname = NULL;
     SDL_FreeSurface (img);

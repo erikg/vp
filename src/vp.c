@@ -55,7 +55,7 @@ unset_state_int (int name)
 }
 
 int
-toggle_state (name)
+toggle_state (int name)
 {
     return (state ^= name);
 }
@@ -78,8 +78,9 @@ int
 main (int argc, char **argv)
 {
     int x, imgcount = 0, i, count, c, wait = 2500;
+/*
     SDL_SysWMinfo info;
-
+*/
     static struct option optlist[] = {
 	{"fullscreen", 0, NULL, 'f'},
 	{"help", 0, NULL, 'h'},
@@ -178,8 +179,10 @@ main (int argc, char **argv)
 	     */
 	    swidth = 1600;
 	   sheight = 1200;
-//	    swidth = 1024;
-//	    sheight = 768;
+/*
+	    swidth = 1024;
+	    sheight = 768;
+*/
 	    sdepth = 24;
 	}
 	screen = SDL_SetVideoMode (swidth, sheight, sdepth, x);

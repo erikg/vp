@@ -24,5 +24,6 @@
 int
 ftp_init (url_t * u)
 {
+    u=u;
     return 0;
 }
