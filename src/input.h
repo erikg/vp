@@ -1,10 +1,7 @@
 
-/* $Id: input.h,v 1.5 2002/12/11 04:40:45 erik Exp $ */
-
-
 /*****************************************************************************
- * vp    -    SDL based image viewer for linux and fbsd. (X and console)  *
- * Copyright (C) 2001 Erik Greenwald <erik@smluc.org>                        *
+ * vp    -    SDL based image viewer for linux and fbsd. (X and console)     *
+ * Copyright (C) 2001-2004 Erik Greenwald <erik@smluc.org>                   *
  *                                                                           *
  * This program is free software; you can redistribute it and/or modify      *
  * it under the terms of the GNU General Public License as published by      *
@@ -20,6 +17,10 @@
  * along with this program; if not, write to the Free Software               *
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  ****************************************************************************/
+
+/*
+ * $Id: input.h,v 1.6 2004/03/27 00:53:48 erik Exp $
+ */
 
 #ifndef __INPUT_H_
 #define __INPUT_H_
