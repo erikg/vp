@@ -136,6 +136,7 @@ main (int argc, char **argv)
 	else
 	{
 	    ll_addatend (imglist, argv[count]);
+		printf("Adding %s\n", argv[count]);
 	    imgcount++;
 	}
     }

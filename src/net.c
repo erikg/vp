@@ -19,9 +19,14 @@
  ****************************************************************************/
 
 #include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
 #include "ftp.h"
 #include "http.h"
 #include "net.h"
@@ -34,7 +39,7 @@ char *filename;
 int
 net_is_url (char *name)
 {
-    return !strcmp (name, "http://") || !strcmp (name, "ftp://");
+    return strcmp (name, "http://") && strcmp (name, "ftp://");
 }
 
 url_t *
@@ -45,25 +50,54 @@ net_url (char *name)
     u = (url_t *) malloc (sizeof (url_t));
     u->server = NULL;
     u->port = 0;
-    u->file = NULL;
+    u->filename = NULL;
+    u->server = strdup ("freya");
+    u->port = 80;
+    u->filename = strdup ("/icons/jhe061.gif");
+    u->ext = strdup ("gif");
+    u->proto = HTTP;
     return u;
 }
 
 int
 net_connect (url_t * u)
 {
+    struct sockaddr_in s;
+    struct sockaddr *ss = (struct sockaddr *) &s;
+    struct hostent *h;
+
+    memset (&s, 0, sizeof (s));
+    if ((u->conn = socket (AF_INET, SOCK_STREAM, 0)) == -1)
+    {
+	perror ("iview:net.c:net_connect:socket");
+	return -1;
+    }
+    if ((h = gethostbyname (u->server)) == NULL)
+    {
+	perror ("iview:net.c:net_connect:gethostbyname");
+	return -1;
+    }
+    s.sin_family = AF_INET;
+    s.sin_port = htons (u->port);
+    s.sin_addr = *((struct in_addr *) h->h_addr_list[0]);
+    if (connect (u->conn, ss, sizeof (struct sockaddr)) == -1)
+    {
+	perror ("iview:net.c:net_connect:connect");
+	return -1;
+    }
     return 0;
 }
 
 int
-net_suck(url_t *u)
+net_suck (url_t * u)
 {
-	char buf[BUFSIZ];
-	int len;
-	while(len=read(u->conn,buf,BUFSIZ))
-		if(write(u->conn,buf,len)!=len)
-			return -1;
-	return 0;
+    char buf[BUFSIZ];
+    int len;
+
+    while (len = read (u->conn, buf, BUFSIZ))
+	if (write (u->file, buf, len) != len)
+	    return -1;
+    return 0;
 }
 
 char *
@@ -72,8 +106,12 @@ net_download (char *name)
     int socket, file;
     url_t *url;
 
-    if ((url = net_url (name)) == NULL || net_connect (url) == 0)
+    if ((url = net_url (name)) == NULL || net_connect (url) == -1)
 	return NULL;
+    filename =
+	(char *) malloc (strlen ("/tmp/iview.XXXX.") + strlen (url->ext) + 1);
+    sprintf (filename, "/tmp/iview.XXXX.%s", url->ext);
+    url->file = mkstemps (filename, strlen (url->ext) + 1);
     switch (url->proto)
     {
     case HTTP:
@@ -83,14 +121,10 @@ net_download (char *name)
 	ftp_init (url);
 	break;
     }
-    filename =
-	(char *) malloc (strlen ("iview.XXXX.") + strlen (url->ext) + 1);
-    sprintf (filename, "iview.XXXX.%s", url->ext);
-    url->file = mkstemps (filename, strlen (url->ext) + 1);
-    if(net_suck (url)==-1)
-		printf("Some problem reading file (suck blew)...\n");
-	close(url->conn);
-	close(url->file);
+    if (net_suck (url) == -1)
+	printf ("Some problem reading file (suck blew)...\n");
+    close (url->conn);
+    close (url->file);
     free (url);
     return filename;
 }
@@ -98,6 +132,6 @@ net_download (char *name)
 void
 net_purge (char *file)
 {
-    unlink (file);
+    // unlink (file);
     return;
 }

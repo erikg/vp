@@ -24,13 +24,15 @@
 int
 http_init(url_t *u)
 {
-	/* connect to the http server */
-	/* make the request */
+	char *buf;
+	buf=(char *)malloc(BUFSIZ);
+	sprintf(buf,"GET %s HTTP/1.1\nHost: %s\n\n\n",u->filename,u->server);
+	write(u->conn,buf,strlen(buf));
 	/* read the header */
+	read(u->conn,buf,255);
 	/* if an error occured */
 	/*    print the error message and return a fail */
-	/* read the file, saving into a temporary file */
-	/* close the connection */
+	free(buf);
 	return 0;
 }
 

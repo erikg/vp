@@ -27,6 +27,7 @@
 #include "input.h"
 #include "iview.h"
 #include "ll.h"
+#include "net.h"
 
 extern SDL_Surface *screen;
 SDL_Surface *img = NULL;
@@ -95,19 +96,6 @@ if(get_state_int(GRAB_FOCUS))
     return;
 }
 
-int
-image_init (int terminate)
-{
-    void *imglist = get_imglist ();
-
-    ll_rewind (imglist);
-    while ((img = IMG_Load (ll_showline (imglist))) == NULL)
-	if (ll_next (imglist) == 0)
-	    return -1;
-    imgname = ll_showline (imglist);
-    return 0;
-}
-
 SDL_Surface *
 image_load (char *name)
 {
@@ -118,10 +106,24 @@ image_load (char *name)
 	newname = net_download (name);
     else
 	newname = name;
-    s = IMG_Load (name);
+	printf("image_load: %s (%s)\n",newname,name); 
+    s = IMG_Load (newname);
     if (newname != name)
 	net_purge (newname);
     return s;
+}
+
+int
+image_init (int terminate)
+{
+    void *imglist = get_imglist ();
+
+    ll_rewind (imglist);
+    while ((img = image_load (ll_showline (imglist))) == NULL)
+	if (ll_next (imglist) == 0)
+	    return -1;
+    imgname = ll_showline (imglist);
+    return 0;
 }
 
 void
