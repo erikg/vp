@@ -92,14 +92,13 @@ handle_input ()
 	case 'Z':
 	    timer_stop ();
 	    toggle_state (ZOOM);
-	    if (get_state_int (SDL_FULLSCREEN))
-		image_freshen ();
+	    image_freshen ();
 	    break;
 	case 'f':
 	case 'F':
 	    timer_stop ();
-	    toggle_state (SDL_FULLSCREEN);
-	    if (get_state_int (SDL_FULLSCREEN))
+	    toggle_state (FULLSCREEN);
+	    if (get_state_int (FULLSCREEN))
 		screen =
 		    SDL_SetVideoMode (vid_width (), vid_height (),
 		    vid_depth (), SDL_FULLSCREEN | SDL_DOUBLEBUF);

@@ -173,8 +173,6 @@ image_freshen ()
     struct image_table_s *it = get_image_table ();
     int c = it->current;
 
-    printf ("current: %d\n", c);
-
 /*
     if (c > 1 && it->image[c - 2].surface != NULL)
     {
