@@ -108,12 +108,27 @@ image_init (int terminate)
     return 0;
 }
 
+SDL_Surface *
+image_load(char *name)
+{
+	SDL_Surface *s;
+	char *newname;
+
+	if(net_is_url(name))
+		newname=net_download(name);
+	else newname=name;
+	s=IMG_Load(name);
+	if(newname!=name)
+		net_purge(newname);
+	return s;
+}
+
 void
 img_freshen ()
 {
     void *imglist = get_imglist ();
 
-    while ((img = IMG_Load (ll_showline (imglist))) == NULL)
+    while ((img = image_load (ll_showline (imglist))) == NULL)
 	if (ll_next (imglist) == 0)
 	    return;
     imgname = ll_showline (imglist);
