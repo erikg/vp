@@ -167,9 +167,6 @@ show_image ()
 	{
 	    char buf[1024];
 
-	    /*
-	     * um, is this bad? There used to be an SDL_FreeSurface(screen); here but it caused X async errors I think...
-	     */
 	    screen = SDL_SetVideoMode (img->w, img->h, 32, SDL_DOUBLEBUF);
 	    sprintf (buf, "iview - %s", imgname);
 	    SDL_WM_SetCaption (buf, "iview");
