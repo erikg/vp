@@ -166,7 +166,6 @@ show_image ()
 	throw_exit ();
 	return;
     }
-do_lock();
     /*
      * maybe this should be elsewhere? 
      */
@@ -211,6 +210,5 @@ do_lock();
 	SDL_FreeSurface (buf);
     SDL_FreeSurface (img);
     buf = img = NULL;
-do_unlock();
     return;
 }

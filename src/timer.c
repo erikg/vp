@@ -29,20 +29,18 @@
 #define MILLIS 2500
 
 SDL_TimerID timer_id;
-
 extern void *imglist;
-int lock = 0;
-
-void do_lock(){lock=1;}
-void do_unlock(){lock=0;}
 
 int
 timer_stub ()
 {
-    while(lock)sleep(1);
+   SDL_Event ev;
+ 
     if (image_next (1) == 0)
-	throw_exit ();
-    show_image ();
+      throw_exit ();
+   ev.type = SDL_USEREVENT;
+   ev.user.code = SHOW_IMAGE;
+   SDL_PushEvent (&ev);
     return MILLIS;
 }
 

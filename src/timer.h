@@ -21,8 +21,7 @@
 #ifndef __TIMER_H_
 #define __TIMER_H_
 
-void do_lock();
-void do_unlock();
+#define SHOW_IMAGE 0x01
 
 void timer_toggle ();
 void timer_stop ();

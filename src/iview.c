@@ -72,15 +72,39 @@ oops (char *msg)
 void
 parse_control_block (char *word)
 {
-    if (!strcmp (word, "-z") || !strcmp (word, "--zoom"))
-	set_state_int (ZOOM);
-    else if (!strcmp (word, "-l") || !strcmp (word, "--loud"))
-	set_state_int (LOUD);
-    else if (!strcmp (word, "-f") || !strcmp (word, "--fullscreen"))
-	set_state_int (FULLSCREEN);
-    else if (!strcmp (word, "-v") || !strcmp (word, "--version"))
-	exit (printf ("%s %s (C) 2001 Erik Greenwald <erik@smluc.org>\n",
-		      PACKAGE, VERSION));
+    if (word[0] == '-')
+    {
+	/*
+	 * long options 
+	 */
+    } else
+	while (word[0] != 0)
+	{
+	    switch (word[0])
+	    {
+	    case 'z':
+	    case 'Z':
+		set_state_int (ZOOM);
+		break;
+	    case 'l':
+	    case 'L':
+		set_state_int (LOUD);
+		break;
+	    case 'f':
+	    case 'F':
+		set_state_int (FULLSCREEN);
+		break;
+	    case 'v':
+	    case 'V':
+		exit (printf
+		      ("%s %s (C) 2001 Erik Greenwald <erik@smluc.org>\n",
+		       PACKAGE, VERSION));
+		break;
+	    default:
+		printf ("Unknown command\n");
+	    }
+	    word++;
+	}
     return;
 }
 
@@ -103,7 +127,7 @@ main (int argc, char **argv)
     for (count = 1; count < argc; count++)
     {
 	if (argv[count][0] == '-')
-	    parse_control_block (argv[count]);
+	    parse_control_block (argv[count] + 1);
 	else
 	{
 	    ll_addatend (imglist, argv[count]);
@@ -120,8 +144,8 @@ main (int argc, char **argv)
 
     img_freshen ();
 
-    if(x&FULLSCREEN)
-      screen = SDL_SetVideoMode (1280, 1024, 32, x);
+    if (x & FULLSCREEN)
+	screen = SDL_SetVideoMode (1280, 1024, 32, x);
     SDL_ShowCursor (0);
 
     show_image ();

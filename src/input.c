@@ -51,6 +51,14 @@ handle_input ()
     SDL_WaitEvent (&e);
     switch (e.type)
     {
+	/*
+	 * thanks to Ted Mielczarek <tam4@lehigh.edu> for this, fixes the X
+	 * Async request errors 
+	 */
+    case SDL_USEREVENT:
+	if (e.user.code == SHOW_IMAGE)
+	    show_image ();
+	break;
     case SDL_KEYDOWN:
 	switch (e.key.keysym.sym)
 	{
@@ -93,8 +101,9 @@ handle_input ()
 	    show_image ();
 	    break;
 	default:
-	    printf ("Unknown keysym: %d '%c'\n", e.key.keysym.sym,
-		    e.key.keysym.sym);
+	    /*
+	     * do nothing 
+	     */
 	    break;
 	}
 	break;
