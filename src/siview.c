@@ -23,7 +23,6 @@
 #include <SDL_image.h>
 #include <SDL_syswm.h>
 
-
 #include "input.h"
 #include "image.h"
 #include "siview.h"
@@ -140,27 +139,34 @@ main (int argc, char **argv)
 				 * libjpeg seems to like to exit() on bad image,
 				 * instead of doing the right thing and returning an
 				 * error code. :/  */
-screen = SDL_SetVideoMode(10,10,32,0);
-    if (SDL_GetWMInfo (&info) > 0 /*&& info.subsystem==SDL_SYSWM_X11*/)
+    if (get_state_int (FULLSCREEN))
     {
+		/* this fails, why? */
+	if (SDL_GetWMInfo (&info) > 0 /*&& info.subsystem==SDL_SYSWM_X11 */ )
+	{
 	    swidth = DisplayWidth (info.info.x11.display,
 		DefaultScreen (info.info.x11.display));
 	    sheight = DisplayHeight (info.info.x11.display,
 		DefaultScreen (info.info.x11.display));
 	    sdepth = BitmapUnit (info.info.x11.display);
-	printf("sdepth: %d\n", sdepth);
-    }
-
-    if (x & FULLSCREEN)
+	    printf ("display: %dx%d@%d\n", swidth, sheight, sdepth);
+	}
+	swidth = 1280;
+	sheight = 1024;
+	sdepth = 24;
 	screen = SDL_SetVideoMode (swidth, sheight, sdepth, x);
-    SDL_ShowCursor (0);
+    } else
+	screen = SDL_SetVideoMode (10, 10, 32, 0);
 
+    SDL_ShowCursor (0);
     show_image ();
 
     if (imgcount >= 2)
 	timer_start (wait);
 
-    while (handle_input ());
+	/* this is a message loop, it should be signalled or interrupted, not spin-polled */
+    while (handle_input ())
+	sleep(0);	/* surrender to the kernel */
 
     SDL_Quit ();
     return 0;
