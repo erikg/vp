@@ -42,9 +42,7 @@ char *newname = NULL;
 static double
 getscale (double sw, double sh, double iw, double ih)
 {
-    if (sh*iw < ih*sw)
-	return sh / ih;
-    return sw / iw;
+    return (sh * iw < ih * sw) ? sh / ih : sw / iw;
 }
 
 	/*
@@ -163,10 +161,10 @@ image_next (int terminate)
     newname = NULL;
     SDL_FreeSurface (img);
     if (ll_next (imglist) == 0 && terminate == 1)
-	return (int)(img = NULL);
+		return (int)(img = NULL);
     while (!img_freshen ())
-	if (ll_next (imglist) == 0 && terminate == 1)
-	    return (int)(img = NULL);
+		if (ll_next (imglist) == 0 && terminate == 1)
+			return (int)(img = NULL);
     return 1;
 }
 
@@ -211,8 +209,8 @@ show_image ()
 	if (get_state_int (ZOOM))
 	{
 	    buf = SDL_CreateRGBSurface (SDL_SWSURFACE,
-		(int)ceil ((double)img->w * (double)scale),
-		(int)ceil ((double)img->h * (double)scale),
+		(int)ceil ((double)img->w * (double)scale) + 1,
+		(int)ceil ((double)img->h * (double)scale) + 1,
 		img->format->BytesPerPixel * 8,
 		img->format->Rmask, img->format->Gmask, img->format->Bmask,
 		img->format->Amask);

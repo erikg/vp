@@ -133,7 +133,9 @@ net_suck (url_t * u)
 
     do
     {
-	len = read (u->conn, buf, BUFSIZ);
+	printf("=");fflush(stdout);
+	len = read (u->conn, buf, BUFSIZ);	/* TODO this stalls on the last packet */
+	printf("-");fflush(stdout);
 	if (write (u->file, buf, len) != len)
 	    return -1;
     }

@@ -154,7 +154,11 @@ main (int argc, char **argv)
     {
 	Display *disp;
 
+#if QUERY_DISP
 	disp = XOpenDisplay (NULL);
+#else
+	disp = 0x0;
+#endif
 
 	/*
 	 * this fails, why? 
@@ -172,11 +176,13 @@ main (int argc, char **argv)
 	    /*
 	     * fake it. 
 	     */
-	    swidth = 1280;
-	    sheight = 1024;
+	    swidth = 1600;
+	   sheight = 1200;
+//	    swidth = 1024;
+//	    sheight = 768;
 	    sdepth = 24;
 	}
-	screen = SDL_SetVideoMode (swidth, sheight, sdepth, x);
+	screen = SDL_SetVideoMode (swidth, sheight, sdepth, (x&!FULLSCREEN));
     } else
 	screen = SDL_SetVideoMode (10, 10, 32, 0);	/* windowed */
 
