@@ -88,7 +88,7 @@ handle_input ()
 	    timer_stop ();
 	    toggle_state (SDL_FULLSCREEN);
 	    if (get_state_int (SDL_FULLSCREEN))
-		screen = SDL_SetVideoMode (1024, 768, 32, SDL_FULLSCREEN);
+		screen = SDL_SetVideoMode (1280, 1024, 32, SDL_FULLSCREEN);
 	    img_freshen ();
 	    show_image ();
 	    break;

@@ -44,7 +44,8 @@ getscale (double sw, double sh, double iw, double ih)
 }
 
 	/*
-	 * hideous. This should be made more readable, and probably faster 
+	 * hideous. This should be made more readable, and probably faster.
+	 * be nice if it did multi-sampling to get cleaner zooming?
 	 */
 void
 zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
@@ -63,6 +64,7 @@ zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
 
 	/*
 	 * ripped from the libsdl faq, 'gtv' code 
+	 * this is where the async X reply comes from... why?
 	 */
 static void
 center_window ()
@@ -153,8 +155,11 @@ show_image ()
 	throw_exit ();
 	return;
     }
-    fprintf (stdout, "%s\n", imgname);
+
+  if(get_state_int(LOUD))
+    fprintf (stdout, "%s\n", imgname),
     fflush (stdout);
+
     if (!get_state_int (SDL_FULLSCREEN))
     {
 
@@ -162,8 +167,9 @@ show_image ()
 	{
 	    char buf[1024];
 
-	    SDL_FreeSurface (screen);
-	    screen = SDL_SetVideoMode (img->w, img->h, 32, 0);
+	/* um, is this bad? */
+//	    SDL_FreeSurface (screen);
+	    screen = SDL_SetVideoMode (img->w, img->h, 32, SDL_DOUBLEBUF);
 	    sprintf (buf, "iview - %s", imgname);
 	    SDL_WM_SetCaption (buf, "iview");
 	}

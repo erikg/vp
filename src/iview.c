@@ -74,8 +74,10 @@ parse_control_block (char *word)
 {
     if (!strcmp (word, "-z") || !strcmp (word, "--zoom"))
 	set_state_int (ZOOM);
+    else if (!strcmp (word, "-l") || !strcmp (word, "--loud"))
+	set_state_int (LOUD);
     else if (!strcmp (word, "-f") || !strcmp (word, "--fullscreen"))
-	set_state_int (SDL_FULLSCREEN);
+	set_state_int (FULLSCREEN);
     else if (!strcmp (word, "-v") || !strcmp (word, "--version"))
 	exit (printf ("%s %s (C) 2001 Erik Greenwald <erik@smluc.org>\n",
 		      PACKAGE, VERSION));
@@ -91,7 +93,7 @@ main (int argc, char **argv)
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
 
     x = SDL_DOUBLEBUF;
-    unset_state_int (SDL_FULLSCREEN);
+    unset_state_int (FULLSCREEN);
     imglist = ll_newlist ();
     for (count = 1; count < argc; count++)
     {
@@ -105,8 +107,8 @@ main (int argc, char **argv)
     }
     if (imgcount == 0)
 	return 0;
-    x |= get_state_int (SDL_FULLSCREEN);
-    screen = SDL_SetVideoMode (1024, 768, 32, x);
+    x |= get_state_int (FULLSCREEN);
+    screen = SDL_SetVideoMode (1280, 1024, 32, x);
 
     SDL_ShowCursor (0);
 
