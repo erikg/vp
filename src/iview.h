@@ -24,6 +24,7 @@
 #define ZOOM		0x01
 #define FULLSCREEN	SDL_FULLSCREEN
 #define LOUD		0x04
+#define GRAB_FOCUS	0x08
 
 void oops (char *);
 int get_state_int (int);

@@ -34,13 +34,18 @@ extern void *imglist;
 int
 timer_stub ()
 {
-   SDL_Event ev;
- 
+    SDL_Event ev;
+
     if (image_next (1) == 0)
-      throw_exit ();
-   ev.type = SDL_USEREVENT;
-   ev.user.code = SHOW_IMAGE;
-   SDL_PushEvent (&ev);
+	throw_exit ();
+
+    /*
+     * thanks to Ted Mielczarek <tam4@lehigh.edu> for this, fixes the X
+     * Async request errors 
+     */
+    ev.type = SDL_USEREVENT;
+    ev.user.code = SHOW_IMAGE;
+    SDL_PushEvent (&ev);
     return MILLIS;
 }
 
@@ -71,6 +76,5 @@ timer_start ()
     if (timer_id == 0)
 	timer_id =
 	    SDL_AddTimer (MILLIS, (SDL_NewTimerCallback) timer_stub, NULL);
-    // show_image ();
     return;
 }

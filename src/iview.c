@@ -115,9 +115,14 @@ main (int argc, char **argv)
     int count;
 
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
+    atexit(SDL_Quit);	/* as much as I hate doing this, it's necessary.
+			 * libjpeg seems to like to exit() on bad image,
+			 * instead of doing the right thing and returning an
+			 * error code. :/  */
 
     x = SDL_DOUBLEBUF;
     unset_state_int (FULLSCREEN);
+    set_state_int (GRAB_FOCUS);
     imglist = ll_newlist ();
 
     /*

@@ -84,9 +84,11 @@ center_window ()
 			      DefaultScreen (info.info.x11.display));
 	    h = DisplayHeight (info.info.x11.display,
 			       DefaultScreen (info.info.x11.display));
-	    x = (w - screen->w) / 2;
-	    y = (h - screen->h) / 2;
+	    x = (w - screen->w) >> 1;
+	    y = (h - screen->h) >> 1;
 	    XMoveWindow (info.info.x11.display, info.info.x11.wmwindow, x, y);
+if(get_state_int(GRAB_FOCUS))
+	XSetInputFocus(info.info.x11.display,info.info.x11.wmwindow,RevertToNone,CurrentTime);
 	    info.info.x11.unlock_func ();
 	}
     }
@@ -107,18 +109,19 @@ image_init (int terminate)
 }
 
 SDL_Surface *
-image_load(char *name)
+image_load (char *name)
 {
-	SDL_Surface *s;
-	char *newname;
+    SDL_Surface *s;
+    char *newname;
 
-	if(net_is_url(name))
-		newname=net_download(name);
-	else newname=name;
-	s=IMG_Load(name);
-	if(newname!=name)
-		net_purge(newname);
-	return s;
+    if (net_is_url (name))
+	newname = net_download (name);
+    else
+	newname = name;
+    s = IMG_Load (name);
+    if (newname != name)
+	net_purge (newname);
+    return s;
 }
 
 void
@@ -177,6 +180,7 @@ show_image ()
 	if (img)
 	{
 	    char buf[1024];
+
 	    screen = SDL_SetVideoMode (img->w, img->h, 32, SDL_DOUBLEBUF);
 	    sprintf (buf, "iview - %s", imgname);
 	    SDL_WM_SetCaption (buf, "iview");
