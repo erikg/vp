@@ -1,3 +1,5 @@
+# $Id: vp.spec,v 1.3 2002/12/11 04:37:01 erik Exp $
+#
 Summary: view image files.
 Name: vp
 Version: 1.6
