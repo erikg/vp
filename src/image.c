@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /* 
- * $Id: image.c,v 1.40 2004/03/27 00:53:48 erik Exp $
+ * $Id: image.c,v 1.41 2004/07/25 14:53:24 erik Exp $
  */
 
 #include <stdio.h>
@@ -64,12 +64,13 @@ getscale (double sw, double sh, double iw, double ih)
 SDL_Surface *
 zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
 {
-    static int x, y, bpp, doff, soff;
+    static int x, y, bpp, doff, soff, width;
 
     bpp = s->format->BytesPerPixel;
+    width = d->w;
 
     for (y = 0; y < d->h; y++)
-	for (x = 0; x < (d->pitch / bpp); x++)
+	for (x = 0; x < width; x++)
 	{
 	    doff = d->pitch * y + x * bpp;
 	    soff =
