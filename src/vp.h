@@ -18,8 +18,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  ****************************************************************************/
 
-#ifndef __IVIEW_H_
-#define __IVIEW_H_
+#ifndef __VP_H_
+#define __VP_H_
 
 #define ZOOM		0x01
 #define FULLSCREEN	SDL_FULLSCREEN

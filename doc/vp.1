@@ -1,8 +1,8 @@
 .Dd Mar 8, 2001
-.Dt IVIEW 1
+.Dt VP 1
 .Os
 .Sh NAME
-.Nm iview 
+.Nm vp
 .Nd view image files 
 .Sh SYNOPSIS
 .Nm
@@ -10,7 +10,7 @@
 .Op Ar
 .Sh DESCRIPTION
 .Nm
-View image 
+View Picture 
 .Ar files
 using SDL. Supported file types include jpeg, gif, png, bmp, ppm, xpm, pcx,
 tga, and anything else your install of sdl_image supports. Keyboard controls
@@ -38,6 +38,8 @@ Scale the images to fill the screen (zoom)
 .\"Filenames are sent to stderr. 
 .Sh BUGS
 Bad jpeg images force the program to exit.
+
+Scaling (zoom) doesn't work on 8bpp images (gif).
 
 This manpage is inadequate.
 .Sh AUTHOR
