@@ -25,6 +25,7 @@
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <netdb.h>
 
@@ -37,12 +38,18 @@
 	 */
 char *filename;
 
+#undef mkstemps
+
+
+	/* FIXME */
 #ifndef mkstemps
 int mkstemps(char *template, int suffixlen)
 {
+	int f;
 	printf("mkstemps says.. \'%s\' with %d\n",
 		template, suffixlen);
-	return 0;
+	f=open(template,O_WRONLY|O_CREAT,0600);
+	return f;
 }
 #endif
 

@@ -63,6 +63,8 @@ handle_input ()
     case SDL_KEYDOWN:
 	switch (e.key.keysym.sym)
 	{
+	case 'X':
+	case 'x':
 	case 'Q':
 	case 'q':
 	case SDLK_ESCAPE:
@@ -98,7 +100,6 @@ handle_input ()
 	    toggle_state (SDL_FULLSCREEN);
 	    if (get_state_int (SDL_FULLSCREEN))
 		screen = SDL_SetVideoMode (1280, 1024, 32, SDL_FULLSCREEN);
-	    img_freshen ();
 	    show_image ();
 	    break;
 	default:

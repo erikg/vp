@@ -52,7 +52,7 @@ void
 timer_toggle ()
 {
     if (timer_id == 0)
-	timer_start ();
+	timer_start (wait);
     else
 	timer_stop ();
     return;
@@ -64,7 +64,6 @@ timer_stop ()
     if (timer_id != 0)
 	if (SDL_RemoveTimer (timer_id) == SDL_FALSE)
 	    oops ("SDL_RemoveTimer() failed\n");
-
     timer_id = 0;
     return;
 }

@@ -113,11 +113,12 @@ image_load (char *name)
 	else
 	    newname = (char *)strdup (name);
     }
-    s = IMG_Load (name);
+    s = IMG_Load (newname);
 
+/*
     if (strcmp (newname, name))
 	net_purge (newname);
-
+*/
     return s;
 }
 
@@ -139,10 +140,10 @@ img_freshen ()
 {
     void *imglist = get_imglist ();
 
-    if (newname == NULL)
-	if ((img = image_load (ll_showline (imglist))) == NULL)
-	    return 0;
     imgname = ll_showline (imglist);
+    if (newname == NULL)
+	if ((img = image_load (imgname)) == NULL)
+	    return 0;
     return 1;
 }
 
@@ -153,6 +154,7 @@ image_next (int terminate)
 
     free (newname);
     newname = NULL;
+    SDL_FreeSurface (img);
     if (ll_next (imglist) == 0 && terminate == 1)
 	return (int)(img = NULL);
     while (!img_freshen ())
@@ -168,6 +170,7 @@ image_prev (int nothing)
 
     free (newname);
     newname = NULL;
+    SDL_FreeSurface (img);
     ll_prev (imglist);
     while (!img_freshen ())
 	if (ll_prev (imglist) == 0)
@@ -228,7 +231,6 @@ show_image ()
     SDL_Flip (screen);
     if (buf != img)
 	SDL_FreeSurface (buf);
-    SDL_FreeSurface (img);
-    buf = img = NULL;
+    buf = NULL;
     return;
 }
