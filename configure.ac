@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.3 2004/03/27 00:37:55 erik Exp $
+dnl $Id: configure.ac,v 1.4 2004/03/27 00:42:00 erik Exp $
 
 AC_INIT
 AC_CONFIG_SRCDIR([src/vp.c])
@@ -15,7 +15,7 @@ AC_CHECK_FUNC(mkstemps,AC_DEFINE(HAVE_MKSTEMPS,,Safe mktemp))
 
 AM_PATH_SDL(1.2.0,,AC_MSG_ERROR(["SDL 1.2.0 or better is required. Get it at http://libsdl.org."]))
 
-CFLAGS="$CFLAGS $SDL_CFLAGS"
+CFLAGS="$CFLAGS $SDL_CFLAGS -I/usr/X11R6/include"
 LIBS="$LIBS $SDL_LIBS -lSDL_image"
 
 AC_CHECK_LIB(SDL_image,IMG_Load,,AC_MSG_ERROR([SDL_image is required http://www.libsdl.org/projects/SDL_image/index.html]))
