@@ -103,17 +103,20 @@ image_init (int terminate)
 
     ll_rewind (imglist);
     while ((img = IMG_Load (ll_showline (imglist))) == NULL)
-	ll_next (imglist);
+	if (ll_next (imglist) == 0)
+	    return -1;
     imgname = ll_showline (imglist);
     return 0;
 }
 
 void
-img_freshen()
+img_freshen ()
 {
     void *imglist = get_imglist ();
+
     while ((img = IMG_Load (ll_showline (imglist))) == NULL)
-	ll_next (imglist);
+	if (ll_next (imglist) == 0)
+	    return;
     imgname = ll_showline (imglist);
 }
 
@@ -123,11 +126,8 @@ image_next (int terminate)
     void *imglist = get_imglist ();
 
     if (ll_next (imglist) == 0 && terminate == 1)
-    {
-	img = NULL;
-	return 0;
-   }
-img_freshen();
+	return (int) (img = NULL);
+    img_freshen ();
     return 1;
 }
 
@@ -138,7 +138,7 @@ image_prev ()
 
     if (ll_prev (imglist) == 0)
 	return 0;
-img_freshen();
+    img_freshen ();
     return 1;
 }
 
@@ -149,16 +149,17 @@ show_image ()
     float scale;
     SDL_Rect r;
 
-
     if (img == NULL)
     {
 	throw_exit ();
 	return;
     }
 
-  if(get_state_int(LOUD))
-    fprintf (stdout, "%s\n", imgname),
-    fflush (stdout);
+    /*
+     * maybe this should be elsewhere? 
+     */
+    if (get_state_int (LOUD))
+	fprintf (stdout, "%s\n", imgname), fflush (stdout);
 
     if (!get_state_int (SDL_FULLSCREEN))
     {
@@ -167,8 +168,10 @@ show_image ()
 	{
 	    char buf[1024];
 
-	/* um, is this bad? */
-//	    SDL_FreeSurface (screen);
+	    /*
+	     * um, is this bad? 
+	     */
+	    // SDL_FreeSurface (screen);
 	    screen = SDL_SetVideoMode (img->w, img->h, 32, SDL_DOUBLEBUF);
 	    sprintf (buf, "iview - %s", imgname);
 	    SDL_WM_SetCaption (buf, "iview");
@@ -202,6 +205,6 @@ show_image ()
     if (buf != img)
 	SDL_FreeSurface (buf);
     SDL_FreeSurface (img);
-    buf=img=NULL;
+    buf = img = NULL;
     return;
 }

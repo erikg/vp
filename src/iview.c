@@ -95,6 +95,11 @@ main (int argc, char **argv)
     x = SDL_DOUBLEBUF;
     unset_state_int (FULLSCREEN);
     imglist = ll_newlist ();
+
+    /*
+     * this should probably use getopt, or at least a more unix like
+     * method... 
+     */
     for (count = 1; count < argc; count++)
     {
 	if (argv[count][0] == '-')
@@ -105,19 +110,20 @@ main (int argc, char **argv)
 	    imgcount++;
 	}
     }
-    if (imgcount == 0)
+    ll_rewind (imglist);
+    if (imgcount == 0 || image_init () != 0)
+    {
+	printf ("No images selected... aborting.\n");
 	return 0;
+    }
     x |= get_state_int (FULLSCREEN);
-    screen = SDL_SetVideoMode (1280, 1024, 32, x);
 
+    img_freshen ();
+
+    screen = SDL_SetVideoMode (1280, 1024, 32, x);
     SDL_ShowCursor (0);
 
-    ll_rewind (imglist);
-    image_init ();
-
-    img_freshen();
-
-	show_image ();
+    show_image ();
     if (imgcount >= 2)
 	timer_start ();
 
