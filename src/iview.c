@@ -28,6 +28,8 @@
 #include "ll.h"
 #include "timer.h"
 
+#include <getopt.h>
+
 SDL_Surface *screen;
 static void *imglist;		/* linked list */
 static int state;
@@ -70,62 +72,19 @@ oops (char *msg)
     exit (-1);
 }
 
-void
-parse_control_block (char *word)
-{
-    if (word[0] == '-')
-    {
-	/*
-	 * long options 
-	 */
-	word++;
-	if (!strcmp (word, "version"))
-	    exit (printf
-		("%s %s (C) 2001 Erik Greenwald <erik@smluc.org>\n",
-		    PACKAGE, VERSION));
-
-	if (!strcmp (word, "fullscreen"))
-	    set_state_int (FULLSCREEN);
-	if (!strcmp (word, "loud"))
-	    set_state_int (LOUD);
-	if (!strcmp (word, "zoom"))
-	    set_state_int (ZOOM);
-    } else
-	while (word[0] != 0)
-	{
-	    switch (word[0])
-	    {
-	    case 'z':
-	    case 'Z':
-		set_state_int (ZOOM);
-		break;
-	    case 'l':
-	    case 'L':
-		set_state_int (LOUD);
-		break;
-	    case 'f':
-	    case 'F':
-		set_state_int (FULLSCREEN);
-		break;
-	    case 'v':
-	    case 'V':
-		exit (printf
-		    ("%s %s (C) 2001 Erik Greenwald <erik@smluc.org>\n",
-			PACKAGE, VERSION));
-		break;
-	    default:
-		printf ("Unknown command\n");
-	    }
-	    word++;
-	}
-    return;
-}
-
 int
 main (int argc, char **argv)
 {
-    int x, imgcount = 0;
-    int count;
+    int x, imgcount = 0, i, count, c, wait=2500;
+    static struct option optlist[] = {
+	{"fullscreen", 0, NULL, 'f'},
+	{"help", 0, NULL, 'h'},
+	{"loud", 0, NULL, 'l'},
+	{"sleep", 1, NULL, 's'},
+	{"version", 0, NULL, 'v'},
+	{"zoom", 0, NULL, 'z'},
+	{0, 0, 0, 0}
+    };
 
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
     atexit (SDL_Quit);		/* as much as I hate doing this, it's necessary.
@@ -135,23 +94,40 @@ main (int argc, char **argv)
 
     x = SDL_DOUBLEBUF;
     unset_state_int (FULLSCREEN);
-    set_state_int (GRAB_FOCUS);
+    unset_state_int (GRAB_FOCUS);
     imglist = ll_newlist ();
 
-    /*
-     * this should probably use getopt, or at least a more unix like
-     * method... 
-     */
-    for (count = 1; count < argc; count++)
+    while ((c = getopt_long (argc, argv, "vhlzfs:", optlist, &i)) != -1)
     {
-	if (argv[count][0] == '-')
-	    parse_control_block (argv[count] + 1);
-	else
+	switch (c)
 	{
-	    ll_addatend (imglist, argv[count]);
-	    imgcount++;
+	case 'f':
+	    set_state_int (FULLSCREEN);
+	    break;
+	case 'h':
+	    break;
+	case 'l':
+	    set_state_int (LOUD);
+	    break;
+	case 's':
+	    wait = atoi(optarg);
+	    break;
+	case 'v':
+	    exit (printf ("%s %s (C) 2001 Erik Greenwald <erik@smluc.org>\n",
+		    PACKAGE, VERSION));
+	    break;
+	case 'z':
+	    set_state_int (ZOOM);
+	    break;
 	}
     }
+
+    for (count = optind; count < argc; count++)
+    {
+	ll_addatend (imglist, argv[count]);
+	imgcount++;
+    }
+
     ll_rewind (imglist);
     if (imgcount == 0 || image_init () != 0)
     {
@@ -165,8 +141,9 @@ main (int argc, char **argv)
     SDL_ShowCursor (0);
 
     show_image ();
+
     if (imgcount >= 2)
-	timer_start (2500);
+	timer_start (wait);
 
     while (handle_input ());
 

@@ -33,21 +33,11 @@
 #include "http.h"
 #include "net.h"
 
-	/*
-	 * ick 
-	 */
-char *filename;
-
-#undef mkstemps
-
-
 	/* FIXME */
-#ifndef mkstemps
+#ifndef HAVE_MKSTEMPS
 int mkstemps(char *template, int suffixlen)
 {
 	int f;
-	printf("mkstemps says.. \'%s\' with %d\n",
-		template, suffixlen);
 	f=open(template,O_WRONLY|O_CREAT,0600);
 	return f;
 }
@@ -122,19 +112,14 @@ net_suck (url_t * u)
 	len = read (u->conn, buf, BUFSIZ);
 	if (write (u->file, buf, len) != len)
 	    return -1;
-    }
-
-    while (len /*== BUFSIZ*/ );
+    } while (len);
     return 0;
 }
 
 char *
 net_download (char *name)
 {
-
-/*
-    int socket, file;
-*/
+    char *filename;
     url_t *url;
 
     printf ("Download %s\n", name);
@@ -144,7 +129,6 @@ net_download (char *name)
 	(char *)malloc (strlen ("/tmp/iview.XXXX.") + strlen (url->ext) + 1);
     sprintf (filename, "/tmp/iview.XXXX.%s", url->ext);
     url->file = mkstemps (filename, strlen (url->ext) + 1);
-    printf ("saving to %s\n", filename);
     switch (url->proto)
     {
     case HTTP:

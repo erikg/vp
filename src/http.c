@@ -32,6 +32,8 @@ http_init (url_t * u)
     buf = (char *)malloc (BUFSIZ);
     sprintf (buf, "GET /%s HTTP/1.1\nHost: %s\n\n\n", u->filename, u->server);
     write (u->conn, buf, strlen (buf));
+
+	/* FIXME this is ugly */
     while (e < 4)
     {
 	read (u->conn, buf, 1);
