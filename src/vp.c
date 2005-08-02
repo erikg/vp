@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.20 2005/04/01 11:08:44 erik Exp $
+ * $Id: vp.c,v 1.21 2005/08/02 18:02:14 erik Exp $
  */
 
 #include <stdlib.h>
@@ -103,8 +103,7 @@ oops (char *msg)
 int
 main (int argc, char **argv)
 {
-    int i, count, c, wait = 2500, width = 0, height = 0, depth = 0, haveres =
-	0;
+    int i, count, c, wait = 2500, width = 0, height = 0, depth = 0;
 
 /*
     SDL_SysWMinfo info;
@@ -150,20 +149,16 @@ main (int argc, char **argv)
 		char *w = NULL, *h = NULL, *d = NULL, *p;
 
 		p = optarg;
-		w = p;
+		if(isdigit(*p))
+		    width = atoi(p);
 		while (*p)
 		{
 		    if (*p == 'x')
-			h = p + 1;
+			height = atoi(p + 1);
 		    if (*p == '@')
-			d = p + 1;
+			depth = atoi(p + 1);
 		    ++p;
 		}
-		width = atoi (w);
-		height = atoi (h);
-		if (d)
-		    depth = atoi (d);
-		haveres = 1;
 	    }
 	    break;
 	case 'h':
