@@ -19,11 +19,12 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.24 2005/08/02 19:22:34 erik Exp $
+ * $Id: vp.c,v 1.25 2005/08/02 19:25:29 erik Exp $
  */
 
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -104,7 +105,7 @@ void
 show_help(char *name)
 {
     printf("Usage:\n\
-\tvp [-fhlvz] [-s <seconds>] [-r [<width>][x<height>][@<depth>]]\n\
+\t%s [-fhlvz] [-s <seconds>] [-r [<width>][x<height>][@<depth>]]\n\
 \n\
 \t-f		--fullscreen	set fullscreen mode.\n\
 \t-l		--loud		print file name to stdout.\n\
@@ -113,7 +114,8 @@ show_help(char *name)
 \t-z		--zoom		scale to fit when fullscreen.\n\
 \t-s <seconds>	--sleep		seconds between image change in slideshow.\n\
 \t-r <res>	--resolution	width, height, and depth. See man page.\n\
-\n");
+\n", name);
+    return;
 }
 
 int
@@ -163,7 +165,7 @@ main (int argc, char **argv)
 	    break;
 	case 'r':
 	    {
-		char *w = NULL, *h = NULL, *d = NULL, *p;
+		char *p;
 
 		p = optarg;
 		if(isdigit(*p))
