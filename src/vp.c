@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.22 2005/08/02 18:31:37 erik Exp $
+ * $Id: vp.c,v 1.23 2005/08/02 18:39:33 erik Exp $
  */
 
 #include <stdlib.h>
@@ -120,6 +120,7 @@ int
 main (int argc, char **argv)
 {
     int i, count, c, wait = 2500, width = 0, height = 0, depth = 0;
+    SDL_VideoInfo *video_info = NULL;
 
 /*
     SDL_SysWMinfo info;
@@ -205,6 +206,9 @@ main (int argc, char **argv)
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
     atexit (SDL_Quit);
     mutex = SDL_CreateMutex ();
+
+    video_info = SDL_GetVideoInfo();
+    sdepth = video_info->vfmt->BitsPerPixel;
 
 #ifdef SDL_SYSWM_X11
     disp = XOpenDisplay (NULL);

@@ -1,3 +1,7 @@
+20050802:
+	* made resolution parser more robust
+	* added help info
+	* default to best available video depth.
 
 20050401:
 	* Copyright update
@@ -96,4 +100,4 @@
 20010314:
 	* Initial release (1.0)
 
-$Id: ChangeLog,v 1.8 2005/04/01 11:28:46 erik Exp $
+$Id: ChangeLog,v 1.9 2005/08/02 18:39:33 erik Exp $
