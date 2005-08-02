@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.21 2005/08/02 18:02:14 erik Exp $
+ * $Id: vp.c,v 1.22 2005/08/02 18:31:37 erik Exp $
  */
 
 #include <stdlib.h>
@@ -100,6 +100,22 @@ oops (char *msg)
     exit (EXIT_FAILURE);
 }
 
+void
+show_help(char *name)
+{
+    printf("Usage:\n\
+\tvp [-fhlvz] [-s <seconds>] [-r [<width>][x<height>][@<depth>]]\n\
+\n\
+\t-f		--fullscreen	set fullscreen mode.\n\
+\t-l		--loud		print file name to stdout.\n\
+\t-h		--help		show help.\n\
+\t-v		--version	show version.\n\
+\t-z		--zoom		scale to fit when fullscreen.\n\
+\t-s <seconds>	--sleep		seconds between image change in slideshow.\n\
+\t-r <res>	--resolution	width, height, and depth. See man page.\n\
+\n");
+}
+
 int
 main (int argc, char **argv)
 {
@@ -163,9 +179,7 @@ main (int argc, char **argv)
 	    break;
 	case 'h':
 	default:
-	    /*
-	     * show help 
-	     */
+	    show_help(argv[0]);
 	    return 0;
 	    break;
 	}
