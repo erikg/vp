@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.23 2005/08/02 18:39:33 erik Exp $
+ * $Id: vp.c,v 1.24 2005/08/02 19:22:34 erik Exp $
  */
 
 #include <stdlib.h>
@@ -120,7 +120,7 @@ int
 main (int argc, char **argv)
 {
     int i, count, c, wait = 2500, width = 0, height = 0, depth = 0;
-    SDL_VideoInfo *video_info = NULL;
+    const SDL_VideoInfo *video_info;
 
 /*
     SDL_SysWMinfo info;
