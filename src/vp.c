@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.25 2005/08/02 19:25:29 erik Exp $
+ * $Id: vp.c,v 1.26 2005/08/07 15:38:58 erik Exp $
  */
 
 #include <stdlib.h>
@@ -190,7 +190,9 @@ main (int argc, char **argv)
 
     image_table.image = malloc (sizeof (struct image_s) * (argc - optind));
     memset (image_table.image, 0, sizeof (struct image_s) * (argc - optind));
-    printf("Scanning for images, %d possible\n", argc);
+    
+    printf("Scanning for images, %d possible\n", argc-1);
+
     for (count = optind; count < argc; count++)
     {
 	struct stat sb[1];
