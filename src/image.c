@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /* 
- * $Id: image.c,v 1.43 2005/04/01 11:08:44 erik Exp $
+ * $Id: image.c,v 1.44 2005/08/07 15:41:09 erik Exp $
  */
 
 #include <stdio.h>
@@ -133,8 +133,8 @@ show_image ()
     }
 
     s = it->image[it->current].surface;
-    if(s==NULL)
-	    return;
+    if (s == NULL)
+	return;
     if (get_state_int (FULLSCREEN))
     {
 	SDL_FillRect (screen, NULL, 0);

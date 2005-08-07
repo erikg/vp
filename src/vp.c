@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.26 2005/08/07 15:38:58 erik Exp $
+ * $Id: vp.c,v 1.27 2005/08/07 15:41:09 erik Exp $
  */
 
 #include <stdlib.h>
@@ -102,9 +102,9 @@ oops (char *msg)
 }
 
 void
-show_help(char *name)
+show_help (char *name)
 {
-    printf("Usage:\n\
+    printf ("Usage:\n\
 \t%s [-fhlvz] [-s <seconds>] [-r [<width>][x<height>][@<depth>]]\n\
 \n\
 \t-f		--fullscreen	set fullscreen mode.\n\
@@ -168,21 +168,21 @@ main (int argc, char **argv)
 		char *p;
 
 		p = optarg;
-		if(isdigit(*p))
-		    width = atoi(p);
+		if (isdigit (*p))
+		    width = atoi (p);
 		while (*p)
 		{
 		    if (*p == 'x')
-			height = atoi(p + 1);
+			height = atoi (p + 1);
 		    if (*p == '@')
-			depth = atoi(p + 1);
+			depth = atoi (p + 1);
 		    ++p;
 		}
 	    }
 	    break;
 	case 'h':
 	default:
-	    show_help(argv[0]);
+	    show_help (argv[0]);
 	    return 0;
 	    break;
 	}
@@ -190,8 +190,8 @@ main (int argc, char **argv)
 
     image_table.image = malloc (sizeof (struct image_s) * (argc - optind));
     memset (image_table.image, 0, sizeof (struct image_s) * (argc - optind));
-    
-    printf("Scanning for images, %d possible\n", argc-1);
+
+    printf ("Scanning for images, %d possible\n", argc - 1);
 
     for (count = optind; count < argc; count++)
     {
@@ -211,7 +211,7 @@ main (int argc, char **argv)
     atexit (SDL_Quit);
     mutex = SDL_CreateMutex ();
 
-    video_info = SDL_GetVideoInfo();
+    video_info = SDL_GetVideoInfo ();
     sdepth = video_info->vfmt->BitsPerPixel;
 
 #ifdef SDL_SYSWM_X11

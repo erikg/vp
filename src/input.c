@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: input.c,v 1.27 2005/04/01 11:08:44 erik Exp $
+ * $Id: input.c,v 1.28 2005/08/07 15:41:09 erik Exp $
  */
 
 #include <ctype.h>
@@ -67,7 +67,7 @@ handle_input ()
 	    image_freshen ();
 	break;
     case SDL_KEYDOWN:
-	switch (tolower(e.key.keysym.sym))
+	switch (tolower (e.key.keysym.sym))
 	{
 	case 'x':
 	case 'q':
