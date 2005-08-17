@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.27 2005/08/07 15:41:09 erik Exp $
+ * $Id: vp.c,v 1.28 2005/08/17 01:12:30 erik Exp $
  */
 
 #include <stdlib.h>
@@ -38,6 +38,7 @@
 #include "image.h"
 #include "vp.h"
 #include "timer.h"
+#include "net.h"
 
 #include "getopt.h"
 
@@ -197,7 +198,7 @@ main (int argc, char **argv)
     {
 	struct stat sb[1];
 
-	if (stat (argv[count], sb) != -1 && !(sb->st_mode & S_IFDIR))
+	if ((stat (argv[count], sb) != -1 && !(sb->st_mode & S_IFDIR)) || net_is_url(argv[count]))
 	{
 	    image_table.image[image_table.count].resource = argv[count];
 	    image_table.count++;
