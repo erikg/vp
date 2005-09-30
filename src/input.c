@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: input.c,v 1.28 2005/08/07 15:41:09 erik Exp $
+ * $Id: input.c,v 1.29 2005/09/30 03:10:01 erik Exp $
  */
 
 #include <ctype.h>
@@ -43,7 +43,7 @@ throw_exit ()
 {
     SDL_Event thrower;
 
-    printf ("Throwng ext\n");
+    printf ("Throwing ext\n");
     thrower.type = SDL_KEYDOWN;
     thrower.key.keysym.sym = 27;
     timer_stop ();
