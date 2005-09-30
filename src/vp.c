@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.28 2005/08/17 01:12:30 erik Exp $
+ * $Id: vp.c,v 1.29 2005/09/30 03:10:32 erik Exp $
  */
 
 #include <stdlib.h>
@@ -198,9 +198,14 @@ main (int argc, char **argv)
     {
 	struct stat sb[1];
 
-	if ((stat (argv[count], sb) != -1 && !(sb->st_mode & S_IFDIR)) || net_is_url(argv[count]))
+	if (stat (argv[count], sb) != -1 && !(sb->st_mode & S_IFDIR))
 	{
 	    image_table.image[image_table.count].resource = argv[count];
+	    image_table.image[image_table.count].file = argv[count];
+	    image_table.count++;
+	} else if(net_is_url(argv[count])) {
+	    image_table.image[image_table.count].resource = argv[count];
+	    image_table.image[image_table.count].file = net_download(argv[count]);
 	    image_table.count++;
 	}
     }
@@ -235,8 +240,6 @@ main (int argc, char **argv)
 
     if (get_state_int (FULLSCREEN))
     {
-	printf ("Fullscreen!\n");
-	printf ("%dx%d@%d\n", swidth, sheight, sdepth);
 	screen =
 	    SDL_SetVideoMode (swidth, sheight, sdepth,
 	    SDL_FULLSCREEN | SDL_DOUBLEBUF);

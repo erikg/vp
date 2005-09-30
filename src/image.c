@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /* 
- * $Id: image.c,v 1.44 2005/08/07 15:41:09 erik Exp $
+ * $Id: image.c,v 1.45 2005/09/30 03:10:43 erik Exp $
  */
 
 #include <stdio.h>
@@ -167,7 +167,7 @@ image_freshen_sub (struct image_s *i)
 {
     if (i->surface == NULL)
     {
-	i->surface = IMG_Load (i->resource);
+	i->surface = IMG_Load (i->file);
     }
     if (i->scaled == NULL && get_state_int (ZOOM))
     {
