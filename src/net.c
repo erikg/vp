@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: net.c,v 1.24 2005/04/01 11:08:44 erik Exp $
+ * $Id: net.c,v 1.25 2005/09/30 03:09:41 erik Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -90,7 +90,7 @@ mkstemps (char *template, int suffixlen)
 int
 net_is_url (char *name)
 {
-    return !strncmp (name, "http://", 7) || !strncmp (name, "ftp://", 7);
+    return !strncmp (name, "http://", 7) || !strncmp (name, "ftp://", 6);
 }
 
 url_t *
@@ -151,11 +151,7 @@ net_suck (url_t * u)
 
     do
     {
-	printf ("=");
-	fflush (stdout);
 	len = read (u->conn, buf, BUFSIZ);	/* TODO this stalls on the last packet */
-	printf ("-");
-	fflush (stdout);
 	if (write (u->file, buf, len) != len)
 	    return -1;
     }
