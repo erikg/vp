@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /* 
- * $Id: image.c,v 1.45 2005/09/30 03:10:43 erik Exp $
+ * $Id: image.c,v 1.46 2005/10/07 15:26:02 erik Exp $
  */
 
 #include <stdio.h>
@@ -76,6 +76,7 @@ zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
 	    soff =
 		(int)((int)(s->pitch) * (int)(y / scale)) +
 		(bpp * (int)((x) / scale));
+/* TODO this pointer casting causes warnings on 64b */
 	    memcpy ((void *)((int)d->pixels + doff),
 		(void *)((int)s->pixels + soff), bpp);
 	}
