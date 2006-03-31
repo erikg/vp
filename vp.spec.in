@@ -17,7 +17,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA #
 #############################################################################
 
-# $Id: vp.spec.in,v 1.4 2005/04/01 11:08:44 erik Exp $
+# $Id: vp.spec.in,v 1.5 2006/03/31 19:10:34 erik Exp $
 
 Summary: View image files.
 Name: @PACKAGE@
@@ -25,9 +25,9 @@ Version: @VERSION@
 Release: 1
 Copyright: GPL
 Vendor: Erik Greenwald
-Url: http://math.smsu.edu/~erik/software.php?id=63
+Url: http://math.missouristate.edu/~erik/software.php?id=63
 Group: Amusements/Graphics
-Source0: http://math.smsu.edu/~erik/files/@PACKAGE@-@VERSION@.tar.gz
+Source0: http://math.missouristate.edu/~erik/files/@PACKAGE@-@VERSION@.tar.gz
 Buildroot: /var/tmp/@PACKAGE@
 
 %description
