@@ -19,13 +19,18 @@
  ****************************************************************************/
 
 /*
- * $Id: http.c,v 1.15 2005/04/01 11:08:44 erik Exp $
+ * $Id: http.c,v 1.16 2006/09/04 14:52:38 erik Exp $
  */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 #include "http.h"
 
 int
@@ -35,7 +40,11 @@ http_init (url_t * u)
     int e = 0;
 
     buf = (char *)malloc (BUFSIZ);
-    sprintf (buf, "GET /%s HTTP/1.1\nHost: %s\n\n\n", u->filename, u->server);
+    sprintf (buf, "\
+GET /%s HTTP/1.1\n\
+Host: %s\n\
+Agent: %s %s\n\
+\n", u->filename, u->server, PACKAGE, VERSION);
     write (u->conn, buf, strlen (buf));
 
     /*
