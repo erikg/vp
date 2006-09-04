@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: timer.c,v 1.17 2005/04/01 11:08:44 erik Exp $
+ * $Id: timer.c,v 1.18 2006/09/04 15:33:03 erik Exp $
  */
 
 #include <SDL.h>
@@ -29,7 +29,7 @@
 #include "vp.h"
 #include "timer.h"
 
-static int wait = 2500;
+static int wait_time = 2500;
 
 SDL_TimerID timer_id;
 
@@ -52,14 +52,14 @@ timer_stub ()
 /*
     SDL_PushEvent (&ev);
 */
-    return wait;
+    return wait_time;
 }
 
 void
 timer_toggle ()
 {
     if (timer_id == 0)
-	timer_start (wait);
+	timer_start (wait_time);
     else
 	timer_stop ();
     return;
@@ -78,9 +78,9 @@ timer_stop ()
 void
 timer_start (int MILLIS)
 {
-    wait = MILLIS;
+    wait_time = MILLIS;
     if (timer_id == 0)
 	timer_id =
-	    SDL_AddTimer (wait, (SDL_NewTimerCallback) timer_stub, NULL);
+	    SDL_AddTimer (wait_time, (SDL_NewTimerCallback) timer_stub, NULL);
     return;
 }
