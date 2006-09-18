@@ -1,3 +1,7 @@
+
+20060917:
+	* fixed estimated number of images
+
 20051001:
 	* Release 1.6
 
@@ -106,7 +110,7 @@
 20010314:
 	* Initial release (1.0)
 
-$Id: ChangeLog,v 1.10 2006/03/31 19:10:34 erik Exp $
+$Id: ChangeLog,v 1.11 2006/09/18 13:15:28 erik Exp $
 	*
 20050802:
 	* made resolution parser more robust
@@ -210,4 +214,4 @@ $Id: ChangeLog,v 1.10 2006/03/31 19:10:34 erik Exp $
 20010314:
 	* Initial release (1.0)
 
-$Id: ChangeLog,v 1.10 2006/03/31 19:10:34 erik Exp $
+$Id: ChangeLog,v 1.11 2006/09/18 13:15:28 erik Exp $
