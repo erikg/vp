@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.29 2005/09/30 03:10:32 erik Exp $
+ * $Id: vp.c,v 1.30 2006/09/18 13:15:49 erik Exp $
  */
 
 #include <stdlib.h>
@@ -188,13 +188,16 @@ main (int argc, char **argv)
 	    break;
 	}
     }
+    argc -= optind;
+    argv += optind;
 
-    image_table.image = malloc (sizeof (struct image_s) * (argc - optind));
-    memset (image_table.image, 0, sizeof (struct image_s) * (argc - optind));
 
-    printf ("Scanning for images, %d possible\n", argc - 1);
+    image_table.image = malloc (sizeof (struct image_s) * argc);
+    memset (image_table.image, 0, sizeof (struct image_s) * argc);
 
-    for (count = optind; count < argc; count++)
+    printf ("Scanning for images, %d possible\n", argc);
+
+    for (count = 0; count < argc; count++)
     {
 	struct stat sb[1];
 
@@ -243,6 +246,7 @@ main (int argc, char **argv)
 	screen =
 	    SDL_SetVideoMode (swidth, sheight, sdepth,
 	    SDL_FULLSCREEN | SDL_DOUBLEBUF);
+	SDL_ShowCursor (0);
 	printf ("%s\n", SDL_GetError ());
     } else
 	screen = SDL_SetVideoMode (1, 1, 32, SDL_DOUBLEBUF);
@@ -252,7 +256,6 @@ main (int argc, char **argv)
 	return EXIT_FAILURE;
     }
 
-    SDL_ShowCursor (0);
     image_freshen ();
 
     if (image_table.count > 1)
