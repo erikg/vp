@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.30 2006/09/18 13:15:49 erik Exp $
+ * $Id: vp.c,v 1.31 2007/01/10 00:08:46 erik Exp $
  */
 
 #include <stdlib.h>
@@ -190,7 +190,6 @@ main (int argc, char **argv)
     }
     argc -= optind;
     argv += optind;
-
 
     image_table.image = malloc (sizeof (struct image_s) * argc);
     memset (image_table.image, 0, sizeof (struct image_s) * argc);
