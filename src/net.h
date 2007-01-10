@@ -1,7 +1,7 @@
 
 /*****************************************************************************
  * vp    -    SDL based image viewer for linux and fbsd. (X and console)     *
- * Copyright (C) 2001-2005 Erik Greenwald <erik@smluc.org>                   *
+ * Copyright (C) 2001-2007 Erik Greenwald <erik@smluc.org>                   *
  *                                                                           *
  * This program is free software; you can redistribute it and/or modify      *
  * it under the terms of the GNU General Public License as published by      *
@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: net.h,v 1.10 2005/04/01 11:08:44 erik Exp $
+ * $Id: net.h,v 1.11 2007/01/10 15:55:27 erik Exp $
  */
 
 #ifndef __NET_H_
