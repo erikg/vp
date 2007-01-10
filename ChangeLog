@@ -1,6 +1,11 @@
 
-20060917:
+20060918:
 	* fixed estimated number of images
+	* only hide cursor when fullscreen
+
+20060904:
+	* send agent on http connection (http/1.1)
+	* fixes for MacOSX.4
 
 20051001:
 	* Release 1.6
@@ -110,7 +115,7 @@
 20010314:
 	* Initial release (1.0)
 
-$Id: ChangeLog,v 1.11 2006/09/18 13:15:28 erik Exp $
+$Id: ChangeLog,v 1.12 2007/01/10 00:09:03 erik Exp $
 	*
 20050802:
 	* made resolution parser more robust
@@ -214,4 +219,4 @@ $Id: ChangeLog,v 1.11 2006/09/18 13:15:28 erik Exp $
 20010314:
 	* Initial release (1.0)
 
-$Id: ChangeLog,v 1.11 2006/09/18 13:15:28 erik Exp $
+$Id: ChangeLog,v 1.12 2007/01/10 00:09:03 erik Exp $
