@@ -1,4 +1,6 @@
 release:
+	athlon fix (64b)
+	fix X prefix stuff
 	fix networking
 
 general:
@@ -7,4 +9,4 @@ general:
 	filename rendering (on display, osd style)
 	arbitrary zooming and panning
 
-$Id: TODO,v 1.6 2006/07/04 20:37:15 erik Exp $
+$Id: TODO,v 1.7 2007/01/15 16:47:33 erik Exp $
