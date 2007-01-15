@@ -17,7 +17,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA #
 #############################################################################
 
-# $Id: configure.ac,v 1.8 2007/01/10 15:55:27 erik Exp $
+# $Id: configure.ac,v 1.9 2007/01/15 15:18:33 erik Exp $
 
 AC_INIT
 AC_CONFIG_SRCDIR([src/vp.c])
@@ -32,10 +32,11 @@ AC_PROG_INSTALL
 AC_CHECK_HEADERS(unistd.h stdio.h stdlib.h string.h time.h)
 AC_CHECK_FUNCS(mkstemps)
 
+AC_PATH_XTRA
 AM_PATH_SDL(1.2.0,,AC_MSG_ERROR(["SDL 1.2.0 or better is required. Get it at http://libsdl.org."]))
 
-CFLAGS="$CFLAGS $SDL_CFLAGS -I/usr/X11R6/include"
-LIBS="$LIBS $SDL_LIBS -lSDL_image"
+CFLAGS="$CFLAGS $SDL_CFLAGS $X_CFLAGS"
+LIBS="$LIBS $SDL_LIBS -lSDL_image $X_LIBS"
 
 AC_CHECK_LIB(SDL_image,IMG_Load,,AC_MSG_ERROR([SDL_image is required http://www.libsdl.org/projects/SDL_image/index.html]))
 
