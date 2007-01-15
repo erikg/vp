@@ -1,4 +1,7 @@
 
+20070115:
+	* added ability to specify X prefix
+
 20060918:
 	* fixed estimated number of images
 	* only hide cursor when fullscreen
@@ -115,7 +118,7 @@
 20010314:
 	* Initial release (1.0)
 
-$Id: ChangeLog,v 1.12 2007/01/10 00:09:03 erik Exp $
+$Id: ChangeLog,v 1.13 2007/01/15 16:47:47 erik Exp $
 	*
 20050802:
 	* made resolution parser more robust
@@ -219,4 +222,4 @@ $Id: ChangeLog,v 1.12 2007/01/10 00:09:03 erik Exp $
 20010314:
 	* Initial release (1.0)
 
-$Id: ChangeLog,v 1.12 2007/01/10 00:09:03 erik Exp $
+$Id: ChangeLog,v 1.13 2007/01/15 16:47:47 erik Exp $
