@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /* 
- * $Id: image.c,v 1.47 2007/01/10 15:55:27 erik Exp $
+ * $Id: image.c,v 1.48 2007/01/19 15:04:42 erik Exp $
  */
 
 #include <stdio.h>
@@ -163,6 +163,16 @@ show_image ()
     return;
 }
 
+/* saw a crash in here on g5 -fast 
+ * Exception:  EXC_BAD_ACCESS (0x0001)
+ * Codes:      KERN_INVALID_ADDRESS (0x0001) at 0x02730003
+ *
+ * Thread 0 Crashed:
+ * 0   <<00000000>>	0xffff8834 __memcpy + 148 (cpu_capabilities.h:189)
+ * 1   vp				0x00003154 image_freshen_sub + 836
+ * 2   vp				0x00003284 image_freshen + 212
+ * 3   vp				0x00003310 image_prev + 80
+ */
 void
 image_freshen_sub (struct image_s *i)
 {
