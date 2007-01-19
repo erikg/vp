@@ -17,13 +17,13 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA #
 #############################################################################
 
-# $Id: configure.ac,v 1.9 2007/01/15 15:18:33 erik Exp $
+# $Id: configure.ac,v 1.10 2007/01/19 15:04:32 erik Exp $
 
 AC_INIT
 AC_CONFIG_SRCDIR([src/vp.c])
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE(vp, 1.6)
+AM_INIT_AUTOMAKE(vp, 1.7)
 AM_CONFIG_HEADER([config.h])
 
 AC_PROG_CC
