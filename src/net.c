@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: net.c,v 1.26 2007/01/10 15:55:27 erik Exp $
+ * $Id: net.c,v 1.27 2007/02/01 15:13:12 erik Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -163,13 +163,15 @@ char *
 net_download (char *name)
 {
     char *filename;
+    int len;
     url_t *url;
 
     if ((url = net_url (name)) == NULL || net_connect (url) == -1)
 	return NULL;
-    filename =
-	(char *)malloc (strlen ("/tmp/vp.XXXX.") + strlen (url->ext) + 1);
-    sprintf (filename, "/tmp/vp.XXXX.%s", url->ext);
+
+    len = strlen("/tmp/vp.XXXX.")+strlen(url->ext)+1;
+    filename = (char *)malloc (len);
+    snprintf (filename, len, "/tmp/vp.XXXX.%s", url->ext);
     url->file = mkstemps (filename, strlen (url->ext) + 1);
     switch (url->proto)
     {

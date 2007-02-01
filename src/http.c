@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: http.c,v 1.17 2007/01/10 15:55:27 erik Exp $
+ * $Id: http.c,v 1.18 2007/02/01 15:12:56 erik Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -40,7 +40,7 @@ http_init (url_t * u)
     int e = 0;
 
     buf = (char *)malloc (BUFSIZ);
-    sprintf (buf, "\
+    snprintf (buf, BUFSIZ, "\
 GET /%s HTTP/1.1\n\
 Host: %s\n\
 Agent: %s %s\n\

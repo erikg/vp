@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /* 
- * $Id: image.c,v 1.48 2007/01/19 15:04:42 erik Exp $
+ * $Id: image.c,v 1.49 2007/02/01 15:18:05 erik Exp $
  */
 
 #include <stdio.h>
@@ -143,10 +143,10 @@ show_image ()
 	    s = it->image[it->current].scaled;
     } else
     {
-	static char buffer[1024];
+	static char buffer[BUFSIZ];
 
 	screen = SDL_SetVideoMode (s->w, s->h, vid_depth (), SDL_DOUBLEBUF);
-	sprintf (buffer, "vp - %s", it->image[it->current].resource);
+	snprintf (buffer, BUFSIZ, "vp - %s", it->image[it->current].resource);
 	SDL_WM_SetCaption (buffer, "vp");
 	center_window ();
     }
