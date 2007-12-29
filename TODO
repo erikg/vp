@@ -7,5 +7,6 @@ general:
 	surface buffering
 	filename rendering (on display, osd style)
 	arbitrary zooming and panning
+	handle images larger than max display (Robin Getz 12/29/07)
 
-$Id: TODO,v 1.8 2007/01/15 16:47:47 erik Exp $
+$Id: TODO,v 1.9 2007/12/29 15:07:42 erik Exp $
