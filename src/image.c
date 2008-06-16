@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /* 
- * $Id: image.c,v 1.50 2008/06/16 11:43:56 erik Exp $
+ * $Id: image.c,v 1.51 2008/06/16 14:02:21 erik Exp $
  */
 
 #include <stdio.h>
@@ -64,7 +64,7 @@ getscale (double sw, double sh, double iw, double ih)
 SDL_Surface *
 zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
 {
-    static int x, y, bpp, doff, soff, width;
+    static size_t x, y, bpp, doff, soff, width;
 
     bpp = s->format->BytesPerPixel;
     width = d->w;
@@ -74,11 +74,11 @@ zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
 	{
 	    doff = d->pitch * y + x * bpp;
 	    soff =
-		(int)((int)(s->pitch) * (int)(y / scale)) +
-		(bpp * (int)((x) / scale));
+		(size_t)((size_t)(s->pitch) * (size_t)(y / scale)) +
+		(bpp * (size_t)((x) / scale));
 /* TODO this pointer casting causes warnings on 64b */
-	    memcpy ((void *)((int)d->pixels + doff),
-		(void *)((int)s->pixels + soff), bpp);
+	    memcpy ((void *)((size_t)d->pixels + doff),
+		(void *)((size_t)s->pixels + soff), bpp);
 	}
     return d;
 }
