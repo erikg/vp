@@ -1,3 +1,6 @@
+20080615:
+	* Copyright update
+
 20070603:
 	* Release 1.7
 
@@ -123,7 +126,7 @@
 20010314:
 	* Initial release (1.0)
 
-$Id: ChangeLog,v 1.15 2007/06/04 18:14:01 erik Exp $
+$Id: ChangeLog,v 1.16 2008/06/16 11:43:56 erik Exp $
 	*
 20050802:
 	* made resolution parser more robust
@@ -227,4 +230,4 @@ $Id: ChangeLog,v 1.15 2007/06/04 18:14:01 erik Exp $
 20010314:
 	* Initial release (1.0)
 
-$Id: ChangeLog,v 1.15 2007/06/04 18:14:01 erik Exp $
+$Id: ChangeLog,v 1.16 2008/06/16 11:43:56 erik Exp $
