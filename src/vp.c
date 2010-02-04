@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.34 2010/01/06 00:48:15 erik Exp $
+ * $Id: vp.c,v 1.35 2010/02/04 14:48:21 erik Exp $
  */
 
 #include <stdlib.h>
@@ -158,7 +158,7 @@ main (int argc, char **argv)
 	    break;
 	case 'v':
 	    exit (printf
-		("%s %s (C) 2010 Erik Greenwald <erik@smluc.org>\n",
+		("%s %s (C) 2001-2010 Erik Greenwald <erik@bz.bzflag.bz>\n",
 		    PACKAGE, VERSION));
 	    break;
 	case 'z':
