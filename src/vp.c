@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 /*
- * $Id: vp.c,v 1.35 2010/02/04 14:48:21 erik Exp $
+ * $Id: vp.c,v 1.36 2010/07/10 00:41:53 erik Exp $
  */
 
 #include <stdlib.h>
@@ -223,6 +223,7 @@ main (int argc, char **argv)
     sdepth = video_info->vfmt->BitsPerPixel;
 
 #ifdef SDL_SYSWM_X11
+    putenv("SDL_VIDEO_CENTERED=1");
     disp = XOpenDisplay (NULL);
 
     if (disp)
