@@ -17,8 +17,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA #
 #############################################################################
 
-# $Id: Makefile.am,v 1.8 2010/01/06 00:48:15 erik Exp $
-
 SUBDIRS = @GETOPT_LONG_DIR@ doc src
 
 EXTRA_DIST=ChangeLog $(PACKAGE).spec TODO

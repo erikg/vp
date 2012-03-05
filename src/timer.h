@@ -18,10 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  ****************************************************************************/
 
-/*
- * $Id: timer.h,v 1.12 2010/01/06 00:48:15 erik Exp $
- */
-
 #ifndef __TIMER_H_
 #define __TIMER_H_
 

@@ -18,10 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  ****************************************************************************/
 
-/*
- * $Id: vp.c,v 1.36 2010/07/10 00:41:53 erik Exp $
- */
-
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>

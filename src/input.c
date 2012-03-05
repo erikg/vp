@@ -18,10 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  ****************************************************************************/
 
-/*
- * $Id: input.c,v 1.32 2010/01/06 00:48:15 erik Exp $
- */
-
 #include <ctype.h>
 #include <SDL.h>
 #include "image.h"

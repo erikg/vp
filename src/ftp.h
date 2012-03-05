@@ -18,10 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  ****************************************************************************/
 
-/*
- * $Id: ftp.h,v 1.13 2010/01/06 00:48:15 erik Exp $
- */
-
 #ifndef __FTP_H_
 #define __FTP_H_
 #include "net.h"

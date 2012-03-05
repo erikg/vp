@@ -17,8 +17,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA #
 #############################################################################
 
-# $Id: Makefile.am,v 1.12 2010/01/06 00:48:15 erik Exp $
-
 bin_PROGRAMS = vp
 
 vp_SOURCES = ftp.c http.c image.c input.c vp.c net.c timer.c
