@@ -21,7 +21,7 @@ Summary: View image files.
 Name: @PACKAGE@
 Version: @VERSION@
 Release: 1
-Copyright: GPL
+License: GPL
 Vendor: Erik Greenwald
 Url: http://www.elfga.com/~erik/
 Group: Amusements/Graphics
