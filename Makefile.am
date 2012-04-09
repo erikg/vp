@@ -23,10 +23,10 @@ EXTRA_DIST=ChangeLog $(PACKAGE).spec TODO
 
 .PHONY : rpm
 rpm: dist
-	cp $(PACKAGE)-$(VERSION).tar.gz ${HOME}/rpm/SOURCES/
+	cp $(PACKAGE)-$(VERSION).tar.gz ${HOME}/rpmbuild/SOURCES/
 	rpmbuild -ba $(PACKAGE).spec
-	cp ${HOME}/rpm/RPMS/i386/$(PACKAGE)-$(VERSION)-*.i386.rpm \
-	   ${HOME}/rpm/SRPMS/$(PACKAGE)-$(VERSION)-*.src.rpm .
+	cp ${HOME}/rpmbuild/RPMS/i386/$(PACKAGE)-$(VERSION)-*.i386.rpm \
+	   ${HOME}/rpmbuild/SRPMS/$(PACKAGE)-$(VERSION)-*.src.rpm .
 
 
 .PHONY : deb
