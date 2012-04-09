@@ -1,0 +1,21 @@
+vp release notes. See the ChangeLog for more details.
+
+Jun 3, 2007 - Version 1.7
+* Update HTTP to 1.1
+* Disable cursor hiding when windowed
+* portability and stability improvements
+
+Oct 1, 2005 - Version 1.6
+* 
+
+Sep 15, 2001 - Version 1.5
+
+Jun 1, 2001 - Version 1.4
+* Initial networking
+* X Async bug fixed
+
+Apr 24, 2001 - Version 1.3
+
+Mar 15, 2001 - Version 1.01
+
+Mar 14, 2001 - Version 1.0
