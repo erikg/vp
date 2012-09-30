@@ -1,6 +1,6 @@
 vp release notes. See the ChangeLog for more details.
 
-Apr ??, 2012 - Version 1.8
+Sep 30 2012 - Version 1.8
 * RPM building is back
 * center image on screen in windowed mode
 * fixes for 32/64b issue
