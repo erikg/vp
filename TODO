@@ -1,11 +1,7 @@
-release:
-	athlon fix (64b)
-	fix networking
-
 general:
 	image caching
 	surface buffering
 	filename rendering (on display, osd style)
 	arbitrary zooming and panning
 	handle images larger than max display (Robin Getz 12/29/07)
-
+	OpenGL scaling when available
