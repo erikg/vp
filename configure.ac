@@ -17,11 +17,11 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA #
 #############################################################################
 
-AC_INIT
+AC_INIT([vp], [1.8])
 AC_CONFIG_SRCDIR([src/vp.c])
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE(vp, 1.8)
+AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER([config.h])
 
 AC_PROG_CC
