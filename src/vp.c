@@ -154,7 +154,7 @@ main (int argc, char **argv)
 	    break;
 	case 'v':
 	    exit (printf
-		("%s %s (C) 2001-2017 Erik Greenwald <erik@bz.bzflag.bz>\n",
+		("%s %s (C) 2001-2017 Erik Greenwald <erik@elfga.com>\n",
 		    PACKAGE, VERSION));
 	    break;
 	case 'z':
