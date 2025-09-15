@@ -48,5 +48,6 @@ int net_is_url (char *name);
 char *net_download (char *name);
 void net_purge (char *file);
 url_t *net_url (char *name);
+void net_free_url (url_t *u);
 
 #endif

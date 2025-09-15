@@ -36,6 +36,9 @@ http_init (url_t * u)
     int e = 0;
 
     buf = (char *)malloc (BUFSIZ);
+    if (buf == NULL) {
+	return -1;
+    }
     snprintf (buf, BUFSIZ, "\
 GET /%s HTTP/1.1\n\
 Host: %s\n\

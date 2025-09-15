@@ -187,7 +187,7 @@ image_freshen_sub (struct image_s *i)
 	    i->surface->format->BytesPerPixel * 8,
 	    i->surface->format->Rmask, i->surface->format->Gmask,
 	    i->surface->format->Bmask, i->surface->format->Amask);
-	if (i->scaled->format->BytesPerPixel == 1)
+	if (i->scaled->format->BytesPerPixel == 1 && i->surface->format->palette)
 	    memcpy (i->scaled->format->palette, i->surface->format->palette,
 		sizeof (SDL_Palette));
 	zoom_blit (i->scaled, i->surface, scale);

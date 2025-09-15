@@ -89,6 +89,20 @@ net_is_url (char *name)
     return !strncmp (name, "http://", 7) || !strncmp (name, "ftp://", 6);
 }
 
+void
+net_free_url (url_t *u)
+{
+    if (u) {
+	if (u->server) free (u->server);
+	if (u->filename) free (u->filename);
+	if (u->ext) free (u->ext);
+	if (u->mimetype) free (u->mimetype);
+	if (u->file >= 0) close (u->file);
+	if (u->conn >= 0) close (u->conn);
+	free (u);
+    }
+}
+
 url_t *
 net_url (char *name)
 {
@@ -102,11 +116,29 @@ net_url (char *name)
     *n = 0;
     n++;
     u = (url_t *) malloc (sizeof (url_t));
+    if (u == NULL) {
+	return NULL;
+    }
     u->server = strdup (name + strlen ("http://"));
-    u->port = 80;
     u->filename = strdup (n);
-    u->ext = strdup (n + strlen (n) - 3);
+
+    /* Fix buffer overflow - check filename length before accessing extension */
+    int filename_len = strlen (n);
+    if (filename_len >= 3) {
+	u->ext = strdup (n + filename_len - 3);
+    } else {
+	u->ext = strdup ("");
+    }
+
+    /* Check for strdup failures */
+    if (!u->server || !u->filename || !u->ext) {
+	net_free_url (u);
+	return NULL;
+    }
+
+    u->port = 80;
     u->proto = HTTP;
+    u->mimetype = NULL;
     return u;
 }
 
@@ -162,11 +194,17 @@ net_download (char *name)
     int len;
     url_t *url;
 
-    if ((url = net_url (name)) == NULL || net_connect (url) == -1)
+    if ((url = net_url (name)) == NULL || net_connect (url) == -1) {
+	if (url) net_free_url (url);
 	return NULL;
+    }
 
     len = strlen("/tmp/vp.XXXX.")+strlen(url->ext)+1;
     filename = (char *)malloc (len);
+    if (filename == NULL) {
+	net_free_url (url);
+	return NULL;
+    }
     snprintf (filename, len, "/tmp/vp.XXXX.%s", url->ext);
     url->file = mkstemps (filename, strlen (url->ext) + 1);
     switch (url->proto)
@@ -180,10 +218,7 @@ net_download (char *name)
     }
     if (net_suck (url) == -1)
 	printf ("Some problem reading file (suck blew)...\n");
-    shutdown (url->conn, SHUT_RDWR);
-    close (url->conn);
-    close (url->file);
-    free (url);
+    net_free_url (url);
     return filename;
 }
 

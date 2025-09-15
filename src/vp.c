@@ -188,6 +188,10 @@ main (int argc, char **argv)
     argv += optind;
 
     image_table.image = malloc (sizeof (struct image_s) * argc);
+    if (image_table.image == NULL) {
+	fprintf (stderr, "Out of memory\n");
+	exit (EXIT_FAILURE);
+    }
     memset (image_table.image, 0, sizeof (struct image_s) * argc);
 
     printf ("Scanning for images, %d possible\n", argc);
@@ -259,6 +263,9 @@ main (int argc, char **argv)
 
     while (handle_input ());
 
+    if (image_table.image) {
+	free (image_table.image);
+    }
     SDL_Quit ();
     return 0;
 }
