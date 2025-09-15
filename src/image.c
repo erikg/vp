@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <SDL_image.h>
@@ -60,7 +61,12 @@ getscale (double sw, double sh, double iw, double ih)
 SDL_Surface *
 zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
 {
-    static size_t x, y, bpp, doff, soff, width;
+    size_t x, y, bpp, doff, soff, width;
+
+    /* Prevent division by zero */
+    if (scale <= 0.0f) {
+	return d;
+    }
 
     bpp = s->format->BytesPerPixel;
     width = d->w;
@@ -68,10 +74,16 @@ zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
     for (y = 0; y < d->h; y++)
 	for (x = 0; x < width; x++)
 	{
+	    size_t src_x = (size_t)(x / scale);
+	    size_t src_y = (size_t)(y / scale);
+
+	    /* Check source bounds to prevent buffer overflow */
+	    if (src_x >= s->w || src_y >= s->h) {
+		continue;
+	    }
+
 	    doff = d->pitch * y + x * bpp;
-	    soff =
-		(size_t)((size_t)(s->pitch) * (size_t)(y / scale)) +
-		(bpp * (size_t)((x) / scale));
+	    soff = s->pitch * src_y + src_x * bpp;
 /* TODO this pointer casting causes warnings on 64b */
 	    memcpy ((void *)((size_t)d->pixels + doff),
 		(void *)((size_t)s->pixels + soff), bpp);
@@ -122,6 +134,11 @@ show_image ()
     struct image_table_s *it = get_image_table ();
     SDL_Rect r;
     SDL_Surface *s;
+
+    /* Check bounds before accessing array */
+    if (it->current < 0 || it->current >= it->count) {
+	return;
+    }
 
     if (get_state_int (LOUD))
     {
@@ -181,9 +198,16 @@ image_freshen_sub (struct image_s *i)
 	double scale =
 	    getscale (screen->w, screen->h, i->surface->w, i->surface->h);
 
+	/* Check for integer overflow in scaled dimensions */
+	double scaled_w = ceil ((double)i->surface->w * (double)scale) + 1;
+	double scaled_h = ceil ((double)i->surface->h * (double)scale) + 1;
+
+	if (scaled_w > INT_MAX || scaled_h > INT_MAX || scaled_w <= 0 || scaled_h <= 0) {
+	    return;
+	}
+
 	i->scaled = SDL_CreateRGBSurface (SDL_SWSURFACE,
-	    (int)ceil ((double)i->surface->w * (double)scale) + 1,
-	    (int)ceil ((double)i->surface->h * (double)scale) + 1,
+	    (int)scaled_w, (int)scaled_h,
 	    i->surface->format->BytesPerPixel * 8,
 	    i->surface->format->Rmask, i->surface->format->Gmask,
 	    i->surface->format->Bmask, i->surface->format->Amask);
@@ -205,6 +229,12 @@ image_freshen ()
 
     sync ();
     c = it->current;
+
+    /* Check bounds before accessing array */
+    if (c < 0 || c >= it->count) {
+	SDL_UnlockMutex (mutex);
+	return 0;
+    }
 
     if (c > 0)
     {
@@ -243,8 +273,10 @@ image_next ()
 
     if (it->current < (it->count - 1))
 	it->current++;
-    else
+    else {
+	SDL_UnlockMutex (mutex);
 	return 0;
+    }
     SDL_UnlockMutex (mutex);
     image_freshen ();
     return 1;
@@ -259,8 +291,10 @@ image_prev ()
 
     if (it->current > 0)
 	it->current--;
-    else
+    else {
+	SDL_UnlockMutex (mutex);
 	return 0;
+    }
     SDL_UnlockMutex (mutex);
     image_freshen ();
     return 1;
