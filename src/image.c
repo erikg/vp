@@ -29,7 +29,8 @@
 
 #include "vp.h"
 
-extern SDL_Surface *screen;
+extern SDL_Window *window;
+extern SDL_Renderer *renderer;
 extern SDL_mutex *mutex;
 
 void
@@ -39,7 +40,7 @@ sync ()
     SDL_SysWMinfo info;
 
     SDL_VERSION (&info.version);
-    if (SDL_GetWMInfo (&info) > 0)
+    if (SDL_GetWindowWMInfo (window, &info) > 0)
     {
 	if (info.subsystem == SDL_SYSWM_X11)
 	    XSync (info.info.x11.display, False);
@@ -52,6 +53,15 @@ static double
 getscale (double sw, double sh, double iw, double ih)
 {
     return (sh * iw < ih * sw) ? sh / ih : sw / iw;
+}
+
+static double
+getscale_fill (double sw, double sh, double iw, double ih)
+{
+    /* Choose the larger scale factor to fill the screen while preserving aspect ratio */
+    double scale_w = sw / iw;
+    double scale_h = sh / ih;
+    return (scale_w > scale_h) ? scale_w : scale_h;
 }
 
 	/*
@@ -91,40 +101,101 @@ zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
     return d;
 }
 
+SDL_Surface *
+zoom_blit_fill (SDL_Surface * d, SDL_Surface * s, float scale)
+{
+    size_t x, y, bpp, doff, soff, width, height;
+    int scaled_w, scaled_h, offset_x, offset_y;
+
+    /* Prevent division by zero */
+    if (scale <= 0.0f) {
+	return d;
+    }
+
+    bpp = s->format->BytesPerPixel;
+    width = d->w;
+    height = d->h;
+
+    /* Calculate scaled dimensions and centering offset for cropping */
+    scaled_w = (int)(s->w * scale);
+    scaled_h = (int)(s->h * scale);
+    offset_x = (scaled_w - d->w) / 2;  /* Amount to crop from left/right */
+    offset_y = (scaled_h - d->h) / 2;  /* Amount to crop from top/bottom */
+
+    /* Fill the entire destination surface */
+    for (y = 0; y < height; y++)
+	for (x = 0; x < width; x++)
+	{
+	    /* Calculate source coordinates accounting for cropping offset */
+	    int src_x = (int)((x + offset_x) / scale);
+	    int src_y = (int)((y + offset_y) / scale);
+
+	    /* Check bounds - only copy if source coordinates are valid */
+	    if (src_x >= 0 && src_x < s->w && src_y >= 0 && src_y < s->h)
+	    {
+		doff = d->pitch * y + x * bpp;
+		soff = s->pitch * src_y + src_x * bpp;
+		memcpy ((void *)((size_t)d->pixels + doff),
+			(void *)((size_t)s->pixels + soff), bpp);
+	    }
+	}
+    return d;
+}
+
+SDL_Surface *
+zoom_blit_centered (SDL_Surface * d, SDL_Surface * s, float scale)
+{
+    size_t x, y, bpp, doff, soff, width, height;
+    int scaled_w, scaled_h, offset_x, offset_y;
+
+    /* Prevent division by zero */
+    if (scale <= 0.0f) {
+	return d;
+    }
+
+    bpp = s->format->BytesPerPixel;
+    width = d->w;
+    height = d->h;
+
+    /* Calculate scaled dimensions and centering offset */
+    scaled_w = (int)(s->w * scale);
+    scaled_h = (int)(s->h * scale);
+    offset_x = (d->w - scaled_w) / 2;
+    offset_y = (d->h - scaled_h) / 2;
+
+    /* Clear the destination surface first */
+    SDL_FillRect(d, NULL, 0);
+
+    for (y = 0; y < height; y++)
+	for (x = 0; x < width; x++)
+	{
+	    /* Calculate source coordinates accounting for centering */
+	    int src_x = (int)((x - offset_x) / scale);
+	    int src_y = (int)((y - offset_y) / scale);
+
+	    /* Check bounds - only copy if source coordinates are valid */
+	    if (src_x >= 0 && src_x < s->w && src_y >= 0 && src_y < s->h &&
+		x >= offset_x && x < (offset_x + scaled_w) &&
+		y >= offset_y && y < (offset_y + scaled_h))
+	    {
+		doff = d->pitch * y + x * bpp;
+		soff = s->pitch * src_y + src_x * bpp;
+		memcpy ((void *)((size_t)d->pixels + doff),
+			(void *)((size_t)s->pixels + soff), bpp);
+	    }
+	}
+    return d;
+}
+
 	/*
-	 * ripped from the libsdl faq, 'gtv' code 
+	 * ripped from the libsdl faq, 'gtv' code
 	 */
 static void
 center_window ()
 {
-    SDL_SysWMinfo info;
-
-    SDL_VERSION (&info.version);
-    if (SDL_GetWMInfo (&info) > 0)
-    {
-#ifdef SDL_SYSWM_X11
-	int x, y, w, h;
-
-	if (info.subsystem == SDL_SYSWM_X11)
-	{
-	    info.info.x11.lock_func ();
-	    w = DisplayWidth (info.info.x11.display,
-		DefaultScreen (info.info.x11.display));
-	    h = DisplayHeight (info.info.x11.display,
-		DefaultScreen (info.info.x11.display));
-	    x = (w - screen->w) / 2;
-	    y = (h - screen->h) / 2;
-	    XMoveWindow (info.info.x11.display, info.info.x11.wmwindow, x, y);
-
-/*
-	    if (get_state_int (GRAB_FOCUS))
-		XSetInputFocus (info.info.x11.display, info.info.x11.wmwindow,
-		    RevertToNone, CurrentTime);
-*/
-	    info.info.x11.unlock_func ();
-	}
-#endif
-    }
+    int w, h;
+    SDL_GetWindowSize(window, &w, &h);
+    SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     return;
 }
 
@@ -134,6 +205,8 @@ show_image ()
     struct image_table_s *it = get_image_table ();
     SDL_Rect r;
     SDL_Surface *s;
+    SDL_Texture *texture;
+    int window_w, window_h;
 
     /* Check bounds before accessing array */
     if (it->current < 0 || it->current >= it->count) {
@@ -149,30 +222,40 @@ show_image ()
     s = it->image[it->current].surface;
     if (s == NULL)
 	return;
+
+    SDL_RenderClear(renderer);
+
     if (get_state_int (FULLSCREEN))
     {
-	SDL_FillRect (screen, NULL, 0);
 	if (get_state_int (ZOOM))
 	    s = it->image[it->current].scaled;
     } else
     {
 	static char buffer[BUFSIZ];
 
-	screen = SDL_SetVideoMode (s->w, s->h, vid_depth (), SDL_DOUBLEBUF);
+	SDL_SetWindowSize(window, s->w, s->h);
 	snprintf (buffer, BUFSIZ, "vp - %s", it->image[it->current].resource);
-	SDL_WM_SetCaption (buffer, "vp");
+	SDL_SetWindowTitle(window, buffer);
 	center_window ();
     }
+
     if (s && s->format)
     {
-	r.x = (Sint16) (screen->w - s->w) / 2;
-	r.y = (Sint16) (screen->h - s->h) / 2;
-	r.w = (Uint16) s->w;
-	r.h = (Uint16) s->h;
+	SDL_GetWindowSize(window, &window_w, &window_h);
+
+	/* Center the image on screen */
+	r.x = (window_w - s->w) / 2;
+	r.y = (window_h - s->h) / 2;
+	r.w = s->w;
+	r.h = s->h;
+
+	texture = SDL_CreateTextureFromSurface(renderer, s);
+	SDL_RenderCopy(renderer, texture, NULL, &r);
+	SDL_DestroyTexture(texture);
     } else
 	printf ("Image \"%s\" failed\n", it->image[it->current].resource);
-    SDL_BlitSurface (s, NULL, screen, &r);
-    SDL_Flip (screen);
+
+    SDL_RenderPresent(renderer);
     return;
 }
 
@@ -195,8 +278,12 @@ image_freshen_sub (struct image_s *i)
     }
     if (i->scaled == NULL && get_state_int (ZOOM))
     {
-	double scale =
-	    getscale (screen->w, screen->h, i->surface->w, i->surface->h);
+	int window_w, window_h;
+	SDL_GetWindowSize(window, &window_w, &window_h);
+	double scale;
+
+	/* Fit within window while preserving aspect ratio (letterbox/pillarbox) */
+	scale = getscale (window_w, window_h, i->surface->w, i->surface->h);
 
 	/* Check for integer overflow in scaled dimensions */
 	double scaled_w = ceil ((double)i->surface->w * (double)scale) + 1;
@@ -206,14 +293,19 @@ image_freshen_sub (struct image_s *i)
 	    return;
 	}
 
-	i->scaled = SDL_CreateRGBSurface (SDL_SWSURFACE,
+	i->scaled = SDL_CreateRGBSurface (0,
 	    (int)scaled_w, (int)scaled_h,
 	    i->surface->format->BytesPerPixel * 8,
 	    i->surface->format->Rmask, i->surface->format->Gmask,
 	    i->surface->format->Bmask, i->surface->format->Amask);
-	if (i->scaled->format->BytesPerPixel == 1 && i->surface->format->palette)
-	    memcpy (i->scaled->format->palette, i->surface->format->palette,
-		sizeof (SDL_Palette));
+
+	/* Set palette if needed */
+	if (i->scaled && i->scaled->format->BytesPerPixel == 1 && i->surface->format->palette)
+	    SDL_SetPaletteColors(i->scaled->format->palette,
+				 i->surface->format->palette->colors, 0,
+				 i->surface->format->palette->ncolors);
+
+	/* Scale the image using standard zoom_blit */
 	zoom_blit (i->scaled, i->surface, scale);
     }
     return;

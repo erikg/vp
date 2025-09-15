@@ -26,9 +26,10 @@
 #include "timer.h"
 
 	/*
-	 * these are ugly and shouldn't be here. Must redesign. 
+	 * these are ugly and shouldn't be here. Must redesign.
 	 */
-extern SDL_Surface *screen, *img;
+extern SDL_Window *window;
+extern SDL_Renderer *renderer;
 extern float scale;
 
 	/*
@@ -41,7 +42,7 @@ throw_exit ()
 
     printf ("Throwing ext\n");
     thrower.type = SDL_KEYDOWN;
-    thrower.key.keysym.sym = 27;
+    thrower.key.keysym.sym = SDLK_ESCAPE;
     timer_stop ();
     SDL_PushEvent (&thrower);
 }
@@ -93,10 +94,13 @@ handle_input ()
 	case 'f':
 	    timer_stop ();
 	    toggle_state (FULLSCREEN);
-	    if (get_state_int (FULLSCREEN))
-		screen =
-		    SDL_SetVideoMode (vid_width (), vid_height (),
-		    vid_depth (), SDL_FULLSCREEN | SDL_DOUBLEBUF);
+	    if (get_state_int (FULLSCREEN)) {
+		SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+		SDL_ShowCursor (0);
+	    } else {
+		SDL_SetWindowFullscreen(window, 0);
+		SDL_ShowCursor (1);
+	    }
 	    image_freshen ();
 	    break;
 #if 0

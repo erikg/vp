@@ -32,12 +32,11 @@ AC_CHECK_FUNCS(mkstemps)
 AC_CHECK_FUNC([ceil],[],[AC_CHECK_LIB([m],[ceil],[LIBS="$LIBS -lm"])])
 
 AC_PATH_XTRA
-AM_PATH_SDL(1.2.0,,AC_MSG_ERROR(["SDL 1.2.0 or better is required. Get it at http://libsdl.org."]))
+PKG_CHECK_MODULES([SDL2], [sdl2 >= 2.0.0])
+PKG_CHECK_MODULES([SDL2_image], [SDL2_image >= 2.0.0])
 
-CFLAGS="$CFLAGS $SDL_CFLAGS $X_CFLAGS"
-LIBS="$LIBS $SDL_LIBS -lSDL_image $X_LIBS"
-
-AC_CHECK_LIB(SDL_image,IMG_Load,,AC_MSG_ERROR([SDL_image is required http://www.libsdl.org/projects/SDL_image/index.html]))
+CFLAGS="$CFLAGS $SDL2_CFLAGS $SDL2_image_CFLAGS $X_CFLAGS"
+LIBS="$LIBS $SDL2_LIBS $SDL2_image_LIBS $X_LIBS"
 
 AC_SEARCH_LIBS(socket,socket wsock32)
 

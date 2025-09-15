@@ -50,4 +50,7 @@ unsigned int vid_width ();
 unsigned int vid_height ();
 unsigned int vid_depth ();
 
+extern SDL_Window *window;
+extern SDL_Renderer *renderer;
+
 #endif

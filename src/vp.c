@@ -38,7 +38,8 @@
 
 #include "getopt.h"
 
-SDL_Surface *screen;
+SDL_Window *window;
+SDL_Renderer *renderer;
 SDL_mutex *mutex;
 static int state;
 int swidth = 640, sheight = 480, sdepth = 8;
@@ -47,11 +48,21 @@ struct image_table_s image_table;
 unsigned int
 vid_width ()
 {
+    int w;
+    if (window) {
+	SDL_GetWindowSize(window, &w, NULL);
+	return w;
+    }
     return swidth;
 }
 unsigned int
 vid_height ()
 {
+    int h;
+    if (window) {
+	SDL_GetWindowSize(window, NULL, &h);
+	return h;
+    }
     return sheight;
 }
 unsigned int
@@ -119,14 +130,6 @@ int
 main (int argc, char **argv)
 {
     int i, count, c, wait = 2500, width = 0, height = 0, depth = 0;
-    const SDL_VideoInfo *video_info;
-
-/*
-    SDL_SysWMinfo info;
-*/
-#ifdef SDL_SYSWM_X11
-    Display *disp = NULL;
-#endif
 
     static struct option optlist[] = {
 	{"fullscreen", 0, NULL, 'f'},
@@ -219,20 +222,13 @@ main (int argc, char **argv)
     atexit (SDL_Quit);
     mutex = SDL_CreateMutex ();
 
-    video_info = SDL_GetVideoInfo ();
-    sdepth = video_info->vfmt->BitsPerPixel;
-
-#ifdef SDL_SYSWM_X11
-    putenv("SDL_VIDEO_CENTERED=1");
-    disp = XOpenDisplay (NULL);
-
-    if (disp)
-    {
-	swidth = DisplayWidth (disp, DefaultScreen (disp));
-	sheight = DisplayHeight (disp, DefaultScreen (disp));
-	sdepth = BitmapUnit (disp);
+    /* Get desktop display mode for fullscreen */
+    SDL_DisplayMode desktop_mode;
+    if (SDL_GetDesktopDisplayMode (0, &desktop_mode) == 0) {
+	swidth = desktop_mode.w;
+	sheight = desktop_mode.h;
+	sdepth = SDL_BITSPERPIXEL (desktop_mode.format);
     }
-#endif
 
     if (width)
 	swidth = width;
@@ -241,18 +237,30 @@ main (int argc, char **argv)
     if (depth)
 	sdepth = depth;
 
-    if (get_state_int (FULLSCREEN))
-    {
-	screen =
-	    SDL_SetVideoMode (swidth, sheight, sdepth,
-	    SDL_FULLSCREEN | SDL_DOUBLEBUF);
+    /* Create window */
+    Uint32 window_flags = 0;
+    if (get_state_int (FULLSCREEN)) {
+	window_flags = SDL_WINDOW_FULLSCREEN_DESKTOP;
 	SDL_ShowCursor (0);
-	printf ("%s\n", SDL_GetError ());
-    } else
-	screen = SDL_SetVideoMode (1, 1, 32, SDL_DOUBLEBUF);
-    if (screen == NULL)
+    }
+
+    window = SDL_CreateWindow ("vp",
+	SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	get_state_int (FULLSCREEN) ? swidth : 1,
+	get_state_int (FULLSCREEN) ? sheight : 1,
+	window_flags);
+
+    if (window == NULL)
     {
-	printf ("Unable to grab screen\n");
+	printf ("Unable to create window: %s\n", SDL_GetError ());
+	return EXIT_FAILURE;
+    }
+
+    /* Create renderer */
+    renderer = SDL_CreateRenderer (window, -1, SDL_RENDERER_ACCELERATED);
+    if (renderer == NULL) {
+	SDL_DestroyWindow (window);
+	printf ("Unable to create renderer: %s\n", SDL_GetError ());
 	return EXIT_FAILURE;
     }
 
@@ -265,6 +273,12 @@ main (int argc, char **argv)
 
     if (image_table.image) {
 	free (image_table.image);
+    }
+    if (renderer) {
+	SDL_DestroyRenderer (renderer);
+    }
+    if (window) {
+	SDL_DestroyWindow (window);
     }
     SDL_Quit ();
     return 0;
