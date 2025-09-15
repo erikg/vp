@@ -30,7 +30,6 @@
 	 */
 extern SDL_Window *window;
 extern SDL_Renderer *renderer;
-extern float scale;
 
 	/*
 	 * instead of actually exiting, we just fake the escape key 
@@ -55,13 +54,20 @@ handle_input ()
     SDL_WaitEvent (&e);
     switch (e.type)
     {
+    case SDL_QUIT:
+	/* Window close button or signal handler */
+	return 0;
 	/*
 	 * thanks to Ted Mielczarek <tam4@lehigh.edu> for this, fixes the X
-	 * Async request errors 
+	 * Async request errors
 	 */
     case SDL_USEREVENT:
 	if (e.user.code == SHOW_IMAGE)
 	    image_freshen ();
+	else if (e.user.code == NEXT_IMAGE) {
+	    if (image_next () == 0)
+		throw_exit ();
+	}
 	break;
     case SDL_KEYDOWN:
 	switch (tolower (e.key.keysym.sym))
@@ -80,11 +86,11 @@ handle_input ()
 	    break;
 	case SDLK_RIGHT:
 	    timer_stop ();
-	    image_next (0);
+	    image_next ();
 	    break;
 	case SDLK_LEFT:
 	    timer_stop ();
-	    image_prev (0);
+	    image_prev ();
 	    break;
 	case 'z':
 	    timer_stop ();
@@ -120,9 +126,6 @@ handle_input ()
 	     */
 	    break;
 	}
-	break;
-    case SDL_QUIT:
-	return 0;
 	break;
     }
     return 1;

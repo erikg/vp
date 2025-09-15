@@ -22,6 +22,7 @@
 #define __TIMER_H_
 
 #define SHOW_IMAGE 0x01
+#define NEXT_IMAGE 0x02
 
 void timer_toggle ();
 void timer_stop ();

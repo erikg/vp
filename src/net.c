@@ -28,6 +28,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/time.h>
+#include <sys/socket.h>
+#include <errno.h>
 
 #ifdef WIN32
 # include <winsock.h>
@@ -54,13 +57,13 @@ randchar ()
     switch (rand () % 3)
     {
     case 0:
-	return rand () % 11 + '0';
+	return rand () % 10 + '0';  /* Digits 0-9 */
 	break;
     case 1:
-	return rand () % 27 + 'A';
+	return rand () % 26 + 'A';  /* Letters A-Z */
 	break;
     case 2:
-	return rand () % 26 + 'a';
+	return rand () % 26 + 'a';  /* Letters a-z */
 	break;
     }
     return 'X';
@@ -74,9 +77,11 @@ mkstemps (char *template, int suffixlen)
 
     s = template;
     srand (getpid ());
-    while (*s)
-	if (*s++ == 'X')
+    while (*s) {
+	if (*s == 'X')
 	    *s = randchar ();
+	s++;
+    }
     f = open (template, O_WRONLY | O_CREAT, 0600);
     return f;
 }
@@ -103,6 +108,23 @@ net_free_url (url_t *u)
     }
 }
 
+/* Set socket timeouts to prevent hanging connections */
+static int
+set_socket_timeout(int sockfd, int timeout_sec)
+{
+    struct timeval timeout;
+    timeout.tv_sec = timeout_sec;
+    timeout.tv_usec = 0;
+
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+	return -1;
+    }
+    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) < 0) {
+	return -1;
+    }
+    return 0;
+}
+
 url_t *
 net_url (char *name)
 {
@@ -110,11 +132,17 @@ net_url (char *name)
     char *n;
 
     n = name;
-    n += strlen ("http://") + 1;
-    while (*n != '/')
-	n++;
-    *n = 0;
-    n++;
+    n += strlen ("http://");
+
+    /* Find the '/' character safely */
+    char *slash = strchr(n, '/');
+    if (slash == NULL) {
+	return NULL;  /* Invalid URL - no path component */
+    }
+
+    /* Temporarily null-terminate the server part */
+    *slash = 0;
+    n = slash + 1;
     u = (url_t *) malloc (sizeof (url_t));
     if (u == NULL) {
 	return NULL;
@@ -139,6 +167,8 @@ net_url (char *name)
     u->port = 80;
     u->proto = HTTP;
     u->mimetype = NULL;
+    u->file = -1;
+    u->conn = -1;
     return u;
 }
 
@@ -158,14 +188,24 @@ net_connect (url_t * u)
     if ((h = gethostbyname (u->server)) == NULL)
     {
 	perror ("vp:net.c:net_connect:gethostbyname");
+	close (u->conn);
+	u->conn = -1;
 	return -1;
     }
     s.sin_family = AF_INET;
     s.sin_port = htons (u->port);
     s.sin_addr = *((struct in_addr *)h->h_addr_list[0]);
+    /* Set socket timeouts before connecting */
+    if (set_socket_timeout(u->conn, 30) == -1) {
+	perror ("vp:net.c:net_connect:set_socket_timeout");
+	/* Continue anyway - timeouts are not critical for basic functionality */
+    }
+
     if (connect (u->conn, ss, sizeof (struct sockaddr)) == -1)
     {
 	perror ("vp:net.c:net_connect:connect");
+	close (u->conn);
+	u->conn = -1;
 	return -1;
     }
     return 0;
@@ -176,14 +216,31 @@ net_suck (url_t * u)
 {
     char buf[BUFSIZ];
     int len = BUFSIZ;
+    size_t total_bytes = 0;
+    const size_t max_download_size = 100 * 1024 * 1024;  /* 100MB limit */
 
     do
     {
 	len = read (u->conn, buf, BUFSIZ);	/* TODO this stalls on the last packet */
-	if (write (u->file, buf, len) != len)
+	if (len < 0) {
+	    /* Read error */
 	    return -1;
+	}
+	if (len > 0) {
+	    /* Check download size limit */
+	    total_bytes += len;
+	    if (total_bytes > max_download_size) {
+		fprintf (stderr, "Download size limit exceeded (%zu bytes)\n", max_download_size);
+		return -1;
+	    }
+
+	    if (write (u->file, buf, len) != len) {
+		/* Write error */
+		return -1;
+	    }
+	}
     }
-    while (len);
+    while (len > 0);
     return 0;
 }
 
@@ -207,17 +264,43 @@ net_download (char *name)
     }
     snprintf (filename, len, "/tmp/vp.XXXX.%s", url->ext);
     url->file = mkstemps (filename, strlen (url->ext) + 1);
+    if (url->file == -1) {
+	perror ("mkstemps failed");
+	free (filename);
+	net_free_url (url);
+	return NULL;
+    }
+
     switch (url->proto)
     {
     case HTTP:
-	http_init (url);
+	if (http_init (url) == -1) {
+	    fprintf (stderr, "HTTP initialization failed\n");
+	    unlink (filename);  /* Remove partial file */
+	    free (filename);
+	    net_free_url (url);
+	    return NULL;
+	}
 	break;
     case FTP:
-	ftp_init (url);
+	if (ftp_init (url) == -1) {
+	    fprintf (stderr, "FTP initialization failed\n");
+	    unlink (filename);  /* Remove partial file */
+	    free (filename);
+	    net_free_url (url);
+	    return NULL;
+	}
 	break;
     }
-    if (net_suck (url) == -1)
-	printf ("Some problem reading file (suck blew)...\n");
+
+    if (net_suck (url) == -1) {
+	fprintf (stderr, "Download failed\n");
+	unlink (filename);  /* Remove partial file */
+	free (filename);
+	net_free_url (url);
+	return NULL;
+    }
+
     net_free_url (url);
     return filename;
 }

@@ -27,27 +27,20 @@
 
 static int wait_time = 2500;
 
-SDL_TimerID timer_id;
+SDL_TimerID timer_id = 0;
 
 int
 timer_stub ()
 {
     SDL_Event ev;
 
-    if (image_next (1) == 0)
-	throw_exit ();
-
     /*
-     * thanks to Ted Mielczarek <tam4@lehigh.edu> for this, fixes the X
-     * Async request errors 
+     * Instead of calling image_next() directly from timer thread,
+     * send an event to the main thread for safe processing
      */
-
     ev.type = SDL_USEREVENT;
-    ev.user.code = SHOW_IMAGE;
-
-/*
+    ev.user.code = NEXT_IMAGE;
     SDL_PushEvent (&ev);
-*/
     return wait_time;
 }
 

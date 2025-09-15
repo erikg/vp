@@ -52,12 +52,20 @@ sync ()
 static double
 getscale (double sw, double sh, double iw, double ih)
 {
+    /* Prevent division by zero */
+    if (ih <= 0.0 || iw <= 0.0) {
+	return 1.0;
+    }
     return (sh * iw < ih * sw) ? sh / ih : sw / iw;
 }
 
 static double
 getscale_fill (double sw, double sh, double iw, double ih)
 {
+    /* Prevent division by zero */
+    if (ih <= 0.0 || iw <= 0.0) {
+	return 1.0;
+    }
     /* Choose the larger scale factor to fill the screen while preserving aspect ratio */
     double scale_w = sw / iw;
     double scale_h = sh / ih;
@@ -72,6 +80,11 @@ SDL_Surface *
 zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
 {
     size_t x, y, bpp, doff, soff, width;
+
+    /* Validate parameters */
+    if (d == NULL || s == NULL || s->format == NULL) {
+	return d;
+    }
 
     /* Prevent division by zero */
     if (scale <= 0.0f) {
@@ -92,6 +105,14 @@ zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
 		continue;
 	    }
 
+	    /* Check for integer overflow in offset calculations */
+	    if (y > SIZE_MAX / d->pitch || x > (SIZE_MAX - d->pitch * y) / bpp) {
+		continue;
+	    }
+	    if (src_y > SIZE_MAX / s->pitch || src_x > (SIZE_MAX - s->pitch * src_y) / bpp) {
+		continue;
+	    }
+
 	    doff = d->pitch * y + x * bpp;
 	    soff = s->pitch * src_y + src_x * bpp;
 /* TODO this pointer casting causes warnings on 64b */
@@ -107,6 +128,11 @@ zoom_blit_fill (SDL_Surface * d, SDL_Surface * s, float scale)
     size_t x, y, bpp, doff, soff, width, height;
     int scaled_w, scaled_h, offset_x, offset_y;
 
+    /* Validate parameters */
+    if (d == NULL || s == NULL || s->format == NULL) {
+	return d;
+    }
+
     /* Prevent division by zero */
     if (scale <= 0.0f) {
 	return d;
@@ -116,9 +142,17 @@ zoom_blit_fill (SDL_Surface * d, SDL_Surface * s, float scale)
     width = d->w;
     height = d->h;
 
-    /* Calculate scaled dimensions and centering offset for cropping */
-    scaled_w = (int)(s->w * scale);
-    scaled_h = (int)(s->h * scale);
+    /* Calculate scaled dimensions and centering offset for cropping with overflow protection */
+    double scaled_w_f = (double)s->w * (double)scale;
+    double scaled_h_f = (double)s->h * (double)scale;
+
+    /* Check for overflow before casting to int */
+    if (scaled_w_f > INT_MAX || scaled_h_f > INT_MAX || scaled_w_f < 0 || scaled_h_f < 0) {
+	return d;  /* Overflow - return unchanged */
+    }
+
+    scaled_w = (int)scaled_w_f;
+    scaled_h = (int)scaled_h_f;
     offset_x = (scaled_w - d->w) / 2;  /* Amount to crop from left/right */
     offset_y = (scaled_h - d->h) / 2;  /* Amount to crop from top/bottom */
 
@@ -133,6 +167,14 @@ zoom_blit_fill (SDL_Surface * d, SDL_Surface * s, float scale)
 	    /* Check bounds - only copy if source coordinates are valid */
 	    if (src_x >= 0 && src_x < s->w && src_y >= 0 && src_y < s->h)
 	    {
+		/* Check for integer overflow in offset calculations */
+		if (y > SIZE_MAX / d->pitch || x > (SIZE_MAX - d->pitch * y) / bpp) {
+		    continue;
+		}
+		if (src_y > SIZE_MAX / s->pitch || src_x > (SIZE_MAX - s->pitch * src_y) / bpp) {
+		    continue;
+		}
+
 		doff = d->pitch * y + x * bpp;
 		soff = s->pitch * src_y + src_x * bpp;
 		memcpy ((void *)((size_t)d->pixels + doff),
@@ -148,6 +190,11 @@ zoom_blit_centered (SDL_Surface * d, SDL_Surface * s, float scale)
     size_t x, y, bpp, doff, soff, width, height;
     int scaled_w, scaled_h, offset_x, offset_y;
 
+    /* Validate parameters */
+    if (d == NULL || s == NULL || s->format == NULL) {
+	return d;
+    }
+
     /* Prevent division by zero */
     if (scale <= 0.0f) {
 	return d;
@@ -157,9 +204,17 @@ zoom_blit_centered (SDL_Surface * d, SDL_Surface * s, float scale)
     width = d->w;
     height = d->h;
 
-    /* Calculate scaled dimensions and centering offset */
-    scaled_w = (int)(s->w * scale);
-    scaled_h = (int)(s->h * scale);
+    /* Calculate scaled dimensions and centering offset with overflow protection */
+    double scaled_w_f = (double)s->w * (double)scale;
+    double scaled_h_f = (double)s->h * (double)scale;
+
+    /* Check for overflow before casting to int */
+    if (scaled_w_f > INT_MAX || scaled_h_f > INT_MAX || scaled_w_f < 0 || scaled_h_f < 0) {
+	return d;  /* Overflow - return unchanged */
+    }
+
+    scaled_w = (int)scaled_w_f;
+    scaled_h = (int)scaled_h_f;
     offset_x = (d->w - scaled_w) / 2;
     offset_y = (d->h - scaled_h) / 2;
 
@@ -178,6 +233,14 @@ zoom_blit_centered (SDL_Surface * d, SDL_Surface * s, float scale)
 		x >= offset_x && x < (offset_x + scaled_w) &&
 		y >= offset_y && y < (offset_y + scaled_h))
 	    {
+		/* Check for integer overflow in offset calculations */
+		if (y > SIZE_MAX / d->pitch || x > (SIZE_MAX - d->pitch * y) / bpp) {
+		    continue;
+		}
+		if (src_y > SIZE_MAX / s->pitch || src_x > (SIZE_MAX - s->pitch * src_y) / bpp) {
+		    continue;
+		}
+
 		doff = d->pitch * y + x * bpp;
 		soff = s->pitch * src_y + src_x * bpp;
 		memcpy ((void *)((size_t)d->pixels + doff),
@@ -231,7 +294,7 @@ show_image ()
 	    s = it->image[it->current].scaled;
     } else
     {
-	static char buffer[BUFSIZ];
+	char buffer[BUFSIZ];  /* Local buffer to prevent race conditions */
 
 	SDL_SetWindowSize(window, s->w, s->h);
 	snprintf (buffer, BUFSIZ, "vp - %s", it->image[it->current].resource);
@@ -250,8 +313,10 @@ show_image ()
 	r.h = s->h;
 
 	texture = SDL_CreateTextureFromSurface(renderer, s);
-	SDL_RenderCopy(renderer, texture, NULL, &r);
-	SDL_DestroyTexture(texture);
+	if (texture) {
+	    SDL_RenderCopy(renderer, texture, NULL, &r);
+	    SDL_DestroyTexture(texture);
+	}
     } else
 	printf ("Image \"%s\" failed\n", it->image[it->current].resource);
 
@@ -275,6 +340,9 @@ image_freshen_sub (struct image_s *i)
     if (i->surface == NULL)
     {
 	i->surface = IMG_Load (i->file);
+	if (i->surface == NULL) {
+	    return;
+	}
     }
     if (i->scaled == NULL && get_state_int (ZOOM))
     {
@@ -299,8 +367,12 @@ image_freshen_sub (struct image_s *i)
 	    i->surface->format->Rmask, i->surface->format->Gmask,
 	    i->surface->format->Bmask, i->surface->format->Amask);
 
+	if (i->scaled == NULL) {
+	    return;
+	}
+
 	/* Set palette if needed */
-	if (i->scaled && i->scaled->format->BytesPerPixel == 1 && i->surface->format->palette)
+	if (i->scaled->format->BytesPerPixel == 1 && i->surface->format->palette)
 	    SDL_SetPaletteColors(i->scaled->format->palette,
 				 i->surface->format->palette->colors, 0,
 				 i->surface->format->palette->ncolors);

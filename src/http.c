@@ -47,15 +47,31 @@ Agent: %s %s\n\
     write (u->conn, buf, strlen (buf));
 
     /*
-     * FIXME this is ugly 
+     * Read HTTP headers with safety limits to prevent infinite loops
      */
-    while (e < 4)
+    int bytes_read = 0;
+    int max_header_size = 8192;  /* 8KB header limit */
+
+    while (e < 4 && bytes_read < max_header_size)
     {
-	read (u->conn, buf, 1);
+	ssize_t result = read (u->conn, buf, 1);
+	if (result <= 0) {
+	    /* Connection error or EOF */
+	    free (buf);
+	    return -1;
+	}
+	bytes_read++;
+
 	if (*buf == '\n' || *buf == '\r')
 	    e++;
 	else
 	    e = 0;
+    }
+
+    if (e < 4) {
+	/* Headers too large or malformed */
+	free (buf);
+	return -1;
     }
     free (buf);
     return 0;

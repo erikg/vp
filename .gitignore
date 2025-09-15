@@ -1,11 +1,13 @@
-Makefile.in
 aclocal.m4
 autom4te.cache/
+build/
+compile
 config.guess
+config.h.cmake.in
 config.h.in
 config.sub
 configure
 depcomp
 install-sh
+Makefile.in
 missing
-build/

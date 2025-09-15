@@ -23,6 +23,9 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <limits.h>
+#include <errno.h>
+#include <signal.h>
 
 #include <SDL.h>
 #include <SDL_image.h>
@@ -41,9 +44,9 @@
 SDL_Window *window;
 SDL_Renderer *renderer;
 SDL_mutex *mutex;
-static int state;
+static int state = 0;
 int swidth = 640, sheight = 480, sdepth = 8;
-struct image_table_s image_table;
+struct image_table_s image_table = {0, 0, NULL};
 
 unsigned int
 vid_width ()
@@ -74,25 +77,41 @@ vid_depth ()
 int
 get_state_int (int name)
 {
-    return state & name;
+    int result;
+    SDL_LockMutex (mutex);
+    result = state & name;
+    SDL_UnlockMutex (mutex);
+    return result;
 }
 
 int
 set_state_int (int name)
 {
-    return (state |= name);
+    int result;
+    SDL_LockMutex (mutex);
+    result = (state |= name);
+    SDL_UnlockMutex (mutex);
+    return result;
 }
 
 int
 unset_state_int (int name)
 {
-    return (state &= ~name);
+    int result;
+    SDL_LockMutex (mutex);
+    result = (state &= ~name);
+    SDL_UnlockMutex (mutex);
+    return result;
 }
 
 int
 toggle_state (int name)
 {
-    return (state ^= name);
+    int result;
+    SDL_LockMutex (mutex);
+    result = (state ^= name);
+    SDL_UnlockMutex (mutex);
+    return result;
 }
 
 struct image_table_s *
@@ -101,10 +120,60 @@ get_image_table ()
     return &image_table;
 }
 
+/* Safe integer parsing with overflow detection */
+static int
+safe_atoi (const char *str, int *result, int min_val, int max_val)
+{
+    char *endptr;
+    long val;
+
+    if (!str || !result) {
+        return -1;
+    }
+
+    errno = 0;
+    val = strtol(str, &endptr, 10);
+
+    /* Check for conversion errors */
+    if (errno == ERANGE || val < INT_MIN || val > INT_MAX) {
+        return -1;  /* Overflow */
+    }
+
+    /* Check for invalid characters */
+    if (endptr == str || *endptr != '\0') {
+        return -1;  /* No digits found or trailing garbage */
+    }
+
+    /* Check application-specific bounds */
+    if (val < min_val || val > max_val) {
+        return -1;  /* Out of acceptable range */
+    }
+
+    *result = (int)val;
+    return 0;  /* Success */
+}
+
+/* Global flag for graceful shutdown */
+static volatile sig_atomic_t shutdown_requested = 0;
+
+/* Signal handler for graceful shutdown */
+static void
+signal_handler (int sig)
+{
+    shutdown_requested = 1;
+    /* Send a quit event to the main loop */
+    SDL_Event quit_event;
+    quit_event.type = SDL_QUIT;
+    SDL_PushEvent(&quit_event);
+}
+
 void
 oops (char *msg)
 {
     fprintf (stderr, "%s\n", msg);
+    if (mutex) {
+	SDL_DestroyMutex (mutex);
+    }
     SDL_Quit ();
     exit (EXIT_FAILURE);
 }
@@ -153,7 +222,10 @@ main (int argc, char **argv)
 	    set_state_int (LOUD);
 	    break;
 	case 's':
-	    wait = atoi (optarg);
+	    if (safe_atoi (optarg, &wait, 100, 60000) != 0) {
+		fprintf (stderr, "Invalid sleep time: %s (must be 100-60000ms)\n", optarg);
+		exit (EXIT_FAILURE);
+	    }
 	    break;
 	case 'v':
 	    exit (printf
@@ -165,18 +237,86 @@ main (int argc, char **argv)
 	    break;
 	case 'r':
 	    {
-		char *p;
+		char *p, *x_pos, *at_pos;
+
+		if (!optarg || strlen(optarg) == 0) {
+		    fprintf (stderr, "Resolution cannot be empty\n");
+		    exit (EXIT_FAILURE);
+		}
 
 		p = optarg;
-		if (isdigit (*p))
-		    width = atoi (p);
-		while (*p)
+		x_pos = strchr(p, 'x');
+		at_pos = strchr(p, '@');
+
+		/* Validate format - must have at least width and height */
+		if (!x_pos) {
+		    fprintf (stderr, "Invalid resolution format: %s (expected WIDTHxHEIGHT[@DEPTH])\n", optarg);
+		    exit (EXIT_FAILURE);
+		}
+
+		/* Parse width */
+		if (isdigit (*p)) {
+		    char width_str[16];
+		    int len = (int)(x_pos - p);
+		    if (len <= 0 || len >= sizeof(width_str)) {
+			fprintf (stderr, "Invalid resolution format: %s\n", optarg);
+			exit (EXIT_FAILURE);
+		    }
+		    strncpy(width_str, p, len);
+		    width_str[len] = '\0';
+		    if (safe_atoi (width_str, &width, 64, 16384) != 0) {
+			fprintf (stderr, "Invalid width: %s (must be 64-16384)\n", width_str);
+			exit (EXIT_FAILURE);
+		    }
+		} else {
+		    fprintf (stderr, "Width must start with a digit: %s\n", optarg);
+		    exit (EXIT_FAILURE);
+		}
+
+		/* Parse height */
 		{
-		    if (*p == 'x')
-			height = atoi (p + 1);
-		    if (*p == '@')
-			depth = atoi (p + 1);
-		    ++p;
+		    char height_str[16];
+		    char *h_start = x_pos + 1;
+		    int len = at_pos ? (int)(at_pos - h_start) : strlen(h_start);
+		    if (len <= 0 || len >= sizeof(height_str)) {
+			fprintf (stderr, "Invalid resolution format: %s\n", optarg);
+			exit (EXIT_FAILURE);
+		    }
+		    if (!isdigit (*h_start)) {
+			fprintf (stderr, "Height must start with a digit: %s\n", optarg);
+			exit (EXIT_FAILURE);
+		    }
+		    strncpy(height_str, h_start, len);
+		    height_str[len] = '\0';
+		    if (safe_atoi (height_str, &height, 64, 16384) != 0) {
+			fprintf (stderr, "Invalid height: %s (must be 64-16384)\n", height_str);
+			exit (EXIT_FAILURE);
+		    }
+		}
+
+		/* Parse depth (optional) */
+		if (at_pos) {
+		    if (!isdigit (*(at_pos + 1))) {
+			fprintf (stderr, "Depth must be a number: %s\n", at_pos + 1);
+			exit (EXIT_FAILURE);
+		    }
+		    if (safe_atoi (at_pos + 1, &depth, 8, 32) != 0) {
+			fprintf (stderr, "Invalid depth: %s (must be 8, 16, 24, or 32)\n", at_pos + 1);
+			exit (EXIT_FAILURE);
+		    }
+		    /* Validate common depths */
+		    if (depth != 8 && depth != 16 && depth != 24 && depth != 32) {
+			fprintf (stderr, "Invalid depth: %d (must be 8, 16, 24, or 32)\n", depth);
+			exit (EXIT_FAILURE);
+		    }
+		}
+
+		/* Validate aspect ratio */
+		double aspect_ratio = (double)width / (double)height;
+		if (aspect_ratio < 0.1 || aspect_ratio > 10.0) {
+		    fprintf (stderr, "Invalid aspect ratio: %dx%d (ratio %.2f is unrealistic)\n",
+			     width, height, aspect_ratio);
+		    exit (EXIT_FAILURE);
 		}
 	    }
 	    break;
@@ -189,6 +329,12 @@ main (int argc, char **argv)
     }
     argc -= optind;
     argv += optind;
+
+    /* Check for integer overflow in allocation size */
+    if (argc > SIZE_MAX / sizeof(struct image_s)) {
+	fprintf (stderr, "Too many arguments\n");
+	exit (EXIT_FAILURE);
+    }
 
     image_table.image = malloc (sizeof (struct image_s) * argc);
     if (image_table.image == NULL) {
@@ -205,13 +351,27 @@ main (int argc, char **argv)
 
 	if (stat (argv[count], sb) != -1 && !(sb->st_mode & S_IFDIR))
 	{
+	    /* Check bounds before accessing array */
+	    if (image_table.count >= argc) {
+		fprintf (stderr, "Internal error: image_table overflow\n");
+		exit (EXIT_FAILURE);
+	    }
 	    image_table.image[image_table.count].resource = argv[count];
 	    image_table.image[image_table.count].file = argv[count];
 	    image_table.count++;
 	} else if(net_is_url(argv[count])) {
-	    image_table.image[image_table.count].resource = argv[count];
-	    image_table.image[image_table.count].file = net_download(argv[count]);
-	    image_table.count++;
+	    char *downloaded_file = net_download(argv[count]);
+	    if (downloaded_file) {
+		/* Check bounds before accessing array */
+		if (image_table.count >= argc) {
+		    fprintf (stderr, "Internal error: image_table overflow\n");
+		    free (downloaded_file);
+		    exit (EXIT_FAILURE);
+		}
+		image_table.image[image_table.count].resource = argv[count];
+		image_table.image[image_table.count].file = downloaded_file;
+		image_table.count++;
+	    }
 	}
     }
 
@@ -221,6 +381,13 @@ main (int argc, char **argv)
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
     atexit (SDL_Quit);
     mutex = SDL_CreateMutex ();
+
+    /* Install signal handlers for graceful shutdown */
+    signal (SIGINT, signal_handler);   /* Ctrl+C */
+    signal (SIGTERM, signal_handler);  /* Termination request */
+    #ifdef SIGHUP
+    signal (SIGHUP, signal_handler);   /* Hangup */
+    #endif
 
     /* Get desktop display mode for fullscreen */
     SDL_DisplayMode desktop_mode;
@@ -272,6 +439,19 @@ main (int argc, char **argv)
     while (handle_input ());
 
     if (image_table.image) {
+	/* Free downloaded filenames and clean up image surfaces */
+	for (int i = 0; i < image_table.count; i++) {
+	    if (image_table.image[i].surface) {
+		SDL_FreeSurface (image_table.image[i].surface);
+	    }
+	    if (image_table.image[i].scaled) {
+		SDL_FreeSurface (image_table.image[i].scaled);
+	    }
+	    /* Free downloaded filenames (they differ from resource) */
+	    if (image_table.image[i].file != image_table.image[i].resource) {
+		free (image_table.image[i].file);
+	    }
+	}
 	free (image_table.image);
     }
     if (renderer) {
@@ -279,6 +459,9 @@ main (int argc, char **argv)
     }
     if (window) {
 	SDL_DestroyWindow (window);
+    }
+    if (mutex) {
+	SDL_DestroyMutex (mutex);
     }
     SDL_Quit ();
     return 0;
