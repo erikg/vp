@@ -256,13 +256,13 @@ net_download (char *name)
 	return NULL;
     }
 
-    len = strlen("/tmp/vp.XXXX.")+strlen(url->ext)+1;
+    len = strlen("/tmp/vp.XXXXXX.")+strlen(url->ext)+1;
     filename = (char *)malloc (len);
     if (filename == NULL) {
 	net_free_url (url);
 	return NULL;
     }
-    snprintf (filename, len, "/tmp/vp.XXXX.%s", url->ext);
+    snprintf (filename, len, "/tmp/vp.XXXXXX.%s", url->ext);
     url->file = mkstemps (filename, strlen (url->ext) + 1);
     if (url->file == -1) {
 	perror ("mkstemps failed");
