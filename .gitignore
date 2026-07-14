@@ -3,7 +3,6 @@ autom4te.cache/
 build/
 compile
 config.guess
-config.h.cmake.in
 config.h.in
 config.sub
 configure
