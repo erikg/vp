@@ -169,6 +169,8 @@ net_url (char *name)
     u->mimetype = NULL;
     u->file = -1;
     u->conn = -1;
+    u->content_length = -1;
+    u->chunked = 0;
     return u;
 }
 
@@ -211,36 +213,154 @@ net_connect (url_t * u)
     return 0;
 }
 
+#define MAX_DOWNLOAD_SIZE (100 * 1024 * 1024)	/* 100MB limit */
+
+/*
+ * Buffered reader over the connection socket. http_init leaves the socket
+ * positioned exactly at the first body byte, so this owns it from there.
+ */
+typedef struct {
+    int fd;
+    unsigned char buf[BUFSIZ];
+    size_t pos, len;
+} breader_t;
+
+/* Return next byte, or -1 on EOF/error. */
+static int
+br_getc (breader_t * b)
+{
+    if (b->pos >= b->len) {
+	ssize_t n = read (b->fd, b->buf, sizeof (b->buf));
+	if (n <= 0)
+	    return -1;
+	b->pos = 0;
+	b->len = (size_t) n;
+    }
+    return b->buf[b->pos++];
+}
+
+/* Read up to want bytes into dst; return count (0 at EOF), -1 on error. */
+static ssize_t
+br_read (breader_t * b, unsigned char *dst, size_t want)
+{
+    size_t got = 0;
+
+    while (got < want) {
+	if (b->pos >= b->len) {
+	    ssize_t n = read (b->fd, b->buf, sizeof (b->buf));
+	    if (n < 0)
+		return -1;
+	    if (n == 0)
+		break;		/* EOF */
+	    b->pos = 0;
+	    b->len = (size_t) n;
+	}
+	size_t avail = b->len - b->pos;
+	size_t take = (want - got < avail) ? (want - got) : avail;
+	memcpy (dst + got, b->buf + b->pos, take);
+	b->pos += take;
+	got += take;
+    }
+    return (ssize_t) got;
+}
+
+/* Write len bytes to the download file, enforcing the size cap. */
+static int
+sink_write (url_t * u, const unsigned char *data, size_t len, size_t *total)
+{
+    *total += len;
+    if (*total > MAX_DOWNLOAD_SIZE) {
+	fprintf (stderr, "Download size limit exceeded (%d bytes)\n",
+	    MAX_DOWNLOAD_SIZE);
+	return -1;
+    }
+    if (write (u->file, data, len) != (ssize_t) len)
+	return -1;
+    return 0;
+}
+
+/* Decode a Transfer-Encoding: chunked body straight to the file. */
+static int
+net_suck_chunked (url_t * u, breader_t * br)
+{
+    size_t total = 0;
+
+    for (;;) {
+	char line[64];
+	int i = 0, c;
+
+	/* chunk-size line: hex, possibly with ;extensions, ending CRLF */
+	while ((c = br_getc (br)) != -1 && c != '\n') {
+	    if (c != '\r' && i < (int) sizeof (line) - 1)
+		line[i++] = (char) c;
+	}
+	if (c == -1)
+	    return -1;
+	line[i] = '\0';
+
+	long chunk = strtol (line, NULL, 16);
+	if (chunk < 0)
+	    return -1;
+	if (chunk == 0)
+	    break;		/* last chunk */
+
+	while (chunk > 0) {
+	    unsigned char tmp[BUFSIZ];
+	    size_t want = (chunk < (long) sizeof (tmp)) ? (size_t) chunk : sizeof (tmp);
+	    ssize_t got = br_read (br, tmp, want);
+	    if (got <= 0)
+		return -1;	/* truncated */
+	    if (sink_write (u, tmp, (size_t) got, &total) == -1)
+		return -1;
+	    chunk -= got;
+	}
+
+	/* consume the CRLF trailing the chunk data */
+	c = br_getc (br);
+	if (c == '\r')
+	    c = br_getc (br);
+	if (c == -1)
+	    return -1;
+    }
+    return 0;
+}
+
 int
 net_suck (url_t * u)
 {
-    char buf[BUFSIZ];
-    int len = BUFSIZ;
-    size_t total_bytes = 0;
-    const size_t max_download_size = 100 * 1024 * 1024;  /* 100MB limit */
+    breader_t br;
+    size_t total = 0;
+    long remaining;
 
-    do
-    {
-	len = read (u->conn, buf, BUFSIZ);	/* TODO this stalls on the last packet */
-	if (len < 0) {
-	    /* Read error */
+    br.fd = u->conn;
+    br.pos = br.len = 0;
+
+    if (u->chunked)
+	return net_suck_chunked (u, &br);
+
+    /* identity encoding: bounded by Content-Length, else read until close */
+    remaining = u->content_length;	/* -1 == until EOF */
+    for (;;) {
+	unsigned char tmp[BUFSIZ];
+	size_t want = sizeof (tmp);
+	ssize_t got;
+
+	if (remaining >= 0) {
+	    if (remaining == 0)
+		break;
+	    if ((long) want > remaining)
+		want = (size_t) remaining;
+	}
+	got = br_read (&br, tmp, want);
+	if (got < 0)
 	    return -1;
-	}
-	if (len > 0) {
-	    /* Check download size limit */
-	    total_bytes += len;
-	    if (total_bytes > max_download_size) {
-		fprintf (stderr, "Download size limit exceeded (%zu bytes)\n", max_download_size);
-		return -1;
-	    }
-
-	    if (write (u->file, buf, len) != len) {
-		/* Write error */
-		return -1;
-	    }
-	}
+	if (got == 0)
+	    break;		/* EOF (connection close) */
+	if (sink_write (u, tmp, (size_t) got, &total) == -1)
+	    return -1;
+	if (remaining >= 0)
+	    remaining -= got;
     }
-    while (len > 0);
     return 0;
 }
 

@@ -38,10 +38,15 @@ typedef struct {
     int port;			/* numeric port value */
     char *filename;		/* file on server to get... */
     /*
-     * mime info 
+     * mime info
      */
     char *mimetype;
     char *ext;
+    /*
+     * HTTP response framing (set by http_init, consumed by net_suck)
+     */
+    long content_length;	/* body length, or -1 if unknown */
+    int chunked;		/* nonzero if Transfer-Encoding: chunked */
 } url_t;
 
 int net_is_url (char *name);
