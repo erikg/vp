@@ -32,6 +32,17 @@
 
 #define MAX_HEADER_SIZE 8192	/* 8KB header block limit */
 
+/* Reject control characters (CR/LF etc.) so a crafted URL cannot inject
+ * extra request headers or smuggle a second request. */
+static int
+has_ctrl (const char *s)
+{
+    for (; s && *s; s++)
+	if ((unsigned char) *s < 0x20 || (unsigned char) *s == 0x7f)
+	    return 1;
+    return 0;
+}
+
 int
 http_init (url_t * u)
 {
@@ -39,6 +50,11 @@ http_init (url_t * u)
     char hdr[MAX_HEADER_SIZE];
     int hlen = 0, e = 0, status = 0;
     ssize_t off;
+
+    if (has_ctrl (u->filename) || has_ctrl (u->server)) {
+	fprintf (stderr, "Invalid URL (control character in path or host)\n");
+	return -1;
+    }
 
     /* HTTP/1.1 request: CRLF line endings, Host, and Connection: close so the
      * server closes the socket after the body instead of leaving it open

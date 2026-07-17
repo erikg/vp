@@ -447,8 +447,10 @@ main (int argc, char **argv)
 	    if (image_table.image[i].scaled) {
 		SDL_FreeSurface (image_table.image[i].scaled);
 	    }
-	    /* Free downloaded filenames (they differ from resource) */
+	    /* Downloaded temp files differ from resource: unlink then free.
+	     * (Local files share the resource pointer and must be left alone.) */
 	    if (image_table.image[i].file != image_table.image[i].resource) {
+		net_purge (image_table.image[i].file);
 		free (image_table.image[i].file);
 	    }
 	}

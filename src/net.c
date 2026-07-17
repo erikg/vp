@@ -46,44 +46,74 @@
 #include "http.h"
 #include "net.h"
 
-	/*
-	 * FIXME 
-	 */
 #ifndef HAVE_MKSTEMPS
+#include <time.h>
 
-char
+	/*
+	 * Fallback mkstemps() for platforms lacking one, matching glibc
+	 * semantics: the 6 'X's immediately preceding the suffix are replaced
+	 * with random characters, and the file is created atomically with
+	 * O_EXCL (retrying on collision) so it cannot be pre-created as a
+	 * symlink by a local attacker.
+	 */
+static unsigned int rng_state;
+
+static char
 randchar ()
 {
-    switch (rand () % 3)
-    {
-    case 0:
-	return rand () % 10 + '0';  /* Digits 0-9 */
-	break;
-    case 1:
-	return rand () % 26 + 'A';  /* Letters A-Z */
-	break;
-    case 2:
-	return rand () % 26 + 'a';  /* Letters a-z */
-	break;
-    }
-    return 'X';
+    static const char set[] =
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    /* xorshift32 - no dependency on / no clobbering of libc rand() */
+    unsigned int x = rng_state;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    rng_state = x;
+    return set[x % (sizeof (set) - 1)];
 }
 
 int
 mkstemps (char *template, int suffixlen)
 {
-    int f;
-    char *s;
+    size_t len;
+    char *x;
+    int i, tries;
 
-    s = template;
-    srand (getpid ());
-    while (*s) {
-	if (*s == 'X')
-	    *s = randchar ();
-	s++;
+    if (template == NULL || suffixlen < 0) {
+	errno = EINVAL;
+	return -1;
     }
-    f = open (template, O_WRONLY | O_CREAT, 0600);
-    return f;
+    len = strlen (template);
+    /* Need six 'X's sitting immediately before the suffix. */
+    if ((size_t) suffixlen > len || len - (size_t) suffixlen < 6) {
+	errno = EINVAL;
+	return -1;
+    }
+    x = template + len - (size_t) suffixlen - 6;
+    for (i = 0; i < 6; i++) {
+	if (x[i] != 'X') {
+	    errno = EINVAL;
+	    return -1;
+	}
+    }
+
+    rng_state = (unsigned int) (time (NULL) ^ ((unsigned int) getpid () << 16));
+    if (rng_state == 0)
+	rng_state = 0x1234567u;
+
+    for (tries = 0; tries < 4096; tries++) {
+	int f;
+
+	for (i = 0; i < 6; i++)
+	    x[i] = randchar ();
+	f = open (template, O_WRONLY | O_CREAT | O_EXCL, 0600);
+	if (f >= 0)
+	    return f;
+	if (errno != EEXIST)
+	    return -1;
+    }
+    errno = EEXIST;
+    return -1;
 }
 
 #endif
