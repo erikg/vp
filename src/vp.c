@@ -1,7 +1,7 @@
 
 /*****************************************************************************
  * vp   -    SDL based image viewer for linux and fbsd. (X and console)      *
- * Copyright (C) 2001-2025 Erik Greenwald <erik@elfga.com>                   *
+ * Copyright (C) 2001-2026 Erik Greenwald <erik@elfga.com>                   *
  *                                                                           *
  * This program is free software; you can redistribute it and/or modify      *
  * it under the terms of the GNU General Public License as published by      *
@@ -228,7 +228,7 @@ main (int argc, char **argv)
 	    break;
 	case 'v':
 	    exit (printf
-		("%s %s (C) 2001-2025 Erik Greenwald <erik@elfga.com>\n",
+		("%s %s (C) 2001-2026 Erik Greenwald <erik@elfga.com>\n",
 		    PACKAGE, VERSION));
 	    break;
 	case 'z':
