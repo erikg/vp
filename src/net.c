@@ -42,7 +42,6 @@
 # include <netdb.h>
 #endif
 
-#include "ftp.h"
 #include "http.h"
 #include "net.h"
 
@@ -121,7 +120,7 @@ mkstemps (char *template, int suffixlen)
 int
 net_is_url (char *name)
 {
-    return !strncmp (name, "http://", 7) || !strncmp (name, "ftp://", 6);
+    return !strncmp (name, "http://", 7);
 }
 
 void
@@ -421,26 +420,12 @@ net_download (char *name)
 	return NULL;
     }
 
-    switch (url->proto)
-    {
-    case HTTP:
-	if (http_init (url) == -1) {
-	    fprintf (stderr, "HTTP initialization failed\n");
-	    unlink (filename);  /* Remove partial file */
-	    free (filename);
-	    net_free_url (url);
-	    return NULL;
-	}
-	break;
-    case FTP:
-	if (ftp_init (url) == -1) {
-	    fprintf (stderr, "FTP initialization failed\n");
-	    unlink (filename);  /* Remove partial file */
-	    free (filename);
-	    net_free_url (url);
-	    return NULL;
-	}
-	break;
+    if (http_init (url) == -1) {
+	fprintf (stderr, "HTTP initialization failed\n");
+	unlink (filename);  /* Remove partial file */
+	free (filename);
+	net_free_url (url);
+	return NULL;
     }
 
     if (net_suck (url) == -1) {

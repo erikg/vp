@@ -19,8 +19,8 @@
 
 bin_PROGRAMS = vp
 
-vp_SOURCES = ftp.c http.c image.c input.c vp.c net.c timer.c
-noinst_HEADERS = ftp.h http.h image.h input.h vp.h net.h timer.h
+vp_SOURCES = http.c image.c input.c vp.c net.c timer.c
+noinst_HEADERS = http.h image.h input.h vp.h net.h timer.h
 
 lint:
 	for a in *.[ch] ; do echo $$a ; splint $$a @CFLAGS@ @SDL_CFLAGS@  > $$a.lint ; done

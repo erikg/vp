@@ -22,7 +22,6 @@
 #define __NET_H_
 
 #define HTTP 0x1
-#define FTP  0x2
 
 typedef struct {
     /*

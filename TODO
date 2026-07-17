@@ -4,4 +4,3 @@ general:
 	filename rendering (on display, osd style)
 	arbitrary zooming and panning
 	handle images larger than max display (Robin Getz 12/29/07)
-	OpenGL scaling when available

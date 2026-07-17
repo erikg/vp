@@ -5,7 +5,6 @@ set(VP_SOURCES
     input.c
     net.c
     http.c
-    ftp.c
     timer.c
 )
 
@@ -16,7 +15,6 @@ set(VP_HEADERS
     input.h
     net.h
     http.h
-    ftp.h
     timer.h
 )
 
