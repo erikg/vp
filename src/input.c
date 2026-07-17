@@ -51,7 +51,11 @@ handle_input ()
 {
     SDL_Event e;
 
-    SDL_WaitEvent (&e);
+    /* Timed wait (not SDL_WaitEvent) so the caller's loop periodically
+     * re-checks shutdown_requested set by the signal handler. A timeout
+     * (return 0) just means "no event this tick" - keep going. */
+    if (!SDL_WaitEventTimeout (&e, 200))
+	return 1;
     switch (e.type)
     {
     case SDL_QUIT:

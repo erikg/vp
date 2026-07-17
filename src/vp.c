@@ -156,15 +156,14 @@ safe_atoi (const char *str, int *result, int min_val, int max_val)
 /* Global flag for graceful shutdown */
 static volatile sig_atomic_t shutdown_requested = 0;
 
-/* Signal handler for graceful shutdown */
+/* Signal handler for graceful shutdown.
+ * Async-signal-safe: only sets the flag. The main loop uses a timed wait
+ * (see handle_input) so it polls this flag and exits promptly. */
 static void
 signal_handler (int sig)
 {
+    (void) sig;
     shutdown_requested = 1;
-    /* Send a quit event to the main loop */
-    SDL_Event quit_event;
-    quit_event.type = SDL_QUIT;
-    SDL_PushEvent(&quit_event);
 }
 
 void
@@ -229,7 +228,7 @@ main (int argc, char **argv)
 	    break;
 	case 'v':
 	    exit (printf
-		("%s %s (C) 2001-2017 Erik Greenwald <erik@elfga.com>\n",
+		("%s %s (C) 2001-2025 Erik Greenwald <erik@elfga.com>\n",
 		    PACKAGE, VERSION));
 	    break;
 	case 'z':
@@ -436,7 +435,7 @@ main (int argc, char **argv)
     if (image_table.count > 1)
 	timer_start (wait);
 
-    while (handle_input ());
+    while (!shutdown_requested && handle_input ());
 
     if (image_table.image) {
 	/* Free downloaded filenames and clean up image surfaces */
