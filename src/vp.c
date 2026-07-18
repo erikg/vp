@@ -245,20 +245,21 @@ static void
 show_help (char *name)
 {
     printf ("Usage:\n\
-\t%s [-fhkKlvz] [-s <seconds>] [-r [<width>][x<height>][@<depth>]]\n\
+\t%s [-fhkKlvz] [-s <seconds>] [-r <width>x<height>[@<depth>]]\n\
 \n\
 \t-f		--fullscreen	set fullscreen mode.\n\
+\t-h		--help		show help.\n\
 \t-k		--insecure	accept https certificates that fail\n\
 \t				verification.\n\
 \t-K		--keep		keep downloaded files instead of\n\
 \t				deleting them on exit.\n\
 \t-l		--loud		print file name to stdout.\n\
-\t-h		--help		show help.\n\
-\t-v		--version	show version.\n\
-\t-z		--zoom		scale images to fit the screen.\n\
 \t-s <seconds>	--sleep		seconds between image change in slideshow\n\
 \t				(0.1-60, fractions ok, e.g. 2.5).\n\
-\t-r <res>	--resolution	width, height, and depth. See man page.\n\
+\t-r <res>	--resolution	fullscreen resolution, <width>x<height>\n\
+\t				with optional @<depth>. See man page.\n\
+\t-v		--version	show version.\n\
+\t-z		--zoom		scale images to fit the screen.\n\
 \n", name);
     return;
 }
