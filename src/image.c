@@ -43,7 +43,7 @@ enum {
 static int osd_pos = OSD_BL;
 
 void
-osd_cycle_position ()
+osd_cycle_position (void)
 {
     osd_pos = (osd_pos + 1) % OSD_POS_COUNT;
     return;
@@ -135,7 +135,7 @@ draw_osd (const char *text)
 }
 
 void
-sync ()
+sync (void)
 {
 #ifdef SDL_SYSWM_X11
     SDL_SysWMinfo info;
@@ -160,7 +160,7 @@ getscale (double sw, double sh, double iw, double ih)
     return (sh * iw < ih * sw) ? sh / ih : sw / iw;
 }
 
-void show_image ();
+void show_image (void);
 
 /*
  * View transform: the displayed image is the current surface scaled by
@@ -194,7 +194,7 @@ static int cur_tex_idx = -1;
  * gap between the image edge and the window edge.
  */
 static void
-view_clamp ()
+view_clamp (void)
 {
     struct image_table_s *it = get_image_table ();
     SDL_Surface *s;
@@ -263,7 +263,7 @@ view_zoom (double factor, int ax, int ay)
 }
 
 void
-view_actual_size ()
+view_actual_size (void)
 {
     int win_w, win_h;
 
@@ -273,7 +273,7 @@ view_actual_size ()
 }
 
 void
-view_reset ()
+view_reset (void)
 {
     view_manual = 0;
     last_layout = -1;
@@ -281,7 +281,7 @@ view_reset ()
 }
 
 void
-image_cleanup ()
+image_cleanup (void)
 {
     if (cur_tex)
 	SDL_DestroyTexture (cur_tex);
@@ -332,7 +332,7 @@ window_max_content (int *max_w, int *max_h)
 	 * ripped from the libsdl faq, 'gtv' code
 	 */
 static void
-center_window ()
+center_window (void)
 {
     int w, h;
     SDL_GetWindowSize(window, &w, &h);
@@ -341,7 +341,7 @@ center_window ()
 }
 
 void
-show_image ()
+show_image (void)
 {
     struct image_table_s *it = get_image_table ();
     SDL_Rect r;
@@ -457,7 +457,7 @@ image_load_surface (struct image_s *i)
 }
 
 int
-image_freshen ()
+image_freshen (void)
 {
     struct image_table_s *it = get_image_table ();
     int c, lo, hi, idx;
@@ -505,7 +505,7 @@ image_freshen ()
 }
 
 int
-image_next ()
+image_next (void)
 {
     struct image_table_s *it = get_image_table ();
 
@@ -523,7 +523,7 @@ image_next ()
 }
 
 int
-image_prev ()
+image_prev (void)
 {
     struct image_table_s *it = get_image_table ();
 

@@ -94,7 +94,6 @@ http_init (url_t * u)
     }
 
     /* Parse framing headers (case-insensitive), starting after the status line. */
-    off = 0;
     {
 	char *nl = strchr (hdr, '\n');
 	off = nl ? (nl - hdr) + 1 : hlen;

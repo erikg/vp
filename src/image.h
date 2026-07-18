@@ -23,14 +23,14 @@
 
 #include <SDL.h>
 
-int image_freshen ();
-int image_next ();
-int image_prev ();
-void osd_cycle_position ();
+int image_freshen (void);
+int image_next (void);
+int image_prev (void);
+void osd_cycle_position (void);
 void view_pan (int dx, int dy);
 void view_zoom (double factor, int ax, int ay);
-void view_actual_size ();
-void view_reset ();
-void image_cleanup ();
+void view_actual_size (void);
+void view_reset (void);
+void image_cleanup (void);
 
 #endif

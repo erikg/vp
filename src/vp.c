@@ -50,7 +50,7 @@ int swidth = 640, sheight = 480, sdepth = 8;
 struct image_table_s image_table = {0, 0, NULL};
 
 unsigned int
-vid_width ()
+vid_width (void)
 {
     int w;
     if (window) {
@@ -60,7 +60,7 @@ vid_width ()
     return swidth;
 }
 unsigned int
-vid_height ()
+vid_height (void)
 {
     int h;
     if (window) {
@@ -70,7 +70,7 @@ vid_height ()
     return sheight;
 }
 unsigned int
-vid_depth ()
+vid_depth (void)
 {
     return sdepth;
 }
@@ -116,7 +116,7 @@ toggle_state (int name)
 }
 
 struct image_table_s *
-get_image_table ()
+get_image_table (void)
 {
     return &image_table;
 }
@@ -199,7 +199,7 @@ create_renderer (SDL_Window * w)
     if (mode && (!strcasecmp (mode, "accelerated") || !strcasecmp (mode, "hw")))
 	return SDL_CreateRenderer (w, -1, SDL_RENDERER_ACCELERATED);
 
-    if (mode && strcasecmp (mode, "auto"))
+    if (mode && strcasecmp (mode, "auto") != 0)
 	fprintf (stderr,
 	    "Unknown VP_RENDERER \"%s\" (use auto|accelerated|software); using auto\n",
 	    mode);
@@ -291,7 +291,7 @@ main (int argc, char **argv)
 		if (isdigit (*p)) {
 		    char width_str[16];
 		    int len = (int)(x_pos - p);
-		    if (len <= 0 || len >= sizeof(width_str)) {
+		    if (len <= 0 || (size_t)len >= sizeof(width_str)) {
 			fprintf (stderr, "Invalid resolution format: %s\n", optarg);
 			exit (EXIT_FAILURE);
 		    }
@@ -310,8 +310,8 @@ main (int argc, char **argv)
 		{
 		    char height_str[16];
 		    char *h_start = x_pos + 1;
-		    int len = at_pos ? (int)(at_pos - h_start) : strlen(h_start);
-		    if (len <= 0 || len >= sizeof(height_str)) {
+		    int len = at_pos ? (int)(at_pos - h_start) : (int)strlen(h_start);
+		    if (len <= 0 || (size_t)len >= sizeof(height_str)) {
 			fprintf (stderr, "Invalid resolution format: %s\n", optarg);
 			exit (EXIT_FAILURE);
 		    }
@@ -364,7 +364,7 @@ main (int argc, char **argv)
     argv += optind;
 
     /* Check for integer overflow in allocation size */
-    if (argc > SIZE_MAX / sizeof(struct image_s)) {
+    if ((size_t)argc > SIZE_MAX / sizeof(struct image_s)) {
 	fprintf (stderr, "Too many arguments\n");
 	exit (EXIT_FAILURE);
     }

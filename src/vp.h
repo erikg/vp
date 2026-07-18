@@ -45,10 +45,10 @@ int get_state_int (int);
 int toggle_state (int);
 int set_state_int (int);
 int unset_state_int (int);
-struct image_table_s *get_image_table ();
-unsigned int vid_width ();
-unsigned int vid_height ();
-unsigned int vid_depth ();
+struct image_table_s *get_image_table (void);
+unsigned int vid_width (void);
+unsigned int vid_height (void);
+unsigned int vid_depth (void);
 
 extern SDL_Window *window;
 extern SDL_Renderer *renderer;

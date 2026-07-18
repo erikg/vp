@@ -48,7 +48,7 @@ timer_stub (Uint32 interval, void *param)
 }
 
 void
-timer_toggle ()
+timer_toggle (void)
 {
     if (timer_id == 0)
 	timer_start (wait_time);
@@ -58,7 +58,7 @@ timer_toggle ()
 }
 
 void
-timer_stop ()
+timer_stop (void)
 {
     if (timer_id != 0)
 	if (SDL_RemoveTimer (timer_id) == SDL_FALSE)

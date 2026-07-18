@@ -21,7 +21,7 @@
 #ifndef __INPUT_H_
 #define __INPUT_H_
 
-void throw_exit ();
-int handle_input ();
+void throw_exit (void);
+int handle_input (void);
 
 #endif

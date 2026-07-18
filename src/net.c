@@ -58,7 +58,7 @@
 static unsigned int rng_state;
 
 static char
-randchar ()
+randchar (void)
 {
     static const char set[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -174,8 +174,20 @@ net_url (char *name)
     n = slash + 1;
     u = (url_t *) malloc (sizeof (url_t));
     if (u == NULL) {
+	*slash = '/';
 	return NULL;
     }
+
+    /* Initialize every field before anything can fail, so net_free_url()
+     * on the error path below never frees or closes garbage. */
+    u->port = 80;
+    u->proto = HTTP;
+    u->mimetype = NULL;
+    u->file = -1;
+    u->conn = -1;
+    u->content_length = -1;
+    u->chunked = 0;
+
     u->server = strdup (name + strlen ("http://"));
     u->filename = strdup (n);
 
@@ -187,19 +199,16 @@ net_url (char *name)
 	u->ext = strdup ("");
     }
 
+    /* Put the '/' back: the caller's string is argv, and it is displayed
+     * (window title, OSD, -l output) after we return. */
+    *slash = '/';
+
     /* Check for strdup failures */
     if (!u->server || !u->filename || !u->ext) {
 	net_free_url (u);
 	return NULL;
     }
 
-    u->port = 80;
-    u->proto = HTTP;
-    u->mimetype = NULL;
-    u->file = -1;
-    u->conn = -1;
-    u->content_length = -1;
-    u->chunked = 0;
     return u;
 }
 
@@ -242,7 +251,7 @@ net_connect (url_t * u)
     return 0;
 }
 
-#define MAX_DOWNLOAD_SIZE (100 * 1024 * 1024)	/* 100MB limit */
+#define MAX_DOWNLOAD_SIZE ((size_t)100 * 1024 * 1024)	/* 100MB limit */
 
 /*
  * Buffered reader over the connection socket. http_init leaves the socket
@@ -299,7 +308,7 @@ sink_write (url_t * u, const unsigned char *data, size_t len, size_t *total)
 {
     *total += len;
     if (*total > MAX_DOWNLOAD_SIZE) {
-	fprintf (stderr, "Download size limit exceeded (%d bytes)\n",
+	fprintf (stderr, "Download size limit exceeded (%zu bytes)\n",
 	    MAX_DOWNLOAD_SIZE);
 	return -1;
     }

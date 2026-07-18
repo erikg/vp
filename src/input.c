@@ -71,7 +71,7 @@ pan_step (int dim)
 	 * instead of actually exiting, we just fake the escape key
 	 */
 void
-throw_exit ()
+throw_exit (void)
 {
     SDL_Event thrower;
 
@@ -83,7 +83,7 @@ throw_exit ()
 }
 
 int
-handle_input ()
+handle_input (void)
 {
     SDL_Event e;
 
