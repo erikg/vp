@@ -31,7 +31,6 @@ struct image_s {
     char *resource;
     char *file;
     SDL_Surface *surface;
-    SDL_Surface *scaled;
 };
 
 struct image_table_s {

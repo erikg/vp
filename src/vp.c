@@ -221,7 +221,7 @@ show_help (char *name)
 \t-l		--loud		print file name to stdout.\n\
 \t-h		--help		show help.\n\
 \t-v		--version	show version.\n\
-\t-z		--zoom		scale to fit when fullscreen.\n\
+\t-z		--zoom		scale images to fit the screen.\n\
 \t-s <seconds>	--sleep		seconds between image change in slideshow.\n\
 \t-r <res>	--resolution	width, height, and depth. See man page.\n\
 \n", name);
@@ -488,9 +488,6 @@ main (int argc, char **argv)
 	    if (image_table.image[i].surface) {
 		SDL_FreeSurface (image_table.image[i].surface);
 	    }
-	    if (image_table.image[i].scaled) {
-		SDL_FreeSurface (image_table.image[i].scaled);
-	    }
 	    /* Downloaded temp files differ from resource: unlink then free.
 	     * (Local files share the resource pointer and must be left alone.) */
 	    if (image_table.image[i].file != image_table.image[i].resource) {
@@ -500,6 +497,7 @@ main (int argc, char **argv)
 	}
 	free (image_table.image);
     }
+    image_cleanup ();
     if (renderer) {
 	SDL_DestroyRenderer (renderer);
     }

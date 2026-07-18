@@ -19,6 +19,7 @@
  ****************************************************************************/
 
 #include <ctype.h>
+#include <math.h>
 #include <SDL.h>
 #include "image.h"
 #include "input.h"
@@ -32,7 +33,42 @@ extern SDL_Window *window;
 extern SDL_Renderer *renderer;
 
 	/*
-	 * instead of actually exiting, we just fake the escape key 
+	 * mouse state for pan/zoom dragging. The chord check treats
+	 * left+right held together as a middle button, for two-button mice.
+	 */
+static Uint32 buttons = 0;
+static int zoom_anchor_x = 0, zoom_anchor_y = 0;
+
+#define CHORD_MIDDLE(b) (((b) & SDL_BUTTON_MMASK) || \
+	(((b) & SDL_BUTTON_LMASK) && ((b) & SDL_BUTTON_RMASK)))
+
+	/*
+	 * keyboard zoom, anchored at the window center
+	 */
+static void
+key_zoom (double factor)
+{
+    int w, h;
+
+    SDL_GetWindowSize (window, &w, &h);
+    timer_stop ();
+    view_zoom (factor, w / 2, h / 2);
+    return;
+}
+
+	/*
+	 * keyboard pan step: an eighth of the window dimension, at least 32px
+	 */
+static int
+pan_step (int dim)
+{
+    int s = dim / 8;
+
+    return s < 32 ? 32 : s;
+}
+
+	/*
+	 * instead of actually exiting, we just fake the escape key
 	 */
 void
 throw_exit ()
@@ -73,6 +109,39 @@ handle_input ()
 		throw_exit ();
 	}
 	break;
+    case SDL_MOUSEBUTTONDOWN:
+	timer_stop ();
+	buttons |= SDL_BUTTON (e.button.button);
+	zoom_anchor_x = e.button.x;
+	zoom_anchor_y = e.button.y;
+	break;
+    case SDL_MOUSEBUTTONUP:
+	buttons &= ~SDL_BUTTON (e.button.button);
+	break;
+    case SDL_MOUSEMOTION:
+	/* middle-drag (or the left+right chord) zooms about the point where
+	 * the drag started, ~1% per pixel of vertical motion, up to zoom in;
+	 * a plain left-drag pans. */
+	if (CHORD_MIDDLE (buttons))
+	{
+	    if (e.motion.yrel)
+		view_zoom (pow (1.01, (double) -e.motion.yrel),
+		    zoom_anchor_x, zoom_anchor_y);
+	} else if (buttons & SDL_BUTTON_LMASK)
+	    view_pan (e.motion.xrel, e.motion.yrel);
+	break;
+    case SDL_MOUSEWHEEL:
+	{
+	    int mx, my;
+
+	    timer_stop ();
+	    SDL_GetMouseState (&mx, &my);
+	    if (e.wheel.y > 0)
+		view_zoom (1.2, mx, my);
+	    else if (e.wheel.y < 0)
+		view_zoom (1.0 / 1.2, mx, my);
+	}
+	break;
     case SDL_KEYDOWN:
 	switch (tolower (e.key.keysym.sym))
 	{
@@ -89,16 +158,76 @@ handle_input ()
 	    timer_stop ();
 	    break;
 	case SDLK_RIGHT:
+	    /* plain arrows change image; shifted arrows pan the view */
 	    timer_stop ();
-	    image_next ();
+	    if (e.key.keysym.mod & KMOD_SHIFT)
+	    {
+		int w;
+
+		SDL_GetWindowSize (window, &w, NULL);
+		view_pan (-pan_step (w), 0);
+	    } else
+		image_next ();
 	    break;
 	case SDLK_LEFT:
 	    timer_stop ();
-	    image_prev ();
+	    if (e.key.keysym.mod & KMOD_SHIFT)
+	    {
+		int w;
+
+		SDL_GetWindowSize (window, &w, NULL);
+		view_pan (pan_step (w), 0);
+	    } else
+		image_prev ();
+	    break;
+	case SDLK_UP:
+	    if (e.key.keysym.mod & KMOD_SHIFT)
+	    {
+		int h;
+
+		SDL_GetWindowSize (window, NULL, &h);
+		timer_stop ();
+		view_pan (0, pan_step (h));
+	    }
+	    break;
+	case SDLK_DOWN:
+	    if (e.key.keysym.mod & KMOD_SHIFT)
+	    {
+		int h;
+
+		SDL_GetWindowSize (window, NULL, &h);
+		timer_stop ();
+		view_pan (0, -pan_step (h));
+	    }
+	    break;
+	case '=':
+	    /* = resets to 1:1; shift-= is + on most layouts, so zoom in */
+	    if (e.key.keysym.mod & KMOD_SHIFT)
+		key_zoom (1.1);
+	    else
+	    {
+		timer_stop ();
+		view_actual_size ();
+	    }
+	    break;
+	case '+':
+	case SDLK_KP_PLUS:
+	    key_zoom (1.1);
+	    break;
+	case '-':
+	case SDLK_KP_MINUS:
+	    key_zoom (1.0 / 1.1);
+	    break;
+	case SDLK_PAGEUP:
+	    key_zoom (2.0);
+	    break;
+	case SDLK_PAGEDOWN:
+	    key_zoom (0.5);
 	    break;
 	case 'z':
 	    timer_stop ();
 	    toggle_state (ZOOM);
+	    view_reset ();
 	    image_freshen ();
 	    break;
 	case 'f':
@@ -111,6 +240,7 @@ handle_input ()
 		SDL_SetWindowFullscreen(window, 0);
 		SDL_ShowCursor (1);
 	    }
+	    view_reset ();
 	    image_freshen ();
 	    break;
 	case 'n':
@@ -121,17 +251,6 @@ handle_input ()
 		toggle_state (OSD);
 	    image_freshen ();
 	    break;
-#if 0
-	case '+':
-	case '=':
-	    scale += .1;
-	    image_freshen ();
-	    break;
-	case '-':
-	    scale -= .1;
-	    image_freshen ();
-	    break;
-#endif
 	default:
 	    /*
 	     * do nothing 

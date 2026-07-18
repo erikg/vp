@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <limits.h>
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -161,195 +160,135 @@ getscale (double sw, double sh, double iw, double ih)
     return (sh * iw < ih * sw) ? sh / ih : sw / iw;
 }
 
-static double
-getscale_fill (double sw, double sh, double iw, double ih)
+void show_image ();
+
+/*
+ * View transform: the displayed image is the current surface scaled by
+ * view_scale (1.0 = one image pixel per screen pixel) with its top-left
+ * corner at (view_x, view_y) in window coordinates. view_manual is set once
+ * the user pans or zooms; until then show_image() recomputes the automatic
+ * layout (fit or 1:1) every draw. The scaling itself happens in the
+ * RenderCopy dst rect, so the GPU (or SDL's software renderer) does the
+ * work with the linear filter hint set at startup.
+ */
+#define VIEW_SCALE_MIN	0.03125
+#define VIEW_SCALE_MAX	32.0
+
+static double view_scale = 1.0;
+static int view_x = 0, view_y = 0;
+static int view_manual = 0;
+
+/* Which image the window was last laid out (sized/titled/centered) for;
+ * -1 forces a relayout and an automatic-view reset on the next draw. */
+static int last_layout = -1;
+
+/* The current image's texture, uploaded once per image instead of on every
+ * pan/zoom redraw. */
+static SDL_Texture *cur_tex = NULL;
+static SDL_Surface *cur_tex_src = NULL;
+static int cur_tex_idx = -1;
+
+/*
+ * Keep the view on the image: an axis whose scaled size fits in the window
+ * is centered; one that overflows may pan, but never far enough to open a
+ * gap between the image edge and the window edge.
+ */
+static void
+view_clamp ()
 {
-    /* Prevent division by zero */
-    if (ih <= 0.0 || iw <= 0.0) {
-	return 1.0;
-    }
-    /* Choose the larger scale factor to fill the screen while preserving aspect ratio */
-    double scale_w = sw / iw;
-    double scale_h = sh / ih;
-    return (scale_w > scale_h) ? scale_w : scale_h;
+    struct image_table_s *it = get_image_table ();
+    SDL_Surface *s;
+    int win_w, win_h, sw, sh;
+
+    if (it->current < 0 || it->current >= it->count)
+	return;
+    s = it->image[it->current].surface;
+    if (s == NULL)
+	return;
+
+    SDL_GetWindowSize (window, &win_w, &win_h);
+    sw = (int) (s->w * view_scale);
+    sh = (int) (s->h * view_scale);
+
+    if (sw <= win_w)
+	view_x = (win_w - sw) / 2;
+    else if (view_x > 0)
+	view_x = 0;
+    else if (view_x < win_w - sw)
+	view_x = win_w - sw;
+
+    if (sh <= win_h)
+	view_y = (win_h - sh) / 2;
+    else if (view_y > 0)
+	view_y = 0;
+    else if (view_y < win_h - sh)
+	view_y = win_h - sh;
+    return;
 }
 
-	/*
-	 * hideous. This should be made more readable, and probably faster.
-	 * be nice if it did multi-sampling to get cleaner zooming?
-	 */
-SDL_Surface *
-zoom_blit (SDL_Surface * d, SDL_Surface * s, float scale)
+void
+view_pan (int dx, int dy)
 {
-    size_t x, y, bpp, doff, soff, width;
-
-    /* Validate parameters */
-    if (d == NULL || s == NULL || s->format == NULL) {
-	return d;
-    }
-
-    /* Prevent division by zero */
-    if (scale <= 0.0f) {
-	return d;
-    }
-
-    bpp = s->format->BytesPerPixel;
-    width = d->w;
-
-    for (y = 0; y < d->h; y++)
-	for (x = 0; x < width; x++)
-	{
-	    size_t src_x = (size_t)(x / scale);
-	    size_t src_y = (size_t)(y / scale);
-
-	    /* Check source bounds to prevent buffer overflow */
-	    if (src_x >= s->w || src_y >= s->h) {
-		continue;
-	    }
-
-	    /* Check for integer overflow in offset calculations */
-	    if (y > SIZE_MAX / d->pitch || x > (SIZE_MAX - d->pitch * y) / bpp) {
-		continue;
-	    }
-	    if (src_y > SIZE_MAX / s->pitch || src_x > (SIZE_MAX - s->pitch * src_y) / bpp) {
-		continue;
-	    }
-
-	    doff = d->pitch * y + x * bpp;
-	    soff = s->pitch * src_y + src_x * bpp;
-/* TODO this pointer casting causes warnings on 64b */
-	    memcpy ((void *)((size_t)d->pixels + doff),
-		(void *)((size_t)s->pixels + soff), bpp);
-	}
-    return d;
+    SDL_LockMutex (mutex);
+    view_manual = 1;
+    view_x += dx;
+    view_y += dy;
+    view_clamp ();
+    show_image ();
+    SDL_UnlockMutex (mutex);
+    return;
 }
 
-SDL_Surface *
-zoom_blit_fill (SDL_Surface * d, SDL_Surface * s, float scale)
+void
+view_zoom (double factor, int ax, int ay)
 {
-    size_t x, y, bpp, doff, soff, width, height;
-    int scaled_w, scaled_h, offset_x, offset_y;
+    double ns;
 
-    /* Validate parameters */
-    if (d == NULL || s == NULL || s->format == NULL) {
-	return d;
-    }
+    SDL_LockMutex (mutex);
+    ns = view_scale * factor;
+    if (ns < VIEW_SCALE_MIN)
+	ns = VIEW_SCALE_MIN;
+    if (ns > VIEW_SCALE_MAX)
+	ns = VIEW_SCALE_MAX;
 
-    /* Prevent division by zero */
-    if (scale <= 0.0f) {
-	return d;
-    }
-
-    bpp = s->format->BytesPerPixel;
-    width = d->w;
-    height = d->h;
-
-    /* Calculate scaled dimensions and centering offset for cropping with overflow protection */
-    double scaled_w_f = (double)s->w * (double)scale;
-    double scaled_h_f = (double)s->h * (double)scale;
-
-    /* Check for overflow before casting to int */
-    if (scaled_w_f > INT_MAX || scaled_h_f > INT_MAX || scaled_w_f < 0 || scaled_h_f < 0) {
-	return d;  /* Overflow - return unchanged */
-    }
-
-    scaled_w = (int)scaled_w_f;
-    scaled_h = (int)scaled_h_f;
-    offset_x = (scaled_w - d->w) / 2;  /* Amount to crop from left/right */
-    offset_y = (scaled_h - d->h) / 2;  /* Amount to crop from top/bottom */
-
-    /* Fill the entire destination surface */
-    for (y = 0; y < height; y++)
-	for (x = 0; x < width; x++)
-	{
-	    /* Calculate source coordinates accounting for cropping offset */
-	    int src_x = (int)((x + offset_x) / scale);
-	    int src_y = (int)((y + offset_y) / scale);
-
-	    /* Check bounds - only copy if source coordinates are valid */
-	    if (src_x >= 0 && src_x < s->w && src_y >= 0 && src_y < s->h)
-	    {
-		/* Check for integer overflow in offset calculations */
-		if (y > SIZE_MAX / d->pitch || x > (SIZE_MAX - d->pitch * y) / bpp) {
-		    continue;
-		}
-		if (src_y > SIZE_MAX / s->pitch || src_x > (SIZE_MAX - s->pitch * src_y) / bpp) {
-		    continue;
-		}
-
-		doff = d->pitch * y + x * bpp;
-		soff = s->pitch * src_y + src_x * bpp;
-		memcpy ((void *)((size_t)d->pixels + doff),
-			(void *)((size_t)s->pixels + soff), bpp);
-	    }
-	}
-    return d;
+    /* Keep the image point under the anchor (ax,ay) fixed on screen. */
+    view_x = ax - (int) ((ax - view_x) * (ns / view_scale));
+    view_y = ay - (int) ((ay - view_y) * (ns / view_scale));
+    view_scale = ns;
+    view_manual = 1;
+    view_clamp ();
+    show_image ();
+    SDL_UnlockMutex (mutex);
+    return;
 }
 
-SDL_Surface *
-zoom_blit_centered (SDL_Surface * d, SDL_Surface * s, float scale)
+void
+view_actual_size ()
 {
-    size_t x, y, bpp, doff, soff, width, height;
-    int scaled_w, scaled_h, offset_x, offset_y;
+    int win_w, win_h;
 
-    /* Validate parameters */
-    if (d == NULL || s == NULL || s->format == NULL) {
-	return d;
-    }
+    SDL_GetWindowSize (window, &win_w, &win_h);
+    view_zoom (1.0 / view_scale, win_w / 2, win_h / 2);
+    return;
+}
 
-    /* Prevent division by zero */
-    if (scale <= 0.0f) {
-	return d;
-    }
+void
+view_reset ()
+{
+    view_manual = 0;
+    last_layout = -1;
+    return;
+}
 
-    bpp = s->format->BytesPerPixel;
-    width = d->w;
-    height = d->h;
-
-    /* Calculate scaled dimensions and centering offset with overflow protection */
-    double scaled_w_f = (double)s->w * (double)scale;
-    double scaled_h_f = (double)s->h * (double)scale;
-
-    /* Check for overflow before casting to int */
-    if (scaled_w_f > INT_MAX || scaled_h_f > INT_MAX || scaled_w_f < 0 || scaled_h_f < 0) {
-	return d;  /* Overflow - return unchanged */
-    }
-
-    scaled_w = (int)scaled_w_f;
-    scaled_h = (int)scaled_h_f;
-    offset_x = (d->w - scaled_w) / 2;
-    offset_y = (d->h - scaled_h) / 2;
-
-    /* Clear the destination surface first */
-    SDL_FillRect(d, NULL, 0);
-
-    for (y = 0; y < height; y++)
-	for (x = 0; x < width; x++)
-	{
-	    /* Calculate source coordinates accounting for centering */
-	    int src_x = (int)((x - offset_x) / scale);
-	    int src_y = (int)((y - offset_y) / scale);
-
-	    /* Check bounds - only copy if source coordinates are valid */
-	    if (src_x >= 0 && src_x < s->w && src_y >= 0 && src_y < s->h &&
-		x >= offset_x && x < (offset_x + scaled_w) &&
-		y >= offset_y && y < (offset_y + scaled_h))
-	    {
-		/* Check for integer overflow in offset calculations */
-		if (y > SIZE_MAX / d->pitch || x > (SIZE_MAX - d->pitch * y) / bpp) {
-		    continue;
-		}
-		if (src_y > SIZE_MAX / s->pitch || src_x > (SIZE_MAX - s->pitch * src_y) / bpp) {
-		    continue;
-		}
-
-		doff = d->pitch * y + x * bpp;
-		soff = s->pitch * src_y + src_x * bpp;
-		memcpy ((void *)((size_t)d->pixels + doff),
-			(void *)((size_t)s->pixels + soff), bpp);
-	    }
-	}
-    return d;
+void
+image_cleanup ()
+{
+    if (cur_tex)
+	SDL_DestroyTexture (cur_tex);
+    cur_tex = NULL;
+    cur_tex_src = NULL;
+    cur_tex_idx = -1;
+    return;
 }
 
 /*
@@ -407,7 +346,6 @@ show_image ()
     struct image_table_s *it = get_image_table ();
     SDL_Rect r;
     SDL_Surface *s;
-    SDL_Texture *texture;
     int window_w, window_h;
 
     /* Check bounds before accessing array */
@@ -422,74 +360,82 @@ show_image ()
     }
 
     s = it->image[it->current].surface;
-    if (s == NULL)
+    if (s == NULL || s->format == NULL)
+    {
+	printf ("Image \"%s\" failed\n", it->image[it->current].resource);
 	return;
+    }
+
+    /* New image (or forced relayout): drop any manual pan/zoom and, in
+     * windowed mode, size the window to the image - but never larger than
+     * the display can show (usable desktop minus decorations), so oversized
+     * images don't spawn a window that runs off-screen. Pan/zoom redraws of
+     * the same image skip all of this. */
+    if (it->current != last_layout)
+    {
+	view_manual = 0;
+	if (!get_state_int (FULLSCREEN))
+	{
+	    char buffer[BUFSIZ];  /* Local buffer to prevent race conditions */
+	    int max_w, max_h, win_w, win_h;
+
+	    window_max_content (&max_w, &max_h);
+	    win_w = s->w < max_w ? s->w : max_w;
+	    win_h = s->h < max_h ? s->h : max_h;
+
+	    SDL_SetWindowSize(window, win_w, win_h);
+	    snprintf (buffer, BUFSIZ, "vp - %s", it->image[it->current].resource);
+	    SDL_SetWindowTitle(window, buffer);
+	    center_window ();
+	}
+	last_layout = it->current;
+    }
+
+    SDL_GetWindowSize(window, &window_w, &window_h);
+
+    /* Automatic layout until the user pans or zooms: fit when the zoom
+     * toggle is on, else 1:1 in fullscreen (a too-big image is cropped) or
+     * shrink-to-fit in windowed mode (never enlarge), centered either way. */
+    if (!view_manual)
+    {
+	double fit = getscale (window_w, window_h, s->w, s->h);
+
+	if (get_state_int (ZOOM))
+	    view_scale = fit;
+	else if (get_state_int (FULLSCREEN))
+	    view_scale = 1.0;
+	else
+	    view_scale = fit < 1.0 ? fit : 1.0;
+	view_x = (window_w - (int) (s->w * view_scale)) / 2;
+	view_y = (window_h - (int) (s->h * view_scale)) / 2;
+    }
 
     /* Clear to black explicitly: draw_osd() leaves the draw color white, and
      * RenderClear uses the draw color, so pin it here for the letterbox. */
     SDL_SetRenderDrawColor (renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    if (get_state_int (FULLSCREEN))
+    /* Upload the texture once per image, not on every pan/zoom redraw. */
+    if (cur_tex == NULL || cur_tex_idx != it->current || cur_tex_src != s)
     {
-	if (get_state_int (ZOOM))
-	    s = it->image[it->current].scaled;
-    } else
-    {
-	char buffer[BUFSIZ];  /* Local buffer to prevent race conditions */
-	int max_w, max_h, win_w, win_h;
-
-	/* Size the window to the image, but never larger than the display can
-	 * show (usable desktop minus decorations), so oversized images don't
-	 * spawn a window that runs off-screen. */
-	window_max_content (&max_w, &max_h);
-	win_w = s->w < max_w ? s->w : max_w;
-	win_h = s->h < max_h ? s->h : max_h;
-
-	SDL_SetWindowSize(window, win_w, win_h);
-	snprintf (buffer, BUFSIZ, "vp - %s", it->image[it->current].resource);
-	SDL_SetWindowTitle(window, buffer);
-	center_window ();
+	if (cur_tex)
+	    SDL_DestroyTexture (cur_tex);
+	cur_tex = SDL_CreateTextureFromSurface (renderer, s);
+	cur_tex_src = s;
+	cur_tex_idx = it->current;
     }
 
-    if (s && s->format)
-    {
-	int draw_w = s->w, draw_h = s->h;
+    r.x = view_x;
+    r.y = view_y;
+    r.w = (int) (s->w * view_scale);
+    r.h = (int) (s->h * view_scale);
+    if (r.w < 1)
+	r.w = 1;
+    if (r.h < 1)
+	r.h = 1;
 
-	SDL_GetWindowSize(window, &window_w, &window_h);
-
-	/* In windowed mode, shrink an image too big for the (display-clamped)
-	 * window down to fit, preserving aspect ratio, so the whole image is
-	 * visible instead of a center crop. Never enlarge - that is what the
-	 * zoom toggle is for. RenderCopy does the scaling on the GPU.
-	 * Fullscreen sizing is handled above (1:1, or the pre-scaled zoom
-	 * surface). */
-	if (!get_state_int (FULLSCREEN) &&
-	    (s->w > window_w || s->h > window_h))
-	{
-	    double scale = getscale (window_w, window_h, s->w, s->h);
-
-	    draw_w = (int) (s->w * scale);
-	    draw_h = (int) (s->h * scale);
-	    if (draw_w < 1)
-		draw_w = 1;
-	    if (draw_h < 1)
-		draw_h = 1;
-	}
-
-	/* Center the image on screen */
-	r.x = (window_w - draw_w) / 2;
-	r.y = (window_h - draw_h) / 2;
-	r.w = draw_w;
-	r.h = draw_h;
-
-	texture = SDL_CreateTextureFromSurface(renderer, s);
-	if (texture) {
-	    SDL_RenderCopy(renderer, texture, NULL, &r);
-	    SDL_DestroyTexture(texture);
-	}
-    } else
-	printf ("Image \"%s\" failed\n", it->image[it->current].resource);
+    if (cur_tex)
+	SDL_RenderCopy (renderer, cur_tex, NULL, &r);
 
     if (get_state_int (OSD))
 	draw_osd (it->image[it->current].resource);
@@ -498,89 +444,15 @@ show_image ()
     return;
 }
 
-/* saw a crash in here on g5 -fast 
- * Exception:  EXC_BAD_ACCESS (0x0001)
- * Codes:      KERN_INVALID_ADDRESS (0x0001) at 0x02730003
- *
- * Thread 0 Crashed:
- * 0   <<00000000>>	0xffff8834 __memcpy + 148 (cpu_capabilities.h:189)
- * 1   vp				0x00003154 image_freshen_sub + 836
- * 2   vp				0x00003284 image_freshen + 212
- * 3   vp				0x00003310 image_prev + 80
- */
 /*
- * Ensure a table entry has its decoded surface resident, without touching
- * (or building) the zoom-scaled cache - that is only ever needed for the
- * currently displayed image and is (re)built by image_freshen_sub() when the
- * entry becomes current.
+ * Ensure a table entry has its decoded surface resident. All scaling is
+ * done at draw time by the renderer, so this is the whole load step.
  */
 static void
 image_load_surface (struct image_s *i)
 {
     if (i->surface == NULL)
 	i->surface = IMG_Load (i->file);
-    return;
-}
-
-void
-image_freshen_sub (struct image_s *i)
-{
-    if (i->surface == NULL)
-    {
-	i->surface = IMG_Load (i->file);
-	if (i->surface == NULL) {
-	    return;
-	}
-    }
-    if (get_state_int (ZOOM))
-    {
-	int window_w, window_h;
-	double scale, scaled_w, scaled_h;
-
-	SDL_GetWindowSize(window, &window_w, &window_h);
-
-	/* Fit within window while preserving aspect ratio (letterbox/pillarbox) */
-	scale = getscale (window_w, window_h, i->surface->w, i->surface->h);
-
-	/* Check for integer overflow in scaled dimensions */
-	scaled_w = ceil ((double)i->surface->w * (double)scale) + 1;
-	scaled_h = ceil ((double)i->surface->h * (double)scale) + 1;
-
-	if (scaled_w > INT_MAX || scaled_h > INT_MAX || scaled_w <= 0 || scaled_h <= 0) {
-	    return;
-	}
-
-	/* Drop a cached scaled surface built for a different window size (e.g.
-	 * after toggling fullscreen or resizing the window) so it is rebuilt at
-	 * the current scale instead of being reused stale. */
-	if (i->scaled &&
-	    (i->scaled->w != (int)scaled_w || i->scaled->h != (int)scaled_h)) {
-	    SDL_FreeSurface (i->scaled);
-	    i->scaled = NULL;
-	}
-
-	if (i->scaled == NULL)
-	{
-	    i->scaled = SDL_CreateRGBSurface (0,
-		(int)scaled_w, (int)scaled_h,
-		i->surface->format->BytesPerPixel * 8,
-		i->surface->format->Rmask, i->surface->format->Gmask,
-		i->surface->format->Bmask, i->surface->format->Amask);
-
-	    if (i->scaled == NULL) {
-		return;
-	    }
-
-	    /* Set palette if needed */
-	    if (i->scaled->format->BytesPerPixel == 1 && i->surface->format->palette)
-		SDL_SetPaletteColors(i->scaled->format->palette,
-				     i->surface->format->palette->colors, 0,
-				     i->surface->format->palette->ncolors);
-
-	    /* Scale the image using standard zoom_blit */
-	    zoom_blit (i->scaled, i->surface, scale);
-	}
-    }
     return;
 }
 
@@ -621,14 +493,11 @@ image_freshen ()
 	{
 	    if (i->surface)
 		SDL_FreeSurface (i->surface);
-	    if (i->scaled)
-		SDL_FreeSurface (i->scaled);
-	    i->surface = i->scaled = NULL;
-	} else if (idx != c)
+	    i->surface = NULL;
+	} else
 	    image_load_surface (i);
     }
 
-    image_freshen_sub (&it->image[c]);
     show_image ();
     sync ();
     SDL_UnlockMutex (mutex);

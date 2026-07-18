@@ -27,5 +27,10 @@ int image_freshen ();
 int image_next ();
 int image_prev ();
 void osd_cycle_position ();
+void view_pan (int dx, int dy);
+void view_zoom (double factor, int ax, int ay);
+void view_actual_size ();
+void view_reset ();
+void image_cleanup ();
 
 #endif

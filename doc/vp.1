@@ -10,17 +10,22 @@
 .Op Ar
 .Sh DESCRIPTION
 .Nm
-View Picture 
+View Picture
 .Ar files
 using SDL. Supported file types include jpeg, gif, png, bmp, ppm, xpm, pcx,
 tga, and anything else your install of sdl_image supports. Keyboard controls
-are escape or q to quit, f to toggle fullscreen, z to toggle zoom (only in
-fullscreen), left arrow to go to the previous image, right arrow to go to the
-next image, and space to toggle slideshow. n toggles the on-screen display of
-the current file name, and N (shift-n) cycles its position through the corners,
-edge centers, and screen center. Toggling the zoom and fullscreen or
-using the arrow keys disables slideshow mode. File names starting with http://
-are interpreted as URL's and downloaded.
+are escape or q to quit, f to toggle fullscreen, z to toggle scale-to-fit,
+left arrow to go to the previous image, right arrow to go to the next image,
+and space to toggle slideshow. n toggles the on-screen display of the current
+file name, and N (shift-n) cycles its position through the corners, edge
+centers, and screen center. The view can be zoomed with + and - (or the
+keypad equivalents), or in larger steps with page up and page down; = returns
+to 1:1, and shifted arrow keys pan a zoomed image. The mouse also controls
+the view: dragging with the left button pans, the scroll wheel zooms at the
+pointer, and dragging the middle button up or down zooms in or out (holding
+the left and right buttons together works as the middle button). Zooming,
+panning, or toggling fullscreen disables slideshow mode. File names starting
+with http:// are interpreted as URL's and downloaded.
 .Sh OPTIONS
 .Bl -tag -width indent
 .It Fl f, -fullscreen
@@ -36,7 +41,7 @@ Screen resolution (for fullscreen). <width>x<height>@<bpp>
 .It Fl v, -version
 Print the version and exit
 .It Fl z, -zoom
-Scale the images to fill the screen (zoom)
+Scale images to fit the screen (zoom)
 .El
 .Sh ENVIRONMENT
 .Bl -tag -width VP_RENDERER
