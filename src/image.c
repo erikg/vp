@@ -344,41 +344,54 @@ image_freshen_sub (struct image_s *i)
 	    return;
 	}
     }
-    if (i->scaled == NULL && get_state_int (ZOOM))
+    if (get_state_int (ZOOM))
     {
 	int window_w, window_h;
+	double scale, scaled_w, scaled_h;
+
 	SDL_GetWindowSize(window, &window_w, &window_h);
-	double scale;
 
 	/* Fit within window while preserving aspect ratio (letterbox/pillarbox) */
 	scale = getscale (window_w, window_h, i->surface->w, i->surface->h);
 
 	/* Check for integer overflow in scaled dimensions */
-	double scaled_w = ceil ((double)i->surface->w * (double)scale) + 1;
-	double scaled_h = ceil ((double)i->surface->h * (double)scale) + 1;
+	scaled_w = ceil ((double)i->surface->w * (double)scale) + 1;
+	scaled_h = ceil ((double)i->surface->h * (double)scale) + 1;
 
 	if (scaled_w > INT_MAX || scaled_h > INT_MAX || scaled_w <= 0 || scaled_h <= 0) {
 	    return;
 	}
 
-	i->scaled = SDL_CreateRGBSurface (0,
-	    (int)scaled_w, (int)scaled_h,
-	    i->surface->format->BytesPerPixel * 8,
-	    i->surface->format->Rmask, i->surface->format->Gmask,
-	    i->surface->format->Bmask, i->surface->format->Amask);
-
-	if (i->scaled == NULL) {
-	    return;
+	/* Drop a cached scaled surface built for a different window size (e.g.
+	 * after toggling fullscreen or resizing the window) so it is rebuilt at
+	 * the current scale instead of being reused stale. */
+	if (i->scaled &&
+	    (i->scaled->w != (int)scaled_w || i->scaled->h != (int)scaled_h)) {
+	    SDL_FreeSurface (i->scaled);
+	    i->scaled = NULL;
 	}
 
-	/* Set palette if needed */
-	if (i->scaled->format->BytesPerPixel == 1 && i->surface->format->palette)
-	    SDL_SetPaletteColors(i->scaled->format->palette,
-				 i->surface->format->palette->colors, 0,
-				 i->surface->format->palette->ncolors);
+	if (i->scaled == NULL)
+	{
+	    i->scaled = SDL_CreateRGBSurface (0,
+		(int)scaled_w, (int)scaled_h,
+		i->surface->format->BytesPerPixel * 8,
+		i->surface->format->Rmask, i->surface->format->Gmask,
+		i->surface->format->Bmask, i->surface->format->Amask);
 
-	/* Scale the image using standard zoom_blit */
-	zoom_blit (i->scaled, i->surface, scale);
+	    if (i->scaled == NULL) {
+		return;
+	    }
+
+	    /* Set palette if needed */
+	    if (i->scaled->format->BytesPerPixel == 1 && i->surface->format->palette)
+		SDL_SetPaletteColors(i->scaled->format->palette,
+				     i->surface->format->palette->colors, 0,
+				     i->surface->format->palette->ncolors);
+
+	    /* Scale the image using standard zoom_blit */
+	    zoom_blit (i->scaled, i->surface, scale);
+	}
     }
     return;
 }
