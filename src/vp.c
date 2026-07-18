@@ -211,13 +211,15 @@ create_renderer (SDL_Window * w)
     return r;
 }
 
-void
+static void
 show_help (char *name)
 {
     printf ("Usage:\n\
-\t%s [-fhlvz] [-s <seconds>] [-r [<width>][x<height>][@<depth>]]\n\
+\t%s [-fhklvz] [-s <seconds>] [-r [<width>][x<height>][@<depth>]]\n\
 \n\
 \t-f		--fullscreen	set fullscreen mode.\n\
+\t-k		--insecure	accept https certificates that fail\n\
+\t				verification.\n\
 \t-l		--loud		print file name to stdout.\n\
 \t-h		--help		show help.\n\
 \t-v		--version	show version.\n\
@@ -244,6 +246,7 @@ main (int argc, char **argv)
     static struct option optlist[] = {
 	{"fullscreen", 0, NULL, 'f'},
 	{"help", 0, NULL, 'h'},
+	{"insecure", 0, NULL, 'k'},
 	{"loud", 0, NULL, 'l'},
 	{"sleep", 1, NULL, 's'},
 	{"version", 0, NULL, 'v'},
@@ -252,12 +255,15 @@ main (int argc, char **argv)
 	{0, 0, 0, 0}
     };
 
-    while ((c = getopt_long (argc, argv, "vhlzfs:r:", optlist, &i)) != -1)
+    while ((c = getopt_long (argc, argv, "vhklzfs:r:", optlist, &i)) != -1)
     {
 	switch (c)
 	{
 	case 'f':
 	    set_state_int (FULLSCREEN);
+	    break;
+	case 'k':
+	    net_allow_bad_certs ();
 	    break;
 	case 'l':
 	    set_state_int (LOUD);
@@ -503,15 +509,15 @@ main (int argc, char **argv)
 
     if (image_table.image) {
 	/* Free downloaded filenames and clean up image surfaces */
-	for (int i = 0; i < image_table.count; i++) {
-	    if (image_table.image[i].surface) {
-		SDL_FreeSurface (image_table.image[i].surface);
+	for (int n = 0; n < image_table.count; n++) {
+	    if (image_table.image[n].surface) {
+		SDL_FreeSurface (image_table.image[n].surface);
 	    }
 	    /* Downloaded temp files differ from resource: unlink then free.
 	     * (Local files share the resource pointer and must be left alone.) */
-	    if (image_table.image[i].file != image_table.image[i].resource) {
-		net_purge (image_table.image[i].file);
-		free (image_table.image[i].file);
+	    if (image_table.image[n].file != image_table.image[n].resource) {
+		net_purge (image_table.image[n].file);
+		free (image_table.image[n].file);
 	    }
 	}
 	free (image_table.image);

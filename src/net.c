@@ -329,11 +329,23 @@ net_url (char *name)
     return u;
 }
 
+/* -k/--insecure: accept https certificates that fail verification. The
+ * flag lives here (not in vp.c's state machine) so a no-TLS build parses
+ * it as a harmless no-op without any #ifdef in the option handler. */
+static int allow_bad_certs = 0;
+
+void
+net_allow_bad_certs (void)
+{
+    allow_bad_certs = 1;
+}
+
 #ifdef HAVE_OPENSSL
 /*
  * Wrap an already-connected socket in TLS: server certificate verified
  * against the system trust store, hostname checked against the URL's,
  * SNI sent (shared-hosting servers need it to pick the right cert).
+ * With -k verification failures are reported but not fatal.
  */
 static int
 net_tls_start (url_t * u)
@@ -343,8 +355,9 @@ net_tls_start (url_t * u)
 
     if ((ctx = SSL_CTX_new (TLS_client_method ())) == NULL)
 	return -1;
-    SSL_CTX_set_verify (ctx, SSL_VERIFY_PEER, NULL);
-    if (SSL_CTX_set_default_verify_paths (ctx) != 1) {
+    SSL_CTX_set_verify (ctx,
+	allow_bad_certs ? SSL_VERIFY_NONE : SSL_VERIFY_PEER, NULL);
+    if (SSL_CTX_set_default_verify_paths (ctx) != 1 && !allow_bad_certs) {
 	fprintf (stderr, "vp: no system certificate store found\n");
 	SSL_CTX_free (ctx);
 	return -1;
@@ -376,6 +389,16 @@ net_tls_start (url_t * u)
 	SSL_free (ssl);
 	SSL_CTX_free (ctx);
 	return -1;
+    }
+    /* Verification still ran under SSL_VERIFY_NONE; say what -k waved
+     * through so the acceptance is at least an informed one. */
+    if (allow_bad_certs) {
+	long vr = SSL_get_verify_result (ssl);
+
+	if (vr != X509_V_OK)
+	    fprintf (stderr,
+		"vp: %s: accepting untrusted certificate (-k): %s\n",
+		u->server, X509_verify_cert_error_string (vr));
     }
     u->ssl = ssl;
     u->ssl_ctx = ctx;

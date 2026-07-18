@@ -61,6 +61,7 @@ typedef struct {
 
 int net_is_url (char *name);
 char *net_download (char *name);
+void net_allow_bad_certs (void);
 ssize_t net_read (url_t *u, void *buf, size_t len);
 ssize_t net_write (url_t *u, const void *buf, size_t len);
 void net_purge (char *file);

@@ -6,7 +6,7 @@
 .Nd view image files 
 .Sh SYNOPSIS
 .Nm
-.Op Fl fhlsvz
+.Op Fl fhklsvz
 .Op Ar
 .Sh DESCRIPTION
 .Nm
@@ -29,14 +29,22 @@ with http:// or https:// are interpreted as URL's and downloaded; HTTP
 redirects are followed, up to five hops. https support requires
 .Nm
 to have been built with OpenSSL, in which case server certificates are
-verified against the system trust store; in a build without it, an https://
-URL or a redirect to one is reported as unsupported and skipped.
+verified against the system trust store unless
+.Fl k
+is given; in a build without it, an https:// URL or a redirect to one is
+reported as unsupported and skipped.
 .Sh OPTIONS
 .Bl -tag -width indent
 .It Fl f, -fullscreen
 Start in fullscreen mode
 .It Fl h, -help
 Show the help screen
+.It Fl k, -insecure
+Accept https server certificates that fail verification (self-signed,
+expired, wrong hostname). The failure reason is still printed as a warning.
+Only meaningful when
+.Nm
+was built with OpenSSL.
 .It Fl l, -loud
 Loud behavior. Print out file names as it displays
 .It Fl s, -sleep
