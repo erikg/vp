@@ -1,3 +1,24 @@
+20260718:
+	* Release 1.9
+	* Ported from SDL 1.x to SDL2; added a CMake build alongside autotools
+	* https support via OpenSSL (optional, feature-detected in both build
+	  systems): certificate verification against the system trust store,
+	  -k/--insecure to accept bad certificates, TLS >= 1.2
+	* IPv6 support (getaddrinfo, bracketed [::1]:port literals)
+	* HTTP: proper HTTP/1.1 response framing, follow 3xx redirects (up to
+	  5 hops), chunked transfer decoding, size and time limits
+	* -K/--keep to retain downloaded files instead of deleting on exit
+	* Dropped FTP (was advertised but never implemented)
+	* Arbitrary pan and zoom (mouse drag/wheel + keyboard), unified on a
+	  single GPU transform
+	* On-screen filename display (n toggles, N cycles position), with an
+	  embedded 8x8 font
+	* Handle oversized images (clamp window to display, downscale to fit)
+	* Decoded-image cache; software-renderer fallback when no acceleration
+	* Security hardening of the download path; async-signal-safe shutdown
+	* GitHub Actions CI (Linux/macOS/FreeBSD) and a self-contained network
+	  test suite
+
 20080615:
 	* Copyright update
 
