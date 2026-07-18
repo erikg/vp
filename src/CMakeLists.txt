@@ -19,6 +19,11 @@ set(VP_HEADERS
     font8x8.h
 )
 
+# pkg-config reports bare library names in *_LIBRARIES; the matching -L
+# paths are in *_LIBRARY_DIRS and must be passed too, or the link fails
+# anywhere SDL2 is off the default linker path (/usr/local/lib on FreeBSD).
+link_directories(${SDL2_LIBRARY_DIRS} ${SDL2_IMAGE_LIBRARY_DIRS})
+
 # Create executable
 add_executable(vp ${VP_SOURCES})
 
