@@ -113,7 +113,11 @@ check_shows "relative redirect"       "http://127.0.0.1:$HP/rel"
 check_shows "protocol-relative"       "http://127.0.0.1:$HP/proto"
 check_shows "chunked body"            "http://127.0.0.1:$HP/chunked"
 check_shows "bare host"               "http://127.0.0.1:$HP"
-check_shows "ipv6 literal"            "http://[::1]:$V6/test1.ppm"
+if grep -q "V6 ok" "$TMP/srv.out"; then
+    check_shows "ipv6 literal"        "http://[::1]:$V6/test1.ppm"
+else
+    echo "SKIP: ipv6 literal (no ::1 loopback on this host)"
+fi
 check_says  "redirect loop"           "Too many redirects" \
 				      "http://127.0.0.1:$HP/loop"
 check_says  "3xx without Location"    "without a usable Location" \

@@ -85,14 +85,24 @@ def main():
     handler = make_handler(args.dir, args.http_port, args.https_port)
 
     plain = http.server.HTTPServer(('127.0.0.1', args.http_port), handler)
-    v6 = V6Server(('::1', args.v6_port), handler)
 
     tls = http.server.HTTPServer(('127.0.0.1', args.https_port), handler)
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ctx.load_cert_chain(args.cert, args.key)
     tls.socket = ctx.wrap_socket(tls.socket, server_side=True)
 
-    for srv in (plain, v6, tls):
+    servers = [plain, tls]
+
+    # IPv6 loopback is best-effort: some CI runners (notably GitHub's
+    # macOS images) have no ::1, and the v6 test skips rather than fails.
+    try:
+        v6 = V6Server(('::1', args.v6_port), handler)
+        servers.append(v6)
+        print('V6 ok', flush=True)
+    except OSError as e:
+        print('V6 unavailable: %s' % e, flush=True)
+
+    for srv in servers:
         threading.Thread(target=srv.serve_forever, daemon=True).start()
 
     print('READY', flush=True)
