@@ -327,9 +327,31 @@ net_url (char *name)
 	return NULL;
     }
 
-    /* Optional :port in the authority (our copy, argv already restored). */
+    /* Optional :port in the authority (our copy, argv already restored).
+     * An IPv6 literal is bracketed ([::1] or [::1]:8080) so its colons
+     * are not mistaken for the port separator; the brackets are stripped
+     * here and re-added where the RFCs require them (Host header,
+     * redirect resolution). */
     {
-	char *colon = strchr (u->server, ':');
+	char *colon = NULL;
+
+	if (u->server[0] == '[') {
+	    char *rb = strchr (u->server, ']');
+
+	    if (rb == NULL || (rb[1] != '\0' && rb[1] != ':')) {
+		fprintf (stderr, "Invalid IPv6 literal in URL: %s\n", name);
+		net_free_url (u);
+		return NULL;
+	    }
+	    if (rb[1] == ':')
+		colon = rb + 1;
+	    *rb = '\0';
+	    /* strip the brackets: shift the host down over the '[' (the
+	     * ':port' tail past the new NUL stays put, and colon still
+	     * points at it) */
+	    memmove (u->server, u->server + 1, strlen (u->server + 1) + 1);
+	} else
+	    colon = strchr (u->server, ':');
 
 	if (colon) {
 	    char *end;
@@ -380,7 +402,9 @@ net_tls_start (url_t * u)
     SSL_CTX *ctx;
     SSL *ssl;
     struct in_addr ip4;
-    int is_ip = (inet_pton (AF_INET, u->server, &ip4) == 1);
+    struct in6_addr ip6;
+    int is_ip = (inet_pton (AF_INET, u->server, &ip4) == 1 ||
+	inet_pton (AF_INET6, u->server, &ip6) == 1);
     int r;
 
     if ((ctx = SSL_CTX_new (TLS_client_method ())) == NULL)
@@ -461,9 +485,9 @@ net_tls_start (url_t * u)
 static int
 net_connect (url_t * u)
 {
-    struct sockaddr_in s;
-    struct sockaddr *ss = (struct sockaddr *)&s;
-    struct hostent *h;
+    struct addrinfo hints, *res, *ai;
+    char portstr[6];
+    int err;
 
 #ifndef HAVE_OPENSSL
     if (u->proto == HTTPS) {
@@ -473,36 +497,35 @@ net_connect (url_t * u)
     }
 #endif
 
-    memset (&s, 0, sizeof (s));
-    if ((u->conn = socket (AF_INET, SOCK_STREAM, 0)) == -1)
-    {
-	perror ("vp:net.c:net_connect:socket");
-	return -1;
-    }
-    if ((h = gethostbyname (u->server)) == NULL)
-    {
-	/* gethostbyname reports through h_errno; perror would print
-	 * whatever stale errno happened to be lying around. */
+    memset (&hints, 0, sizeof (hints));
+    hints.ai_family = AF_UNSPEC;	/* IPv4 and IPv6 alike */
+    hints.ai_socktype = SOCK_STREAM;
+    snprintf (portstr, sizeof (portstr), "%d", u->port);
+    if ((err = getaddrinfo (u->server, portstr, &hints, &res)) != 0) {
 	fprintf (stderr, "vp: cannot resolve %s: %s\n",
-	    u->server, hstrerror (h_errno));
-	close (u->conn);
-	u->conn = -1;
+	    u->server, gai_strerror (err));
 	return -1;
-    }
-    s.sin_family = AF_INET;
-    s.sin_port = htons (u->port);
-    s.sin_addr = *((struct in_addr *)h->h_addr_list[0]);
-    /* Set socket timeouts before connecting */
-    if (set_socket_timeout(u->conn, 30) == -1) {
-	perror ("vp:net.c:net_connect:set_socket_timeout");
-	/* Continue anyway - timeouts are not critical for basic functionality */
     }
 
-    if (connect (u->conn, ss, sizeof (struct sockaddr)) == -1)
-    {
-	perror ("vp:net.c:net_connect:connect");
+    /* Try each returned address (v6 and v4) until one connects. */
+    u->conn = -1;
+    for (ai = res; ai != NULL; ai = ai->ai_next) {
+	u->conn = socket (ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+	if (u->conn == -1)
+	    continue;
+	/* Set socket timeouts before connecting; not critical for basic
+	 * functionality, so continue even if it fails. */
+	if (set_socket_timeout (u->conn, 30) == -1)
+	    perror ("vp:net.c:net_connect:set_socket_timeout");
+	if (connect (u->conn, ai->ai_addr, ai->ai_addrlen) == 0)
+	    break;
 	close (u->conn);
 	u->conn = -1;
+    }
+    freeaddrinfo (res);
+    if (u->conn == -1) {
+	fprintf (stderr, "vp: cannot connect to %s port %d: %s\n",
+	    u->server, u->port, strerror (errno));
 	return -1;
     }
     /* Overall transfer budget; per-read stalls are caught by SO_RCVTIMEO,
@@ -690,6 +713,9 @@ static char *
 resolve_location (const url_t *base, const char *loc)
 {
     const char *scheme = (base->proto == HTTPS) ? "https" : "http";
+    /* an IPv6-literal base host must be re-bracketed in built URLs */
+    const char *ob = strchr (base->server, ':') ? "[" : "";
+    const char *cb = *ob ? "]" : "";
     char *out = NULL;
     size_t n;
 
@@ -714,8 +740,8 @@ resolve_location (const url_t *base, const char *loc)
 	/* absolute path on the same authority */
 	n = strlen (scheme) + strlen (base->server) + strlen (loc) + 32;
 	if ((out = malloc (n)) != NULL)
-	    snprintf (out, n, "%s://%s:%d%s", scheme, base->server,
-		base->port, loc);
+	    snprintf (out, n, "%s://%s%s%s:%d%s", scheme, ob, base->server,
+		cb, base->port, loc);
     } else {
 	/* relative to the directory of the current path, where "path"
 	 * stops at any ?query/#fragment (a '/' inside a query string is
@@ -730,8 +756,9 @@ resolve_location (const url_t *base, const char *loc)
 	n = strlen (scheme) + strlen (base->server) + dirlen +
 	    strlen (loc) + 32;
 	if ((out = malloc (n)) != NULL)
-	    snprintf (out, n, "%s://%s:%d/%.*s%s", scheme, base->server,
-		base->port, (int) dirlen, base->filename, loc);
+	    snprintf (out, n, "%s://%s%s%s:%d/%.*s%s", scheme, ob,
+		base->server, cb, base->port, (int) dirlen,
+		base->filename, loc);
     }
 
     /* net_url needs a path slash after the authority; a bare

@@ -26,7 +26,9 @@ pointer, and dragging the middle button up or down zooms in or out (holding
 the left and right buttons together works as the middle button). Zooming,
 panning, or toggling fullscreen disables slideshow mode. File names starting
 with http:// or https:// are interpreted as URL's and downloaded; HTTP
-redirects are followed, up to five hops. https support requires
+redirects are followed, up to five hops. Both IPv4 and IPv6 are supported;
+a literal IPv6 address in a URL is written in brackets, as in
+http://[::1]:8080/image.png. https support requires
 .Nm
 to have been built with OpenSSL, in which case server certificates are
 verified against the system trust store unless

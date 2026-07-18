@@ -50,6 +50,9 @@ http_init (url_t * u)
     char hdr[MAX_HEADER_SIZE];
     int rlen, hlen = 0, nl = 0, status = 0;
     int defport = (u->proto == HTTPS) ? 443 : 80;
+    /* an IPv6-literal host must be re-bracketed in the Host header */
+    const char *ob = strchr (u->server, ':') ? "[" : "";
+    const char *cb = *ob ? "]" : "";
     ssize_t off;
 
     if (has_ctrl (u->filename) || has_ctrl (u->server)) {
@@ -64,17 +67,18 @@ http_init (url_t * u)
     if (u->port == defport)
 	rlen = snprintf (req, sizeof (req),
 	    "GET /%s HTTP/1.1\r\n"
-	    "Host: %s\r\n"
+	    "Host: %s%s%s\r\n"
 	    "User-Agent: %s/%s\r\n"
 	    "Connection: close\r\n"
-	    "\r\n", u->filename, u->server, PACKAGE, VERSION);
+	    "\r\n", u->filename, ob, u->server, cb, PACKAGE, VERSION);
     else
 	rlen = snprintf (req, sizeof (req),
 	    "GET /%s HTTP/1.1\r\n"
-	    "Host: %s:%d\r\n"
+	    "Host: %s%s%s:%d\r\n"
 	    "User-Agent: %s/%s\r\n"
 	    "Connection: close\r\n"
-	    "\r\n", u->filename, u->server, u->port, PACKAGE, VERSION);
+	    "\r\n", u->filename, ob, u->server, cb, u->port,
+	    PACKAGE, VERSION);
     if (rlen < 0 || (size_t) rlen >= sizeof (req)) {
 	/* Truncated request would just stall the server; fail fast. */
 	fprintf (stderr, "URL too long\n");
