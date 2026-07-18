@@ -24,8 +24,8 @@
 #define SHOW_IMAGE 0x01
 #define NEXT_IMAGE 0x02
 
-void timer_toggle ();
-void timer_stop ();
-void timer_start ();
+void timer_toggle (void);
+void timer_stop (void);
+void timer_start (int millis);
 
 #endif

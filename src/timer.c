@@ -29,9 +29,12 @@ static int wait_time = 2500;
 
 SDL_TimerID timer_id = 0;
 
-int
-timer_stub ()
+static Uint32
+timer_stub (Uint32 interval, void *param)
 {
+    (void)interval;
+    (void)param;
+
     SDL_Event ev;
 
     /*
@@ -70,6 +73,6 @@ timer_start (int MILLIS)
     wait_time = MILLIS;
     if (timer_id == 0)
 	timer_id =
-	    SDL_AddTimer (wait_time, (SDL_TimerCallback) timer_stub, NULL);
+	    SDL_AddTimer (wait_time, timer_stub, NULL);
     return;
 }
