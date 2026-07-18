@@ -20,6 +20,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -175,6 +176,39 @@ oops (char *msg)
     }
     SDL_Quit ();
     exit (EXIT_FAILURE);
+}
+
+/*
+ * Create the renderer, preferring hardware acceleration but falling back to
+ * the software renderer so vp still runs on machines with no 3D at all
+ * (old laptops, minimal-fbdev embedded boards, etc.). The VP_RENDERER
+ * environment variable forces a mode for debugging/testing:
+ *   auto (default) - try accelerated, fall back to software
+ *   accelerated|hw - hardware only (fail if unavailable)
+ *   software|sw    - software only
+ */
+static SDL_Renderer *
+create_renderer (SDL_Window * w)
+{
+    const char *mode = getenv ("VP_RENDERER");
+    SDL_Renderer *r = NULL;
+
+    if (mode && (!strcasecmp (mode, "software") || !strcasecmp (mode, "sw")))
+	return SDL_CreateRenderer (w, -1, SDL_RENDERER_SOFTWARE);
+
+    if (mode && (!strcasecmp (mode, "accelerated") || !strcasecmp (mode, "hw")))
+	return SDL_CreateRenderer (w, -1, SDL_RENDERER_ACCELERATED);
+
+    if (mode && strcasecmp (mode, "auto"))
+	fprintf (stderr,
+	    "Unknown VP_RENDERER \"%s\" (use auto|accelerated|software); using auto\n",
+	    mode);
+
+    /* auto: best available, with software as the safety net */
+    r = SDL_CreateRenderer (w, -1, SDL_RENDERER_ACCELERATED);
+    if (r == NULL)
+	r = SDL_CreateRenderer (w, -1, SDL_RENDERER_SOFTWARE);
+    return r;
 }
 
 void
@@ -422,12 +456,18 @@ main (int argc, char **argv)
 	return EXIT_FAILURE;
     }
 
-    /* Create renderer */
-    renderer = SDL_CreateRenderer (window, -1, SDL_RENDERER_ACCELERATED);
+    /* Create renderer (accelerated if available, else software) */
+    renderer = create_renderer (window);
     if (renderer == NULL) {
 	SDL_DestroyWindow (window);
 	printf ("Unable to create renderer: %s\n", SDL_GetError ());
 	return EXIT_FAILURE;
+    }
+    if (get_state_int (LOUD)) {
+	SDL_RendererInfo ri;
+	if (SDL_GetRendererInfo (renderer, &ri) == 0)
+	    printf ("renderer: %s (%s)\n", ri.name,
+		(ri.flags & SDL_RENDERER_ACCELERATED) ? "accelerated" : "software");
     }
 
     image_freshen ();

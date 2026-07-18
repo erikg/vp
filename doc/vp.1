@@ -36,8 +36,28 @@ Print the version and exit
 .It Fl z, -zoom
 Scale the images to fill the screen (zoom)
 .El
+.Sh ENVIRONMENT
+.Bl -tag -width VP_RENDERER
+.It Ev VP_RENDERER
+Force the rendering backend, mainly for debugging or testing on machines with
+or without 3D acceleration. Accepted values are
+.Ar auto
+(the default: use hardware acceleration if available, otherwise fall back to
+the software renderer),
+.Ar accelerated
+(or
+.Ar hw ;
+hardware only, fail if unavailable), and
+.Ar software
+(or
+.Ar sw ) .
+With the
+.Fl l
+flag the selected renderer and whether it is accelerated are printed at
+startup.
+.El
 .\".Sh DIAGNOSTICS
-.\"Filenames are sent to stderr. 
+.\"Filenames are sent to stderr.
 .Sh BUGS
 Bad jpeg images force the program to exit.
 
