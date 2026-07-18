@@ -1,9 +1,9 @@
-.Dd Mar 8, 2001-2026
+.Dd July 18, 2026
 .Dt VP 1
 .Os
 .Sh NAME
 .Nm vp
-.Nd view image files 
+.Nd view image files
 .Sh SYNOPSIS
 .Nm
 .Op Fl fhkKlvz
@@ -39,33 +39,33 @@ is given; in a build without it, an https:// URL or a redirect to one is
 reported as unsupported and skipped.
 .Sh OPTIONS
 .Bl -tag -width indent
-.It Fl f, -fullscreen
+.It Fl f , -fullscreen
 Start in fullscreen mode
-.It Fl h, -help
+.It Fl h , -help
 Show the help screen
-.It Fl k, -insecure
+.It Fl k , -insecure
 Accept https server certificates that fail verification (self-signed,
 expired, wrong hostname). The failure reason is still printed as a warning.
 Only meaningful when
 .Nm
 was built with OpenSSL.
-.It Fl K, -keep
+.It Fl K , -keep
 Keep downloaded files instead of deleting them on exit. Each kept file's
 path is printed at exit, alongside the URL it came from. Without this
 flag, files downloaded from URLs are removed when
 .Nm
 exits, including exits triggered by SIGINT, SIGTERM, or SIGHUP.
-.It Fl l, -loud
+.It Fl l , -loud
 Loud behavior. Print out file names as it displays
-.It Fl s, -sleep
+.It Fl s , -sleep
 Sleep time between images, in seconds. Fractions are accepted
 (2.5 means two and a half seconds); the range is 0.1 to 60.
-.It Fl r, -resolution
+.It Fl r , -resolution
 Screen resolution (for fullscreen), as <width>x<height> with an optional
 @<depth>, e.g. 1024x768 or 1920x1080@32
-.It Fl v, -version
+.It Fl v , -version
 Print the version and exit
-.It Fl z, -zoom
+.It Fl z , -zoom
 Scale images to fit the screen (zoom)
 .El
 .Sh ENVIRONMENT
@@ -90,7 +90,7 @@ startup.
 .El
 .\".Sh DIAGNOSTICS
 .\"Filenames are sent to stderr.
+.Sh AUTHORS
+.An Erik Greenwald Aq Mt erik@elfga.com
 .Sh BUGS
 This manpage is inadequate.
-.Sh AUTHOR
-Erik Greenwald <erik@elfga.com>
