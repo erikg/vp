@@ -100,11 +100,12 @@ http_init (url_t * u)
 	return -1;		/* headers too large or malformed */
     hdr[hlen] = '\0';
 
-    /* Status line: reject anything that is not 2xx so an error page (404/500)
-     * is never saved and rendered as if it were the image. */
+    /* Status line: 2xx proceeds, 3xx is a redirect to chase (Location is
+     * picked up below), anything else fails so an error page (404/500) is
+     * never saved and rendered as if it were the image. */
     if (sscanf (hdr, "HTTP/%*d.%*d %d", &status) != 1)
 	return -1;
-    if (status < 200 || status >= 300) {
+    if ((status < 200 || status >= 300) && !(status >= 300 && status < 400)) {
 	fprintf (stderr, "HTTP request failed: %d\n", status);
 	return -1;
     }
@@ -128,8 +129,31 @@ http_init (url_t * u)
 		    break;
 		}
 	    }
+	} else if (strncasecmp (line, "Location:", 9) == 0) {
+	    const char *v = line + 9;
+	    const char *vend = line + linelen;
+
+	    while (v < vend && (*v == ' ' || *v == '\t'))
+		v++;
+	    while (vend > v && (vend[-1] == '\r' || vend[-1] == ' ' ||
+		    vend[-1] == '\t'))
+		vend--;
+	    free (u->redirect);
+	    u->redirect = malloc ((size_t) (vend - v) + 1);
+	    if (u->redirect) {
+		memcpy (u->redirect, v, (size_t) (vend - v));
+		u->redirect[vend - v] = '\0';
+	    }
 	}
 	line = eol ? eol + 1 : NULL;
+    }
+
+    if (status >= 300) {
+	if (u->redirect == NULL || u->redirect[0] == '\0') {
+	    fprintf (stderr, "HTTP %d without a usable Location\n", status);
+	    return -1;
+	}
+	return 1;		/* caller follows u->redirect */
     }
     return 0;
 }

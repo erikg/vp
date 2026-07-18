@@ -135,6 +135,7 @@ net_free_url (url_t *u)
 	if (u->filename) free (u->filename);
 	if (u->ext) free (u->ext);
 	if (u->mimetype) free (u->mimetype);
+	if (u->redirect) free (u->redirect);
 	if (u->file >= 0) close (u->file);
 	if (u->conn >= 0) close (u->conn);
 	free (u);
@@ -187,6 +188,7 @@ net_url (char *name)
     u->port = 80;
     u->proto = HTTP;
     u->mimetype = NULL;
+    u->redirect = NULL;
     u->file = -1;
     u->conn = -1;
     u->content_length = -1;
@@ -453,18 +455,103 @@ net_suck (url_t * u)
     return 0;
 }
 
+#define MAX_REDIRECTS 5
+
+/*
+ * Resolve a Location header value against the URL that produced it into a
+ * malloc'd absolute http:// URL, or NULL (with a message) if it cannot be
+ * followed. Handles absolute, protocol-relative (//host/x), absolute-path
+ * (/x), and relative (x) forms.
+ */
+static char *
+resolve_location (const url_t *base, const char *loc)
+{
+    char *out = NULL;
+    size_t n;
+
+    if (strncasecmp (loc, "https://", 8) == 0) {
+	fprintf (stderr,
+	    "Redirected to %s - vp does not speak https, stopping\n", loc);
+	return NULL;
+    }
+    if (strncasecmp (loc, "http://", 7) == 0) {
+	out = strdup (loc);
+    } else if (loc[0] == '/' && loc[1] == '/') {
+	n = strlen ("http:") + strlen (loc) + 1;
+	if ((out = malloc (n)) != NULL)
+	    snprintf (out, n, "http:%s", loc);
+    } else if (loc[0] == '/') {
+	/* absolute path on the same authority */
+	n = strlen (base->server) + strlen (loc) + 32;
+	if ((out = malloc (n)) != NULL)
+	    snprintf (out, n, "http://%s:%d%s", base->server, base->port, loc);
+    } else {
+	/* relative to the directory of the current path */
+	const char *slash = strrchr (base->filename, '/');
+	size_t dirlen = slash ? (size_t) (slash - base->filename) + 1 : 0;
+
+	n = strlen (base->server) + dirlen + strlen (loc) + 32;
+	if ((out = malloc (n)) != NULL)
+	    snprintf (out, n, "http://%s:%d/%.*s%s", base->server,
+		base->port, (int) dirlen, base->filename, loc);
+    }
+
+    /* net_url needs a path slash after the authority; a bare
+     * "http://host" target gets one appended. */
+    if (out && strchr (out + strlen ("http://"), '/') == NULL) {
+	n = strlen (out) + 2;
+	char *slashed = malloc (n);
+
+	if (slashed)
+	    snprintf (slashed, n, "%s/", out);
+	free (out);
+	out = slashed;
+    }
+    return out;
+}
+
 char *
 net_download (char *name)
 {
     char *filename;
-    int len;
-    url_t *url;
+    int len, hops;
+    url_t *url = NULL;
+    char *loc = NULL;		/* malloc'd URL of the current hop, if any */
 
-    if ((url = net_url (name)) == NULL || net_connect (url) == -1) {
-	if (url) net_free_url (url);
+    /* Chase redirects until a 2xx leaves the body ready on the socket. */
+    for (hops = 0; ; hops++) {
+	int r;
+
+	if ((url = net_url (loc ? loc : name)) == NULL ||
+	    net_connect (url) == -1) {
+	    if (url) net_free_url (url);
+	    free (loc);
+	    return NULL;
+	}
+	r = http_init (url);
+	if (r == 0)
+	    break;
+	if (r == 1 && hops < MAX_REDIRECTS) {
+	    char *next = resolve_location (url, url->redirect);
+
+	    net_free_url (url);
+	    free (loc);
+	    loc = next;
+	    if (loc != NULL)
+		continue;
+	    return NULL;	/* resolve_location said why */
+	}
+	if (r == 1)
+	    fprintf (stderr, "Too many redirects (%d)\n", MAX_REDIRECTS);
+	else
+	    fprintf (stderr, "HTTP initialization failed\n");
+	net_free_url (url);
+	free (loc);
 	return NULL;
     }
+    free (loc);
 
+    /* Temp file extension comes from the final URL, post-redirects. */
     len = strlen("/tmp/vp.XXXXXX.")+strlen(url->ext)+1;
     filename = (char *)malloc (len);
     if (filename == NULL) {
@@ -475,14 +562,6 @@ net_download (char *name)
     url->file = mkstemps (filename, strlen (url->ext) + 1);
     if (url->file == -1) {
 	perror ("mkstemps failed");
-	free (filename);
-	net_free_url (url);
-	return NULL;
-    }
-
-    if (http_init (url) == -1) {
-	fprintf (stderr, "HTTP initialization failed\n");
-	unlink (filename);  /* Remove partial file */
 	free (filename);
 	net_free_url (url);
 	return NULL;

@@ -25,7 +25,11 @@ the view: dragging with the left button pans, the scroll wheel zooms at the
 pointer, and dragging the middle button up or down zooms in or out (holding
 the left and right buttons together works as the middle button). Zooming,
 panning, or toggling fullscreen disables slideshow mode. File names starting
-with http:// are interpreted as URL's and downloaded.
+with http:// are interpreted as URL's and downloaded; HTTP redirects are
+followed, up to five hops. A redirect to an https:// target is reported and
+stops the fetch, since
+.Nm
+speaks only plain http.
 .Sh OPTIONS
 .Bl -tag -width indent
 .It Fl f, -fullscreen

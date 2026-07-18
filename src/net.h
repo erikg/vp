@@ -46,6 +46,7 @@ typedef struct {
      */
     long content_length;	/* body length, or -1 if unknown */
     int chunked;		/* nonzero if Transfer-Encoding: chunked */
+    char *redirect;		/* Location value when http_init returns 1 */
 } url_t;
 
 int net_is_url (char *name);
