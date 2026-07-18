@@ -28,10 +28,112 @@
 #include <SDL_image.h>
 
 #include "vp.h"
+#include "font8x8.h"
 
 extern SDL_Window *window;
 extern SDL_Renderer *renderer;
 extern SDL_mutex *mutex;
+
+/* On-screen-display anchor. Cycled by the shift-N key (osd_cycle_position). */
+enum {
+    OSD_TL, OSD_TC, OSD_TR,
+    OSD_BL, OSD_BC, OSD_BR,
+    OSD_CC,
+    OSD_POS_COUNT
+};
+static int osd_pos = OSD_BL;
+
+void
+osd_cycle_position ()
+{
+    osd_pos = (osd_pos + 1) % OSD_POS_COUNT;
+    return;
+}
+
+/*
+ * Draw a NUL-terminated string with the embedded 8x8 font at (x,y), each font
+ * pixel drawn as a scale x scale filled rect in the current draw color.
+ */
+static void
+draw_string (int x, int y, int scale, const char *text)
+{
+    const unsigned char *p;
+    SDL_Rect px;
+
+    px.w = px.h = scale;
+    for (p = (const unsigned char *) text; *p; p++)
+    {
+	const unsigned char *glyph = font8x8_basic[*p & 0x7f];
+	int row, col;
+
+	for (row = 0; row < 8; row++)
+	{
+	    unsigned char bits = glyph[row];
+
+	    for (col = 0; col < 8; col++)
+		if (bits & (1 << col))
+		{
+		    px.x = x + col * scale;
+		    px.y = y + row * scale;
+		    SDL_RenderFillRect (renderer, &px);
+		}
+	}
+	x += 8 * scale;
+    }
+    return;
+}
+
+/*
+ * Render the OSD filename overlay: a translucent backing bar for legibility
+ * over busy images, then the text, anchored per osd_pos. Called from
+ * show_image() after the image is drawn and before RenderPresent.
+ */
+static void
+draw_osd (const char *text)
+{
+    int win_w, win_h, scale, tw, th, pad, x, y;
+    SDL_Rect bar;
+
+    if (text == NULL || *text == '\0')
+	return;
+
+    SDL_GetWindowSize (window, &win_w, &win_h);
+
+    /* Auto-size the glyphs from window height; readable but unobtrusive. */
+    scale = win_h / 360;
+    if (scale < 1)
+	scale = 1;
+
+    tw = (int) strlen (text) * 8 * scale;
+    th = 8 * scale;
+    pad = 4 * scale;
+
+    switch (osd_pos)
+    {
+    case OSD_TL:	x = pad;			y = pad;		break;
+    case OSD_TC:	x = (win_w - tw) / 2;		y = pad;		break;
+    case OSD_TR:	x = win_w - tw - pad;		y = pad;		break;
+    case OSD_BL:	x = pad;			y = win_h - th - pad;	break;
+    case OSD_BC:	x = (win_w - tw) / 2;		y = win_h - th - pad;	break;
+    case OSD_BR:	x = win_w - tw - pad;		y = win_h - th - pad;	break;
+    case OSD_CC:
+    default:		x = (win_w - tw) / 2;		y = (win_h - th) / 2;	break;
+    }
+
+    /* Translucent black backing bar. */
+    bar.x = x - pad;
+    bar.y = y - pad;
+    bar.w = tw + 2 * pad;
+    bar.h = th + 2 * pad;
+    SDL_SetRenderDrawBlendMode (renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor (renderer, 0, 0, 0, 160);
+    SDL_RenderFillRect (renderer, &bar);
+
+    /* Foreground text. */
+    SDL_SetRenderDrawColor (renderer, 255, 255, 255, 255);
+    draw_string (x, y, scale, text);
+    return;
+}
 
 void
 sync ()
@@ -286,6 +388,9 @@ show_image ()
     if (s == NULL)
 	return;
 
+    /* Clear to black explicitly: draw_osd() leaves the draw color white, and
+     * RenderClear uses the draw color, so pin it here for the letterbox. */
+    SDL_SetRenderDrawColor (renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
     if (get_state_int (FULLSCREEN))
@@ -319,6 +424,9 @@ show_image ()
 	}
     } else
 	printf ("Image \"%s\" failed\n", it->image[it->current].resource);
+
+    if (get_state_int (OSD))
+	draw_osd (it->image[it->current].resource);
 
     SDL_RenderPresent(renderer);
     return;

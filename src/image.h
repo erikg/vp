@@ -26,5 +26,6 @@
 int image_freshen ();
 int image_next ();
 int image_prev ();
+void osd_cycle_position ();
 
 #endif

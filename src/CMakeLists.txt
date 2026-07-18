@@ -16,6 +16,7 @@ set(VP_HEADERS
     net.h
     http.h
     timer.h
+    font8x8.h
 )
 
 # Create executable

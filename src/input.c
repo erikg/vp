@@ -113,6 +113,14 @@ handle_input ()
 	    }
 	    image_freshen ();
 	    break;
+	case 'n':
+	    /* n toggles the filename OSD; shift-N cycles its position. */
+	    if (e.key.keysym.mod & KMOD_SHIFT)
+		osd_cycle_position ();
+	    else
+		toggle_state (OSD);
+	    image_freshen ();
+	    break;
 #if 0
 	case '+':
 	case '=':

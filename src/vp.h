@@ -25,6 +25,7 @@
 #define FULLSCREEN	2
 #define LOUD		4
 #define GRAB_FOCUS	8
+#define OSD		16
 
 struct image_s {
     char *resource;
