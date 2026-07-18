@@ -105,7 +105,11 @@ handle_input (void)
 	if (e.user.code == SHOW_IMAGE)
 	    image_freshen ();
 	else if (e.user.code == NEXT_IMAGE) {
-	    if (image_next () == 0)
+	    /* A queued tick can outlive timer_stop() - by queue ordering, or
+	     * because SDL_RemoveTimer doesn't wait out a callback already in
+	     * flight. Drop it, so pausing on the last image pauses instead of
+	     * falling through to exit. */
+	    if (timer_running () && image_next () == 0)
 		throw_exit ();
 	}
 	break;

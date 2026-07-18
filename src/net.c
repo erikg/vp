@@ -191,12 +191,30 @@ net_url (char *name)
     u->server = strdup (name + strlen ("http://"));
     u->filename = strdup (n);
 
-    /* Fix buffer overflow - check filename length before accessing extension */
-    int filename_len = strlen (n);
-    if (filename_len >= 3) {
-	u->ext = strdup (n + filename_len - 3);
-    } else {
-	u->ext = strdup ("");
+    /* Extension hint for the temp file (SDL_image sniffs content, but the
+     * suffix helps): everything after the last '.' of the path's basename,
+     * ignoring any ?query/#fragment. No dot in the basename means no hint.
+     * Never take a raw tail slice - a '/' in it breaks the mkstemps path. */
+    {
+	const char *base, *q, *dot, *p;
+
+	base = strrchr (n, '/');
+	base = base ? base + 1 : n;
+	q = base + strcspn (base, "?#");
+	dot = NULL;
+	for (p = base; p < q; p++)
+	    if (*p == '.')
+		dot = p;
+	if (dot && q - dot > 1) {
+	    size_t elen = (size_t) (q - dot - 1);
+
+	    u->ext = malloc (elen + 1);
+	    if (u->ext) {
+		memcpy (u->ext, dot + 1, elen);
+		u->ext[elen] = '\0';
+	    }
+	} else
+	    u->ext = strdup ("");
     }
 
     /* Put the '/' back: the caller's string is argv, and it is displayed
@@ -392,8 +410,13 @@ net_suck (url_t * u)
 	got = br_read (&br, tmp, want);
 	if (got < 0)
 	    return -1;
-	if (got == 0)
+	if (got == 0) {
+	    /* EOF before the declared Content-Length is a truncated
+	     * download, not a success. */
+	    if (remaining > 0)
+		return -1;
 	    break;		/* EOF (connection close) */
+	}
 	if (sink_write (u, tmp, (size_t) got, &total) == -1)
 	    return -1;
 	if (remaining >= 0)

@@ -222,7 +222,8 @@ show_help (char *name)
 \t-h		--help		show help.\n\
 \t-v		--version	show version.\n\
 \t-z		--zoom		scale images to fit the screen.\n\
-\t-s <seconds>	--sleep		seconds between image change in slideshow.\n\
+\t-s <seconds>	--sleep		seconds between image change in slideshow\n\
+\t				(0.1-60, fractions ok, e.g. 2.5).\n\
 \t-r <res>	--resolution	width, height, and depth. See man page.\n\
 \n", name);
     return;
@@ -255,9 +256,19 @@ main (int argc, char **argv)
 	    set_state_int (LOUD);
 	    break;
 	case 's':
-	    if (safe_atoi (optarg, &wait, 100, 60000) != 0) {
-		fprintf (stderr, "Invalid sleep time: %s (must be 100-60000ms)\n", optarg);
-		exit (EXIT_FAILURE);
+	    {
+		char *end;
+		double secs = strtod (optarg, &end);
+
+		/* Seconds, fractions allowed (-s 2.5 == 2500ms). The
+		 * !(a && b) form also rejects NaN. */
+		if (end == optarg || *end != '\0' ||
+		    !(secs >= 0.1 && secs <= 60.0)) {
+		    fprintf (stderr,
+			"Invalid sleep time: %s (seconds, 0.1-60)\n", optarg);
+		    exit (EXIT_FAILURE);
+		}
+		wait = (int) (secs * 1000.0 + 0.5);
 	    }
 	    break;
 	case 'v':

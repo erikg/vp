@@ -47,6 +47,12 @@ timer_stub (Uint32 interval, void *param)
     return wait_time;
 }
 
+int
+timer_running (void)
+{
+    return timer_id != 0;
+}
+
 void
 timer_toggle (void)
 {
