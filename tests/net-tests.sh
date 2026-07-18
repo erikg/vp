@@ -29,6 +29,20 @@ cleanup () {
 }
 trap cleanup EXIT INT TERM
 
+# make failures self-explaining rather than another round of guessing
+echo "vp:      $VP"
+echo "python3: $(python3 --version 2>&1)"
+echo "openssl: $(openssl version 2>&1)"
+
+die () {
+    echo "$1" >&2
+    if [ -f "$TMP/srv.out" ]; then
+	echo "--- server log: ---" >&2
+	sed 's/^/    /' "$TMP/srv.out" >&2
+    fi
+    exit 2
+}
+
 # portable timeout: macOS ships no timeout(1)
 tmo () {
     python3 -c '
@@ -47,20 +61,20 @@ sys.stdout.buffer.write(b"P6\n32 32\n255\n" + b"\x40\x80\xc0" * (32 * 32))
 ' > "$TMP/test1.ppm"
 
 openssl req -x509 -newkey rsa:2048 -nodes -days 2 -subj "/CN=localhost" \
-    -keyout "$TMP/key.pem" -out "$TMP/cert.pem" 2>/dev/null || {
-    echo "openssl not available; cannot run" >&2; exit 2; }
+    -keyout "$TMP/key.pem" -out "$TMP/cert.pem" 2>/dev/null || \
+    die "openssl could not generate a test certificate"
 
 python3 "$TESTS_DIR/testserv.py" --dir "$TMP" --http-port $HP \
     --https-port $SP --v6-port $V6 --cert "$TMP/cert.pem" \
     --key "$TMP/key.pem" > "$TMP/srv.out" 2>&1 &
 SRV_PID=$!
 i=0
-while [ $i -lt 50 ]; do
+while [ $i -lt 100 ]; do
     grep -q READY "$TMP/srv.out" 2>/dev/null && break
-    kill -0 "$SRV_PID" 2>/dev/null || { cat "$TMP/srv.out" >&2; exit 2; }
+    kill -0 "$SRV_PID" 2>/dev/null || die "test server died before ready"
     sleep 0.2; i=$((i + 1))
 done
-grep -q READY "$TMP/srv.out" || { echo "server never came up" >&2; exit 2; }
+grep -q READY "$TMP/srv.out" || die "test server never signalled ready (20s)"
 
 PASS=0
 FAIL=0

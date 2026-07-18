@@ -8,9 +8,29 @@ import argparse
 import http.server
 import os
 import socket
+import socketserver
 import ssl
 import sys
 import threading
+
+
+class FastHTTPServer(http.server.HTTPServer):
+    """HTTPServer without the server_bind() reverse-DNS lookup.
+
+    http.server.HTTPServer.server_bind() calls socket.getfqdn(), which can
+    block for seconds on hosts with slow reverse resolution (observed
+    hanging past the readiness timeout on GitHub's macOS runners). We only
+    ever bind loopback, so the fqdn is not needed.
+    """
+
+    def server_bind(self):
+        socketserver.TCPServer.server_bind(self)
+        self.server_name = 'localhost'
+        self.server_port = self.server_address[1]
+
+
+class V6Server(FastHTTPServer):
+    address_family = socket.AF_INET6
 
 
 def make_handler(docroot, http_port, https_port):
@@ -68,10 +88,6 @@ def make_handler(docroot, http_port, https_port):
     return Handler
 
 
-class V6Server(http.server.HTTPServer):
-    address_family = socket.AF_INET6
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--dir', required=True)
@@ -84,9 +100,9 @@ def main():
 
     handler = make_handler(args.dir, args.http_port, args.https_port)
 
-    plain = http.server.HTTPServer(('127.0.0.1', args.http_port), handler)
+    plain = FastHTTPServer(('127.0.0.1', args.http_port), handler)
 
-    tls = http.server.HTTPServer(('127.0.0.1', args.https_port), handler)
+    tls = FastHTTPServer(('127.0.0.1', args.https_port), handler)
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ctx.load_cert_chain(args.cert, args.key)
     tls.socket = ctx.wrap_socket(tls.socket, server_side=True)
