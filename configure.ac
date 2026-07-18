@@ -32,11 +32,13 @@ AC_CHECK_FUNCS(mkstemps)
 AC_CHECK_FUNC([ceil],[],[AC_CHECK_LIB([m],[ceil],[LIBS="$LIBS -lm"])])
 
 AC_PATH_XTRA
-PKG_CHECK_MODULES([SDL2], [sdl2 >= 2.0.0])
-PKG_CHECK_MODULES([SDL2_image], [SDL2_image >= 2.0.0])
+dnl One combined check: SDL2_image.pc "Requires: sdl2", so querying the
+dnl modules separately yields sdl2's libs twice; a single pkg-config call
+dnl dedupes them.
+PKG_CHECK_MODULES([SDL], [sdl2 >= 2.0.0 SDL2_image >= 2.0.0])
 
-CFLAGS="$CFLAGS $SDL2_CFLAGS $SDL2_image_CFLAGS $X_CFLAGS"
-LIBS="$LIBS $SDL2_LIBS $SDL2_image_LIBS $X_LIBS"
+CFLAGS="$CFLAGS $SDL_CFLAGS $X_CFLAGS"
+LIBS="$LIBS $SDL_LIBS $X_LIBS"
 
 AC_SEARCH_LIBS(socket,socket wsock32)
 

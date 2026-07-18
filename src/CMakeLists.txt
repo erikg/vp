@@ -43,22 +43,23 @@ target_compile_options(vp PRIVATE
     ${SDL2_IMAGE_CFLAGS_OTHER}
 )
 
-# Link libraries
-target_link_libraries(vp
-    ${SDL2_LIBRARIES}
-    ${SDL2_IMAGE_LIBRARIES}
-)
+# Link libraries. SDL2_image.pc "Requires: sdl2", so SDL2_IMAGE_LIBRARIES
+# already repeats SDL2's libs; dedupe the combined list or CMake emits them
+# twice and the macOS linker warns about duplicate libraries. SDL2_image
+# goes first so static-link ordering stays correct after dedup.
+set(VP_LINK_LIBRARIES ${SDL2_IMAGE_LIBRARIES} ${SDL2_LIBRARIES})
 
-# Link math library if found
 if(MATH_LIBRARY)
-    target_link_libraries(vp ${MATH_LIBRARY})
+    list(APPEND VP_LINK_LIBRARIES ${MATH_LIBRARY})
 endif()
 
-# Link X11 if found
 if(X11_FOUND)
-    target_link_libraries(vp ${X11_LIBRARIES})
+    list(APPEND VP_LINK_LIBRARIES ${X11_LIBRARIES})
     target_include_directories(vp PRIVATE ${X11_INCLUDE_DIR})
 endif()
+
+list(REMOVE_DUPLICATES VP_LINK_LIBRARIES)
+target_link_libraries(vp ${VP_LINK_LIBRARIES})
 
 # Install executable
 install(TARGETS vp DESTINATION bin)
