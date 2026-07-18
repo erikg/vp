@@ -21,7 +21,10 @@
 #ifndef __NET_H_
 #define __NET_H_
 
+#include <sys/types.h>		/* ssize_t */
+
 #define HTTP 0x1
+#define HTTPS 0x2
 
 typedef struct {
     /*
@@ -47,10 +50,19 @@ typedef struct {
     long content_length;	/* body length, or -1 if unknown */
     int chunked;		/* nonzero if Transfer-Encoding: chunked */
     char *redirect;		/* Location value when http_init returns 1 */
+    /*
+     * TLS state (SSL* / SSL_CTX* when built with OpenSSL and the
+     * connection is https; always present so the struct layout does not
+     * depend on the build, always NULL for plain http)
+     */
+    void *ssl;
+    void *ssl_ctx;
 } url_t;
 
 int net_is_url (char *name);
 char *net_download (char *name);
+ssize_t net_read (url_t *u, void *buf, size_t len);
+ssize_t net_write (url_t *u, const void *buf, size_t len);
 void net_purge (char *file);
 url_t *net_url (char *name);
 void net_free_url (url_t *u);

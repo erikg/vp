@@ -58,6 +58,10 @@ if(X11_FOUND)
     target_include_directories(vp PRIVATE ${X11_INCLUDE_DIR})
 endif()
 
+if(OPENSSL_FOUND)
+    list(APPEND VP_LINK_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)
+endif()
+
 list(REMOVE_DUPLICATES VP_LINK_LIBRARIES)
 target_link_libraries(vp ${VP_LINK_LIBRARIES})
 

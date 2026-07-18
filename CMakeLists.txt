@@ -34,6 +34,20 @@ endif()
 # Find X11 for X11 support
 find_package(X11)
 
+# Optional https support via OpenSSL (>= 1.1 for TLS_client_method and
+# SSL_set1_host). find_package handles base-system installs without a
+# pkg-config file (e.g. FreeBSD). When absent, https URLs report as
+# unsupported at runtime.
+option(WITH_SSL "Build https support via OpenSSL" ON)
+if(WITH_SSL)
+    find_package(OpenSSL 1.1)
+    if(OPENSSL_FOUND)
+        set(HAVE_OPENSSL 1)
+    else()
+        message(STATUS "OpenSSL not found - https support disabled")
+    endif()
+endif()
+
 # Find math library
 find_library(MATH_LIBRARY m)
 

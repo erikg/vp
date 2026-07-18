@@ -42,6 +42,32 @@ LIBS="$LIBS $SDL_LIBS $X_LIBS"
 
 AC_SEARCH_LIBS(socket,socket wsock32)
 
+dnl Optional https support via OpenSSL (>= 1.1 for TLS_client_method and
+dnl SSL_set1_host). pkg-config first; fall back to a bare header+library
+dnl probe for base-system OpenSSL installs that ship no openssl.pc
+dnl (e.g. FreeBSD). Without it, https URLs report as unsupported at runtime.
+AC_ARG_WITH([ssl],
+    [AS_HELP_STRING([--with-ssl],
+	[build https support via OpenSSL @<:@default=auto@:>@])],
+    [], [with_ssl=auto])
+have_ssl=no
+AS_IF([test "x$with_ssl" != xno], [
+    PKG_CHECK_MODULES([OPENSSL], [openssl >= 1.1],
+	[have_ssl=yes
+	 CFLAGS="$CFLAGS $OPENSSL_CFLAGS"
+	 LIBS="$LIBS $OPENSSL_LIBS"],
+	[AC_CHECK_HEADER([openssl/ssl.h],
+	    [AC_CHECK_LIB([ssl], [TLS_client_method],
+		[have_ssl=yes
+		 LIBS="$LIBS -lssl -lcrypto"],
+		[], [-lcrypto])])])
+    AS_IF([test "x$have_ssl" = xyes],
+	[AC_DEFINE([HAVE_OPENSSL], [1], [https support via OpenSSL])],
+	[AS_IF([test "x$with_ssl" = xyes],
+	    [AC_MSG_ERROR([--with-ssl given but OpenSSL >= 1.1 not found])],
+	    [AC_MSG_NOTICE([OpenSSL not found - https support disabled])])])
+])
+
 GETOPT_LONG_DIR=
 AC_CHECK_FUNCS(getopt_long , [GETOPT_LONG_DIR=""], [
     AC_CHECK_LIB(gnugetopt, getopt_long, LIBS="$LIBS -lgnugetopt", [

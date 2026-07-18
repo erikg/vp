@@ -25,12 +25,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <errno.h>
+#include <limits.h>
 
 #ifdef WIN32
 # include <winsock.h>
@@ -40,6 +42,12 @@
 # include <sys/uio.h>
 # include <netinet/in.h>
 # include <netdb.h>
+#endif
+
+#ifdef HAVE_OPENSSL
+# include <openssl/ssl.h>
+# include <openssl/err.h>
+# include <openssl/x509.h>
 #endif
 
 #include "http.h"
@@ -124,13 +132,25 @@ mkstemps (char *template, int suffixlen)
 int
 net_is_url (char *name)
 {
-    return !strncmp (name, "http://", 7);
+    /* https is claimed even in a build without TLS support, so those URLs
+     * get a clear "built without https support" message instead of the
+     * misleading "not a readable file". */
+    return !strncasecmp (name, "http://", 7) ||
+	!strncasecmp (name, "https://", 8);
 }
 
 void
 net_free_url (url_t *u)
 {
     if (u) {
+#ifdef HAVE_OPENSSL
+	if (u->ssl) {
+	    SSL_shutdown ((SSL *) u->ssl);
+	    SSL_free ((SSL *) u->ssl);
+	}
+	if (u->ssl_ctx)
+	    SSL_CTX_free ((SSL_CTX *) u->ssl_ctx);
+#endif
 	if (u->server) free (u->server);
 	if (u->filename) free (u->filename);
 	if (u->ext) free (u->ext);
@@ -140,6 +160,56 @@ net_free_url (url_t *u)
 	if (u->conn >= 0) close (u->conn);
 	free (u);
     }
+}
+
+/*
+ * Read/write on the connection, through TLS when the connection is https.
+ * net_read returns bytes read, 0 at EOF, -1 on error, matching read(2).
+ */
+ssize_t
+net_read (url_t * u, void *buf, size_t len)
+{
+#ifdef HAVE_OPENSSL
+    if (u->ssl) {
+	int n;
+
+	if (len > INT_MAX)
+	    len = INT_MAX;
+	n = SSL_read ((SSL *) u->ssl, buf, (int) len);
+	if (n > 0)
+	    return n;
+	switch (SSL_get_error ((SSL *) u->ssl, n)) {
+	    case SSL_ERROR_ZERO_RETURN:
+		return 0;	/* clean TLS shutdown */
+	    case SSL_ERROR_SYSCALL:
+		/* Close without close_notify: common in the wild. Treat
+		 * as EOF and let Content-Length framing catch actual
+		 * truncation. */
+		if (ERR_peek_error () == 0 && errno == 0)
+		    return 0;
+		return -1;
+	    default:
+		return -1;
+	}
+    }
+#endif
+    return read (u->conn, buf, len);
+}
+
+ssize_t
+net_write (url_t * u, const void *buf, size_t len)
+{
+#ifdef HAVE_OPENSSL
+    if (u->ssl) {
+	int n;
+
+	if (len > INT_MAX)
+	    len = INT_MAX;
+	n = SSL_write ((SSL *) u->ssl, buf, (int) len);
+	return (n > 0) ? n : -1;
+    }
+#endif
+    return write (u->conn, buf, len);
 }
 
 /* Set socket timeouts to prevent hanging connections */
@@ -164,9 +234,12 @@ net_url (char *name)
 {
     url_t *u;
     char *n;
+    int tls;
+    size_t schemelen;
 
-    n = name;
-    n += strlen ("http://");
+    tls = (strncasecmp (name, "https://", 8) == 0);
+    schemelen = tls ? strlen ("https://") : strlen ("http://");
+    n = name + schemelen;
 
     /* Find the '/' character safely */
     char *slash = strchr(n, '/');
@@ -185,16 +258,18 @@ net_url (char *name)
 
     /* Initialize every field before anything can fail, so net_free_url()
      * on the error path below never frees or closes garbage. */
-    u->port = 80;
-    u->proto = HTTP;
+    u->port = tls ? 443 : 80;
+    u->proto = tls ? HTTPS : HTTP;
     u->mimetype = NULL;
     u->redirect = NULL;
+    u->ssl = NULL;
+    u->ssl_ctx = NULL;
     u->file = -1;
     u->conn = -1;
     u->content_length = -1;
     u->chunked = 0;
 
-    u->server = strdup (name + strlen ("http://"));
+    u->server = strdup (name + schemelen);
     u->filename = strdup (n);
 
     /* Extension hint for the temp file (SDL_image sniffs content, but the
@@ -254,12 +329,74 @@ net_url (char *name)
     return u;
 }
 
-int
+#ifdef HAVE_OPENSSL
+/*
+ * Wrap an already-connected socket in TLS: server certificate verified
+ * against the system trust store, hostname checked against the URL's,
+ * SNI sent (shared-hosting servers need it to pick the right cert).
+ */
+static int
+net_tls_start (url_t * u)
+{
+    SSL_CTX *ctx;
+    SSL *ssl;
+
+    if ((ctx = SSL_CTX_new (TLS_client_method ())) == NULL)
+	return -1;
+    SSL_CTX_set_verify (ctx, SSL_VERIFY_PEER, NULL);
+    if (SSL_CTX_set_default_verify_paths (ctx) != 1) {
+	fprintf (stderr, "vp: no system certificate store found\n");
+	SSL_CTX_free (ctx);
+	return -1;
+    }
+    if ((ssl = SSL_new (ctx)) == NULL) {
+	SSL_CTX_free (ctx);
+	return -1;
+    }
+    if (SSL_set_tlsext_host_name (ssl, u->server) != 1 ||
+	SSL_set1_host (ssl, u->server) != 1 ||
+	SSL_set_fd (ssl, u->conn) != 1) {
+	SSL_free (ssl);
+	SSL_CTX_free (ctx);
+	return -1;
+    }
+    if (SSL_connect (ssl) != 1) {
+	long vr = SSL_get_verify_result (ssl);
+
+	if (vr != X509_V_OK)
+	    fprintf (stderr, "vp: %s: certificate verification failed: %s\n",
+		u->server, X509_verify_cert_error_string (vr));
+	else {
+	    unsigned long e = ERR_peek_last_error ();
+	    const char *reason = e ? ERR_reason_error_string (e) : NULL;
+
+	    fprintf (stderr, "vp: TLS handshake with %s failed: %s\n",
+		u->server, reason ? reason : "unknown error");
+	}
+	SSL_free (ssl);
+	SSL_CTX_free (ctx);
+	return -1;
+    }
+    u->ssl = ssl;
+    u->ssl_ctx = ctx;
+    return 0;
+}
+#endif
+
+static int
 net_connect (url_t * u)
 {
     struct sockaddr_in s;
     struct sockaddr *ss = (struct sockaddr *)&s;
     struct hostent *h;
+
+#ifndef HAVE_OPENSSL
+    if (u->proto == HTTPS) {
+	fprintf (stderr,
+	    "vp: %s: this vp was built without https support\n", u->server);
+	return -1;
+    }
+#endif
 
     memset (&s, 0, sizeof (s));
     if ((u->conn = socket (AF_INET, SOCK_STREAM, 0)) == -1)
@@ -293,6 +430,13 @@ net_connect (url_t * u)
 	u->conn = -1;
 	return -1;
     }
+#ifdef HAVE_OPENSSL
+    if (u->proto == HTTPS && net_tls_start (u) == -1) {
+	close (u->conn);
+	u->conn = -1;
+	return -1;
+    }
+#endif
     return 0;
 }
 
@@ -303,7 +447,7 @@ net_connect (url_t * u)
  * positioned exactly at the first body byte, so this owns it from there.
  */
 typedef struct {
-    int fd;
+    url_t *u;
     unsigned char buf[BUFSIZ];
     size_t pos, len;
 } breader_t;
@@ -313,7 +457,7 @@ static int
 br_getc (breader_t * b)
 {
     if (b->pos >= b->len) {
-	ssize_t n = read (b->fd, b->buf, sizeof (b->buf));
+	ssize_t n = net_read (b->u, b->buf, sizeof (b->buf));
 	if (n <= 0)
 	    return -1;
 	b->pos = 0;
@@ -330,7 +474,7 @@ br_read (breader_t * b, unsigned char *dst, size_t want)
 
     while (got < want) {
 	if (b->pos >= b->len) {
-	    ssize_t n = read (b->fd, b->buf, sizeof (b->buf));
+	    ssize_t n = net_read (b->u, b->buf, sizeof (b->buf));
 	    if (n < 0)
 		return -1;
 	    if (n == 0)
@@ -411,14 +555,14 @@ net_suck_chunked (url_t * u, breader_t * br)
     return 0;
 }
 
-int
+static int
 net_suck (url_t * u)
 {
     breader_t br;
     size_t total = 0;
     long remaining;
 
-    br.fd = u->conn;
+    br.u = u;
     br.pos = br.len = 0;
 
     if (u->chunked)
@@ -459,53 +603,64 @@ net_suck (url_t * u)
 
 /*
  * Resolve a Location header value against the URL that produced it into a
- * malloc'd absolute http:// URL, or NULL (with a message) if it cannot be
+ * malloc'd absolute URL, or NULL (with a message) if it cannot be
  * followed. Handles absolute, protocol-relative (//host/x), absolute-path
- * (/x), and relative (x) forms.
+ * (/x), and relative (x) forms; the last three inherit the base's scheme.
  */
 static char *
 resolve_location (const url_t *base, const char *loc)
 {
+    const char *scheme = (base->proto == HTTPS) ? "https" : "http";
     char *out = NULL;
     size_t n;
 
+#ifndef HAVE_OPENSSL
     if (strncasecmp (loc, "https://", 8) == 0) {
-	fprintf (stderr,
-	    "Redirected to %s - vp does not speak https, stopping\n", loc);
+	fprintf (stderr, "Redirected to %s - this vp was built without "
+	    "https support, stopping\n", loc);
 	return NULL;
     }
-    if (strncasecmp (loc, "http://", 7) == 0) {
+#endif
+    if (strncasecmp (loc, "http://", 7) == 0 ||
+	strncasecmp (loc, "https://", 8) == 0) {
 	out = strdup (loc);
     } else if (loc[0] == '/' && loc[1] == '/') {
-	n = strlen ("http:") + strlen (loc) + 1;
+	n = strlen (scheme) + 1 + strlen (loc) + 1;
 	if ((out = malloc (n)) != NULL)
-	    snprintf (out, n, "http:%s", loc);
+	    snprintf (out, n, "%s:%s", scheme, loc);
     } else if (loc[0] == '/') {
 	/* absolute path on the same authority */
-	n = strlen (base->server) + strlen (loc) + 32;
+	n = strlen (scheme) + strlen (base->server) + strlen (loc) + 32;
 	if ((out = malloc (n)) != NULL)
-	    snprintf (out, n, "http://%s:%d%s", base->server, base->port, loc);
+	    snprintf (out, n, "%s://%s:%d%s", scheme, base->server,
+		base->port, loc);
     } else {
 	/* relative to the directory of the current path */
 	const char *slash = strrchr (base->filename, '/');
 	size_t dirlen = slash ? (size_t) (slash - base->filename) + 1 : 0;
 
-	n = strlen (base->server) + dirlen + strlen (loc) + 32;
+	n = strlen (scheme) + strlen (base->server) + dirlen +
+	    strlen (loc) + 32;
 	if ((out = malloc (n)) != NULL)
-	    snprintf (out, n, "http://%s:%d/%.*s%s", base->server,
+	    snprintf (out, n, "%s://%s:%d/%.*s%s", scheme, base->server,
 		base->port, (int) dirlen, base->filename, loc);
     }
 
     /* net_url needs a path slash after the authority; a bare
      * "http://host" target gets one appended. */
-    if (out && strchr (out + strlen ("http://"), '/') == NULL) {
-	n = strlen (out) + 2;
-	char *slashed = malloc (n);
+    if (out) {
+	const char *auth = out +
+	    (strncasecmp (out, "https://", 8) == 0 ? 8 : 7);
 
-	if (slashed)
-	    snprintf (slashed, n, "%s/", out);
-	free (out);
-	out = slashed;
+	if (strchr (auth, '/') == NULL) {
+	    n = strlen (out) + 2;
+	    char *slashed = malloc (n);
+
+	    if (slashed)
+		snprintf (slashed, n, "%s/", out);
+	    free (out);
+	    out = slashed;
+	}
     }
     return out;
 }

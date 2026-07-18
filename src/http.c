@@ -49,6 +49,7 @@ http_init (url_t * u)
     char req[BUFSIZ];
     char hdr[MAX_HEADER_SIZE];
     int rlen, hlen = 0, nl = 0, status = 0;
+    int defport = (u->proto == HTTPS) ? 443 : 80;
     ssize_t off;
 
     if (has_ctrl (u->filename) || has_ctrl (u->server)) {
@@ -57,10 +58,10 @@ http_init (url_t * u)
     }
 
     /* HTTP/1.1 request: CRLF line endings, Host (with the port when it is
-     * not the default, per RFC 7230), and Connection: close so the server
-     * closes the socket after the body instead of leaving it open (which
-     * otherwise stalls the body read until the socket timeout). */
-    if (u->port == 80)
+     * not the scheme's default, per RFC 7230), and Connection: close so the
+     * server closes the socket after the body instead of leaving it open
+     * (which otherwise stalls the body read until the socket timeout). */
+    if (u->port == defport)
 	rlen = snprintf (req, sizeof (req),
 	    "GET /%s HTTP/1.1\r\n"
 	    "Host: %s\r\n"
@@ -79,7 +80,7 @@ http_init (url_t * u)
 	fprintf (stderr, "URL too long\n");
 	return -1;
     }
-    if (write (u->conn, req, (size_t) rlen) != (ssize_t) rlen)
+    if (net_write (u, req, (size_t) rlen) != (ssize_t) rlen)
 	return -1;
 
     /* Read the header block byte-by-byte up to the blank line, leaving the
@@ -88,7 +89,7 @@ http_init (url_t * u)
      * all terminate correctly without eating into the body. */
     while (nl < 2 && hlen < (int) sizeof (hdr) - 1)
     {
-	if (read (u->conn, hdr + hlen, 1) != 1)
+	if (net_read (u, hdr + hlen, 1) != 1)
 	    return -1;		/* connection error or premature EOF */
 	if (hdr[hlen] == '\n')
 	    nl++;
@@ -112,8 +113,8 @@ http_init (url_t * u)
 
     /* Parse framing headers (case-insensitive), starting after the status line. */
     {
-	char *nl = strchr (hdr, '\n');
-	off = nl ? (nl - hdr) + 1 : hlen;
+	char *eol = strchr (hdr, '\n');
+	off = eol ? (eol - hdr) + 1 : hlen;
     }
     for (char *line = hdr + off; line && *line; ) {
 	char *eol = strchr (line, '\n');

@@ -9,5 +9,6 @@
 #cmakedefine HAVE_TIME_H
 #cmakedefine HAVE_MKSTEMPS
 #cmakedefine HAVE_GETOPT_LONG
+#cmakedefine HAVE_OPENSSL
 
 #endif /* VP_CONFIG_H */
