@@ -33,6 +33,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <limits.h>
+#include <time.h>
 
 #ifdef WIN32
 # include <winsock.h>
@@ -41,6 +42,7 @@
 # include <sys/socket.h>
 # include <sys/uio.h>
 # include <netinet/in.h>
+# include <arpa/inet.h>
 # include <netdb.h>
 #endif
 
@@ -54,7 +56,6 @@
 #include "net.h"
 
 #ifndef HAVE_MKSTEMPS
-#include <time.h>
 
 	/*
 	 * Fallback mkstemps() for platforms lacking one, matching glibc
@@ -144,10 +145,11 @@ net_free_url (url_t *u)
 {
     if (u) {
 #ifdef HAVE_OPENSSL
-	if (u->ssl) {
-	    SSL_shutdown ((SSL *) u->ssl);
+	/* No SSL_shutdown: it writes a close_notify, which on the error
+	 * paths this runs on (dead/reset sockets) is at best pointless and
+	 * at worst a SIGPIPE; the server sees the close either way. */
+	if (u->ssl)
 	    SSL_free ((SSL *) u->ssl);
-	}
 	if (u->ssl_ctx)
 	    SSL_CTX_free ((SSL_CTX *) u->ssl_ctx);
 #endif
@@ -169,12 +171,24 @@ net_free_url (url_t *u)
 ssize_t
 net_read (url_t * u, void *buf, size_t len)
 {
+    /* SO_RCVTIMEO bounds each read; this bounds the transfer, so a
+     * server dripping one byte per timeout window cannot hold the
+     * viewer hostage indefinitely. */
+    if (u->deadline && time (NULL) > u->deadline) {
+	fprintf (stderr, "Transfer taking too long, giving up\n");
+	return -1;
+    }
 #ifdef HAVE_OPENSSL
     if (u->ssl) {
 	int n;
 
 	if (len > INT_MAX)
 	    len = INT_MAX;
+	/* The EOF classification below reads errno and the error queue;
+	 * clear both so leftovers from earlier calls (mkstemps retries, a
+	 * failed handshake for a previous URL) cannot poison it. */
+	errno = 0;
+	ERR_clear_error ();
 	n = SSL_read ((SSL *) u->ssl, buf, (int) len);
 	if (n > 0)
 	    return n;
@@ -182,9 +196,11 @@ net_read (url_t * u, void *buf, size_t len)
 	    case SSL_ERROR_ZERO_RETURN:
 		return 0;	/* clean TLS shutdown */
 	    case SSL_ERROR_SYSCALL:
-		/* Close without close_notify: common in the wild. Treat
-		 * as EOF and let Content-Length framing catch actual
-		 * truncation. */
+		/* Close without close_notify, as OpenSSL 1.1 reports it:
+		 * common in the wild. Treat as EOF and let Content-Length
+		 * framing catch actual truncation. (3.x reports this case
+		 * as SSL_ERROR_SSL instead; SSL_OP_IGNORE_UNEXPECTED_EOF
+		 * set at CTX creation turns it into ZERO_RETURN above.) */
 		if (ERR_peek_error () == 0 && errno == 0)
 		    return 0;
 		return -1;
@@ -241,18 +257,19 @@ net_url (char *name)
     schemelen = tls ? strlen ("https://") : strlen ("http://");
     n = name + schemelen;
 
-    /* Find the '/' character safely */
-    char *slash = strchr(n, '/');
-    if (slash == NULL) {
-	return NULL;  /* Invalid URL - no path component */
-    }
+    /* The path may be absent entirely (http://host) - that is GET /. */
+    char *slash = strchr (n, '/');
+    const char *path = "";
 
-    /* Temporarily null-terminate the server part */
-    *slash = 0;
-    n = slash + 1;
+    if (slash) {
+	/* Temporarily null-terminate the server part */
+	*slash = 0;
+	path = slash + 1;
+    }
     u = (url_t *) malloc (sizeof (url_t));
     if (u == NULL) {
-	*slash = '/';
+	if (slash)
+	    *slash = '/';
 	return NULL;
     }
 
@@ -268,9 +285,10 @@ net_url (char *name)
     u->conn = -1;
     u->content_length = -1;
     u->chunked = 0;
+    u->deadline = 0;
 
-    u->server = strdup (name + schemelen);
-    u->filename = strdup (n);
+    u->server = strdup (n);
+    u->filename = strdup (path);
 
     /* Extension hint for the temp file (SDL_image sniffs content, but the
      * suffix helps): everything after the last '.' of the path's basename,
@@ -279,8 +297,8 @@ net_url (char *name)
     {
 	const char *base, *q, *dot, *p;
 
-	base = strrchr (n, '/');
-	base = base ? base + 1 : n;
+	base = strrchr (path, '/');
+	base = base ? base + 1 : path;
 	q = base + strcspn (base, "?#");
 	dot = NULL;
 	for (p = base; p < q; p++)
@@ -300,7 +318,8 @@ net_url (char *name)
 
     /* Put the '/' back: the caller's string is argv, and it is displayed
      * (window title, OSD, -l output) after we return. */
-    *slash = '/';
+    if (slash)
+	*slash = '/';
 
     /* Check for strdup failures */
     if (!u->server || !u->filename || !u->ext) {
@@ -324,6 +343,14 @@ net_url (char *name)
 	    u->port = (int) p;
 	    *colon = '\0';
 	}
+    }
+
+    /* An empty host must fail here, not later: SSL_set1_host("") would
+     * silently CLEAR the hostname check rather than fail it. */
+    if (u->server[0] == '\0') {
+	fprintf (stderr, "Invalid URL (empty host): %s\n", name);
+	net_free_url (u);
+	return NULL;
     }
 
     return u;
@@ -352,9 +379,19 @@ net_tls_start (url_t * u)
 {
     SSL_CTX *ctx;
     SSL *ssl;
+    struct in_addr ip4;
+    int is_ip = (inet_pton (AF_INET, u->server, &ip4) == 1);
+    int r;
 
     if ((ctx = SSL_CTX_new (TLS_client_method ())) == NULL)
 	return -1;
+    SSL_CTX_set_min_proto_version (ctx, TLS1_2_VERSION);
+#ifdef SSL_OP_IGNORE_UNEXPECTED_EOF
+    /* OpenSSL 3.x reports a close without close_notify as a hard error;
+     * downgrade it to plain EOF like 1.1 did and let Content-Length
+     * framing catch real truncation (see net_read). */
+    SSL_CTX_set_options (ctx, SSL_OP_IGNORE_UNEXPECTED_EOF);
+#endif
     SSL_CTX_set_verify (ctx,
 	allow_bad_certs ? SSL_VERIFY_NONE : SSL_VERIFY_PEER, NULL);
     if (SSL_CTX_set_default_verify_paths (ctx) != 1 && !allow_bad_certs) {
@@ -366,19 +403,34 @@ net_tls_start (url_t * u)
 	SSL_CTX_free (ctx);
 	return -1;
     }
-    if (SSL_set_tlsext_host_name (ssl, u->server) != 1 ||
-	SSL_set1_host (ssl, u->server) != 1 ||
-	SSL_set_fd (ssl, u->conn) != 1) {
+    /* An IP-literal host gets no SNI (RFC 6066 forbids it) and must match
+     * the certificate's iPAddress SANs; a DNS name gets SNI and the
+     * DNS-name check. */
+    if (is_ip)
+	r = (X509_VERIFY_PARAM_set1_ip_asc (SSL_get0_param (ssl),
+		u->server) == 1);
+    else
+	r = (SSL_set_tlsext_host_name (ssl, u->server) == 1 &&
+	    SSL_set1_host (ssl, u->server) == 1);
+    if (!r || SSL_set_fd (ssl, u->conn) != 1) {
 	SSL_free (ssl);
 	SSL_CTX_free (ctx);
 	return -1;
     }
-    if (SSL_connect (ssl) != 1) {
+    errno = 0;
+    ERR_clear_error ();
+    if ((r = SSL_connect (ssl)) != 1) {
+	int serr = SSL_get_error (ssl, r);
 	long vr = SSL_get_verify_result (ssl);
 
 	if (vr != X509_V_OK)
 	    fprintf (stderr, "vp: %s: certificate verification failed: %s\n",
 		u->server, X509_verify_cert_error_string (vr));
+	else if (serr == SSL_ERROR_WANT_READ || serr == SSL_ERROR_WANT_WRITE)
+	    /* blocking socket + SO_RCVTIMEO/SO_SNDTIMEO: retry-wanted
+	     * here means the 30s socket timeout expired mid-handshake */
+	    fprintf (stderr, "vp: TLS handshake with %s timed out\n",
+		u->server);
 	else {
 	    unsigned long e = ERR_peek_last_error ();
 	    const char *reason = e ? ERR_reason_error_string (e) : NULL;
@@ -453,6 +505,9 @@ net_connect (url_t * u)
 	u->conn = -1;
 	return -1;
     }
+    /* Overall transfer budget; per-read stalls are caught by SO_RCVTIMEO,
+     * this catches a server drip-feeding bytes forever (see net_read). */
+    u->deadline = time (NULL) + 300;
 #ifdef HAVE_OPENSSL
     if (u->proto == HTTPS && net_tls_start (u) == -1) {
 	close (u->conn);
@@ -568,11 +623,12 @@ net_suck_chunked (url_t * u, breader_t * br)
 	    chunk -= got;
 	}
 
-	/* consume the CRLF trailing the chunk data */
+	/* consume the CRLF trailing the chunk data; anything else means
+	 * the framing is desynced and the body cannot be trusted */
 	c = br_getc (br);
 	if (c == '\r')
 	    c = br_getc (br);
-	if (c == -1)
+	if (c != '\n')
 	    return -1;
     }
     return 0;
@@ -644,6 +700,9 @@ resolve_location (const url_t *base, const char *loc)
 	return NULL;
     }
 #endif
+    if (base->proto == HTTPS && strncasecmp (loc, "http://", 7) == 0)
+	fprintf (stderr,
+	    "Warning: redirect downgrades https to plain http (%s)\n", loc);
     if (strncasecmp (loc, "http://", 7) == 0 ||
 	strncasecmp (loc, "https://", 8) == 0) {
 	out = strdup (loc);
@@ -658,9 +717,15 @@ resolve_location (const url_t *base, const char *loc)
 	    snprintf (out, n, "%s://%s:%d%s", scheme, base->server,
 		base->port, loc);
     } else {
-	/* relative to the directory of the current path */
-	const char *slash = strrchr (base->filename, '/');
-	size_t dirlen = slash ? (size_t) (slash - base->filename) + 1 : 0;
+	/* relative to the directory of the current path, where "path"
+	 * stops at any ?query/#fragment (a '/' inside a query string is
+	 * not a directory boundary) */
+	size_t plen = strcspn (base->filename, "?#");
+	size_t dirlen = 0;
+
+	for (size_t j = 0; j < plen; j++)
+	    if (base->filename[j] == '/')
+		dirlen = j + 1;
 
 	n = strlen (scheme) + strlen (base->server) + dirlen +
 	    strlen (loc) + 32;
@@ -685,6 +750,10 @@ resolve_location (const url_t *base, const char *loc)
 	    out = slashed;
 	}
     }
+    /* Every earlier refusal printed its own message and returned; NULL
+     * here means allocation failure. */
+    if (out == NULL)
+	fprintf (stderr, "Cannot resolve redirect Location: %s\n", loc);
     return out;
 }
 
@@ -692,7 +761,8 @@ char *
 net_download (char *name)
 {
     char *filename;
-    int len, hops;
+    size_t len;
+    int hops;
     url_t *url = NULL;
     char *loc = NULL;		/* malloc'd URL of the current hop, if any */
 
@@ -737,7 +807,7 @@ net_download (char *name)
 	return NULL;
     }
     snprintf (filename, len, "/tmp/vp.XXXXXX.%s", url->ext);
-    url->file = mkstemps (filename, strlen (url->ext) + 1);
+    url->file = mkstemps (filename, (int) strlen (url->ext) + 1);
     if (url->file == -1) {
 	perror ("mkstemps failed");
 	free (filename);

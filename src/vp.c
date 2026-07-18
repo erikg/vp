@@ -167,10 +167,35 @@ signal_handler (int sig)
     shutdown_requested = 1;
 }
 
+/*
+ * Unlink downloaded temp files, free their name strings and any decoded
+ * surfaces, and release the image table. Every exit path that runs after
+ * the download loop must come through here or downloads are stranded in
+ * /tmp. (Local files share the resource pointer and must be left alone.)
+ */
+static void
+free_image_table (void)
+{
+    if (image_table.image == NULL)
+	return;
+    for (int n = 0; n < image_table.count; n++) {
+	if (image_table.image[n].surface)
+	    SDL_FreeSurface (image_table.image[n].surface);
+	if (image_table.image[n].file != image_table.image[n].resource) {
+	    net_purge (image_table.image[n].file);
+	    free (image_table.image[n].file);
+	}
+    }
+    free (image_table.image);
+    image_table.image = NULL;
+    image_table.count = 0;
+}
+
 void
-oops (char *msg)
+oops (const char *msg)
 {
     fprintf (stderr, "%s\n", msg);
+    free_image_table ();
     if (mutex) {
 	SDL_DestroyMutex (mutex);
     }
@@ -402,7 +427,21 @@ main (int argc, char **argv)
 
     printf ("Scanning for images, %d possible\n", argc);
 
-    for (count = 0; count < argc; count++)
+    /* Install signal handlers before the download phase, not after: a
+     * Ctrl+C during a slow fetch should still reach the cleanup path
+     * below instead of stranding temp files via default disposition.
+     * SIGPIPE is ignored outright - a server resetting the connection
+     * mid-write must surface as a write error, not kill the viewer. */
+    signal (SIGINT, signal_handler);   /* Ctrl+C */
+    signal (SIGTERM, signal_handler);  /* Termination request */
+#ifdef SIGHUP
+    signal (SIGHUP, signal_handler);   /* Hangup */
+#endif
+#ifdef SIGPIPE
+    signal (SIGPIPE, SIG_IGN);
+#endif
+
+    for (count = 0; count < argc && !shutdown_requested; count++)
     {
 	struct stat sb[1];
 
@@ -411,6 +450,7 @@ main (int argc, char **argv)
 	    /* Check bounds before accessing array */
 	    if (image_table.count >= argc) {
 		fprintf (stderr, "Internal error: image_table overflow\n");
+		free_image_table ();
 		exit (EXIT_FAILURE);
 	    }
 	    image_table.image[image_table.count].resource = argv[count];
@@ -422,7 +462,9 @@ main (int argc, char **argv)
 		/* Check bounds before accessing array */
 		if (image_table.count >= argc) {
 		    fprintf (stderr, "Internal error: image_table overflow\n");
+		    net_purge (downloaded_file);
 		    free (downloaded_file);
+		    free_image_table ();
 		    exit (EXIT_FAILURE);
 		}
 		image_table.image[image_table.count].resource = argv[count];
@@ -434,18 +476,14 @@ main (int argc, char **argv)
 	    fprintf (stderr, "%s: not a readable file, skipping\n", argv[count]);
     }
 
+    if (shutdown_requested)
+	oops ("Interrupted.\n");
+
     if (image_table.count == 0)
 	oops ("No images selected... aborting.\n");
 
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
     atexit (SDL_Quit);
-
-    /* Install signal handlers for graceful shutdown */
-    signal (SIGINT, signal_handler);   /* Ctrl+C */
-    signal (SIGTERM, signal_handler);  /* Termination request */
-    #ifdef SIGHUP
-    signal (SIGHUP, signal_handler);   /* Hangup */
-    #endif
 
     /* Get desktop display mode for fullscreen */
     SDL_DisplayMode desktop_mode;
@@ -478,6 +516,7 @@ main (int argc, char **argv)
     if (window == NULL)
     {
 	printf ("Unable to create window: %s\n", SDL_GetError ());
+	free_image_table ();
 	return EXIT_FAILURE;
     }
 
@@ -491,6 +530,7 @@ main (int argc, char **argv)
     if (renderer == NULL) {
 	SDL_DestroyWindow (window);
 	printf ("Unable to create renderer: %s\n", SDL_GetError ());
+	free_image_table ();
 	return EXIT_FAILURE;
     }
     if (get_state_int (LOUD)) {
@@ -507,21 +547,7 @@ main (int argc, char **argv)
 
     while (!shutdown_requested && handle_input ());
 
-    if (image_table.image) {
-	/* Free downloaded filenames and clean up image surfaces */
-	for (int n = 0; n < image_table.count; n++) {
-	    if (image_table.image[n].surface) {
-		SDL_FreeSurface (image_table.image[n].surface);
-	    }
-	    /* Downloaded temp files differ from resource: unlink then free.
-	     * (Local files share the resource pointer and must be left alone.) */
-	    if (image_table.image[n].file != image_table.image[n].resource) {
-		net_purge (image_table.image[n].file);
-		free (image_table.image[n].file);
-	    }
-	}
-	free (image_table.image);
-    }
+    free_image_table ();
     image_cleanup ();
     if (renderer) {
 	SDL_DestroyRenderer (renderer);

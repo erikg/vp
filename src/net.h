@@ -22,6 +22,7 @@
 #define __NET_H_
 
 #include <sys/types.h>		/* ssize_t */
+#include <time.h>		/* time_t */
 
 #define HTTP 0x1
 #define HTTPS 0x2
@@ -50,6 +51,7 @@ typedef struct {
     long content_length;	/* body length, or -1 if unknown */
     int chunked;		/* nonzero if Transfer-Encoding: chunked */
     char *redirect;		/* Location value when http_init returns 1 */
+    time_t deadline;		/* wall-clock cutoff for the whole transfer */
     /*
      * TLS state (SSL* / SSL_CTX* when built with OpenSSL and the
      * connection is https; always present so the struct layout does not

@@ -40,7 +40,7 @@ struct image_table_s {
 };
 
 
-void oops (char *);
+void oops (const char *);
 int get_state_int (int);
 int toggle_state (int);
 int set_state_int (int);

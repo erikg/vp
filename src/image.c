@@ -27,6 +27,7 @@
 #include <SDL_image.h>
 
 #include "vp.h"
+#include "image.h"
 #include "font8x8.h"
 
 extern SDL_Window *window;
