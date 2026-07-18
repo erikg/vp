@@ -456,6 +456,11 @@ main (int argc, char **argv)
 	return EXIT_FAILURE;
     }
 
+    /* Linear filtering so downscaling oversized images to fit the window
+     * looks smooth rather than aliased. Must be set before any texture is
+     * created. */
+    SDL_SetHint (SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+
     /* Create renderer (accelerated if available, else software) */
     renderer = create_renderer (window);
     if (renderer == NULL) {

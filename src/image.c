@@ -352,6 +352,43 @@ zoom_blit_centered (SDL_Surface * d, SDL_Surface * s, float scale)
     return d;
 }
 
+/*
+ * Largest window content size that fits on the current display without the
+ * window running off-screen: the usable desktop area (which already excludes
+ * the dock / taskbar / panels) minus the window-manager decorations (title bar
+ * and borders). Border reporting is best-effort - it returns zeros on WMs or
+ * backends (e.g. Wayland) that don't expose it, and before the window is first
+ * mapped - so we just under-subtract in those cases, never overrun.
+ */
+static void
+window_max_content (int *max_w, int *max_h)
+{
+    SDL_Rect usable;
+    int disp, top = 0, left = 0, bottom = 0, right = 0;
+
+    disp = SDL_GetWindowDisplayIndex (window);
+    if (disp < 0)
+	disp = 0;
+
+    if (SDL_GetDisplayUsableBounds (disp, &usable) != 0 &&
+	SDL_GetDisplayBounds (disp, &usable) != 0)
+    {
+	/* No display geometry available; don't clamp. */
+	*max_w = *max_h = INT_MAX;
+	return;
+    }
+
+    SDL_GetWindowBordersSize (window, &top, &left, &bottom, &right);
+
+    *max_w = usable.w - left - right;
+    *max_h = usable.h - top - bottom;
+    if (*max_w < 1)
+	*max_w = 1;
+    if (*max_h < 1)
+	*max_h = 1;
+    return;
+}
+
 	/*
 	 * ripped from the libsdl faq, 'gtv' code
 	 */
@@ -400,8 +437,16 @@ show_image ()
     } else
     {
 	char buffer[BUFSIZ];  /* Local buffer to prevent race conditions */
+	int max_w, max_h, win_w, win_h;
 
-	SDL_SetWindowSize(window, s->w, s->h);
+	/* Size the window to the image, but never larger than the display can
+	 * show (usable desktop minus decorations), so oversized images don't
+	 * spawn a window that runs off-screen. */
+	window_max_content (&max_w, &max_h);
+	win_w = s->w < max_w ? s->w : max_w;
+	win_h = s->h < max_h ? s->h : max_h;
+
+	SDL_SetWindowSize(window, win_w, win_h);
 	snprintf (buffer, BUFSIZ, "vp - %s", it->image[it->current].resource);
 	SDL_SetWindowTitle(window, buffer);
 	center_window ();
@@ -409,13 +454,34 @@ show_image ()
 
     if (s && s->format)
     {
+	int draw_w = s->w, draw_h = s->h;
+
 	SDL_GetWindowSize(window, &window_w, &window_h);
 
+	/* In windowed mode, shrink an image too big for the (display-clamped)
+	 * window down to fit, preserving aspect ratio, so the whole image is
+	 * visible instead of a center crop. Never enlarge - that is what the
+	 * zoom toggle is for. RenderCopy does the scaling on the GPU.
+	 * Fullscreen sizing is handled above (1:1, or the pre-scaled zoom
+	 * surface). */
+	if (!get_state_int (FULLSCREEN) &&
+	    (s->w > window_w || s->h > window_h))
+	{
+	    double scale = getscale (window_w, window_h, s->w, s->h);
+
+	    draw_w = (int) (s->w * scale);
+	    draw_h = (int) (s->h * scale);
+	    if (draw_w < 1)
+		draw_w = 1;
+	    if (draw_h < 1)
+		draw_h = 1;
+	}
+
 	/* Center the image on screen */
-	r.x = (window_w - s->w) / 2;
-	r.y = (window_h - s->h) / 2;
-	r.w = s->w;
-	r.h = s->h;
+	r.x = (window_w - draw_w) / 2;
+	r.y = (window_h - draw_h) / 2;
+	r.w = draw_w;
+	r.h = draw_h;
 
 	texture = SDL_CreateTextureFromSurface(renderer, s);
 	if (texture) {

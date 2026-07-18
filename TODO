@@ -1,4 +1,3 @@
 general:
 	image caching
 	arbitrary zooming and panning
-	handle images larger than max display (Robin Getz 12/29/07)
