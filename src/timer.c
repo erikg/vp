@@ -41,6 +41,7 @@ timer_stub (Uint32 interval, void *param)
      * Instead of calling image_next() directly from timer thread,
      * send an event to the main thread for safe processing
      */
+    SDL_zero (ev);
     ev.type = SDL_USEREVENT;
     ev.user.code = NEXT_IMAGE;
     SDL_PushEvent (&ev);

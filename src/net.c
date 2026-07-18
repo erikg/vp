@@ -34,7 +34,7 @@
 
 #ifdef WIN32
 # include <winsock.h>
-# include <winsock2h>
+# include <winsock2.h>
 #else
 # include <sys/socket.h>
 # include <sys/uio.h>
@@ -96,7 +96,11 @@ mkstemps (char *template, int suffixlen)
 	}
     }
 
-    rng_state = (unsigned int) (time (NULL) ^ ((unsigned int) getpid () << 16));
+    /* Seed once per process; later calls continue the stream instead of
+     * replaying the same names within the same second. */
+    if (rng_state == 0)
+	rng_state =
+	    (unsigned int) (time (NULL) ^ ((unsigned int) getpid () << 16));
     if (rng_state == 0)
 	rng_state = 0x1234567u;
 
@@ -227,6 +231,24 @@ net_url (char *name)
 	return NULL;
     }
 
+    /* Optional :port in the authority (our copy, argv already restored). */
+    {
+	char *colon = strchr (u->server, ':');
+
+	if (colon) {
+	    char *end;
+	    long p = strtol (colon + 1, &end, 10);
+
+	    if (end == colon + 1 || *end != '\0' || p < 1 || p > 65535) {
+		fprintf (stderr, "Invalid port in URL: %s\n", name);
+		net_free_url (u);
+		return NULL;
+	    }
+	    u->port = (int) p;
+	    *colon = '\0';
+	}
+    }
+
     return u;
 }
 
@@ -245,7 +267,10 @@ net_connect (url_t * u)
     }
     if ((h = gethostbyname (u->server)) == NULL)
     {
-	perror ("vp:net.c:net_connect:gethostbyname");
+	/* gethostbyname reports through h_errno; perror would print
+	 * whatever stale errno happened to be lying around. */
+	fprintf (stderr, "vp: cannot resolve %s: %s\n",
+	    u->server, hstrerror (h_errno));
 	close (u->conn);
 	u->conn = -1;
 	return -1;
@@ -354,8 +379,11 @@ net_suck_chunked (url_t * u, breader_t * br)
 	    return -1;
 	line[i] = '\0';
 
-	long chunk = strtol (line, NULL, 16);
-	if (chunk < 0)
+	/* An unparseable size line must not read as "0" - that is the
+	 * last-chunk marker and would pass truncation off as success. */
+	char *end;
+	long chunk = strtol (line, &end, 16);
+	if (end == line || chunk < 0)
 	    return -1;
 	if (chunk == 0)
 	    break;		/* last chunk */

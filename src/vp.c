@@ -234,6 +234,13 @@ main (int argc, char **argv)
 {
     int i, count, c, wait = 2500, width = 0, height = 0, depth = 0;
 
+    /* The state accessors lock this, and getopt handlers below already use
+     * them, so create it before anything else can touch it. (SDL mutexes
+     * don't need SDL_Init.) */
+    mutex = SDL_CreateMutex ();
+    if (mutex == NULL)
+	oops ("SDL_CreateMutex() failed\n");
+
     static struct option optlist[] = {
 	{"fullscreen", 0, NULL, 'f'},
 	{"help", 0, NULL, 'h'},
@@ -272,9 +279,9 @@ main (int argc, char **argv)
 	    }
 	    break;
 	case 'v':
-	    exit (printf
-		("%s %s (C) 2001-2026 Erik Greenwald <erik@elfga.com>\n",
-		    PACKAGE, VERSION));
+	    printf ("%s %s (C) 2001-2026 Erik Greenwald <erik@elfga.com>\n",
+		PACKAGE, VERSION);
+	    exit (EXIT_SUCCESS);
 	    break;
 	case 'z':
 	    set_state_int (ZOOM);
@@ -415,8 +422,10 @@ main (int argc, char **argv)
 		image_table.image[image_table.count].resource = argv[count];
 		image_table.image[image_table.count].file = downloaded_file;
 		image_table.count++;
-	    }
-	}
+	    } else
+		fprintf (stderr, "%s: fetch failed, skipping\n", argv[count]);
+	} else
+	    fprintf (stderr, "%s: not a readable file, skipping\n", argv[count]);
     }
 
     if (image_table.count == 0)
@@ -424,7 +433,6 @@ main (int argc, char **argv)
 
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
     atexit (SDL_Quit);
-    mutex = SDL_CreateMutex ();
 
     /* Install signal handlers for graceful shutdown */
     signal (SIGINT, signal_handler);   /* Ctrl+C */

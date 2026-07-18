@@ -48,7 +48,7 @@ http_init (url_t * u)
 {
     char req[BUFSIZ];
     char hdr[MAX_HEADER_SIZE];
-    int hlen = 0, e = 0, status = 0;
+    int rlen, hlen = 0, nl = 0, status = 0;
     ssize_t off;
 
     if (has_ctrl (u->filename) || has_ctrl (u->server)) {
@@ -56,31 +56,47 @@ http_init (url_t * u)
 	return -1;
     }
 
-    /* HTTP/1.1 request: CRLF line endings, Host, and Connection: close so the
-     * server closes the socket after the body instead of leaving it open
-     * (which otherwise stalls the body read until the socket timeout). */
-    snprintf (req, sizeof (req),
-	"GET /%s HTTP/1.1\r\n"
-	"Host: %s\r\n"
-	"User-Agent: %s/%s\r\n"
-	"Connection: close\r\n"
-	"\r\n", u->filename, u->server, PACKAGE, VERSION);
-    if (write (u->conn, req, strlen (req)) != (ssize_t) strlen (req))
+    /* HTTP/1.1 request: CRLF line endings, Host (with the port when it is
+     * not the default, per RFC 7230), and Connection: close so the server
+     * closes the socket after the body instead of leaving it open (which
+     * otherwise stalls the body read until the socket timeout). */
+    if (u->port == 80)
+	rlen = snprintf (req, sizeof (req),
+	    "GET /%s HTTP/1.1\r\n"
+	    "Host: %s\r\n"
+	    "User-Agent: %s/%s\r\n"
+	    "Connection: close\r\n"
+	    "\r\n", u->filename, u->server, PACKAGE, VERSION);
+    else
+	rlen = snprintf (req, sizeof (req),
+	    "GET /%s HTTP/1.1\r\n"
+	    "Host: %s:%d\r\n"
+	    "User-Agent: %s/%s\r\n"
+	    "Connection: close\r\n"
+	    "\r\n", u->filename, u->server, u->port, PACKAGE, VERSION);
+    if (rlen < 0 || (size_t) rlen >= sizeof (req)) {
+	/* Truncated request would just stall the server; fail fast. */
+	fprintf (stderr, "URL too long\n");
+	return -1;
+    }
+    if (write (u->conn, req, (size_t) rlen) != (ssize_t) rlen)
 	return -1;
 
-    /* Read the header block byte-by-byte up to the blank line (CRLFCRLF), so
-     * the socket is left positioned exactly at the first body byte. */
-    while (e < 4 && hlen < (int) sizeof (hdr) - 1)
+    /* Read the header block byte-by-byte up to the blank line, leaving the
+     * socket positioned exactly at the first body byte. Count newlines and
+     * let CR ride along ignored, so CRLFCRLF, bare LFLF, and mixed endings
+     * all terminate correctly without eating into the body. */
+    while (nl < 2 && hlen < (int) sizeof (hdr) - 1)
     {
 	if (read (u->conn, hdr + hlen, 1) != 1)
 	    return -1;		/* connection error or premature EOF */
-	if (hdr[hlen] == '\n' || hdr[hlen] == '\r')
-	    e++;
-	else
-	    e = 0;
+	if (hdr[hlen] == '\n')
+	    nl++;
+	else if (hdr[hlen] != '\r')
+	    nl = 0;
 	hlen++;
     }
-    if (e < 4)
+    if (nl < 2)
 	return -1;		/* headers too large or malformed */
     hdr[hlen] = '\0';
 

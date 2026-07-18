@@ -119,6 +119,13 @@ draw_osd (const char *text)
     default:		x = (win_w - tw) / 2;		y = (win_h - th) / 2;	break;
     }
 
+    /* A name too wide for the window would push centered/right anchors off
+     * the left edge; pin it so at least the start of the name is readable. */
+    if (x < pad)
+	x = pad;
+    if (y < pad)
+	y = pad;
+
     /* Translucent black backing bar. */
     bar.x = x - pad;
     bar.y = y - pad;
@@ -134,8 +141,10 @@ draw_osd (const char *text)
     return;
 }
 
-void
-sync (void)
+/* Flush the X connection. Was called sync() for 20+ years, which collided
+ * with (and linker-shadowed) POSIX sync(2); nothing here wants that. */
+static void
+x_sync (void)
 {
 #ifdef SDL_SYSWM_X11
     SDL_SysWMinfo info;
@@ -464,7 +473,7 @@ image_freshen (void)
 
     SDL_LockMutex (mutex);
 
-    sync ();
+    x_sync ();
     c = it->current;
 
     /* Check bounds before accessing array */
@@ -499,7 +508,7 @@ image_freshen (void)
     }
 
     show_image ();
-    sync ();
+    x_sync ();
     SDL_UnlockMutex (mutex);
     return 1;
 }

@@ -18,7 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  ****************************************************************************/
 
-#include <ctype.h>
 #include <math.h>
 #include <SDL.h>
 #include "image.h"
@@ -76,6 +75,7 @@ throw_exit (void)
     SDL_Event thrower;
 
     printf ("Throwing ext\n");
+    SDL_zero (thrower);		/* no garbage in the fields we don't set */
     thrower.type = SDL_KEYDOWN;
     thrower.key.keysym.sym = SDLK_ESCAPE;
     timer_stop ();
@@ -147,7 +147,16 @@ handle_input (void)
 	}
 	break;
     case SDL_KEYDOWN:
-	switch (tolower (e.key.keysym.sym))
+    {
+	/* SDL2 keycodes for letters are already lowercase; fold A-Z anyway
+	 * for safety. (tolower() on non-char keycodes like SDLK_RIGHT is
+	 * formally UB - glibc/FreeBSD range-guard it, but don't rely on
+	 * that.) */
+	SDL_Keycode sym = e.key.keysym.sym;
+
+	if (sym >= 'A' && sym <= 'Z')
+	    sym += 'a' - 'A';
+	switch (sym)
 	{
 	case 'x':
 	case 'q':
@@ -257,11 +266,12 @@ handle_input (void)
 	    break;
 	default:
 	    /*
-	     * do nothing 
+	     * do nothing
 	     */
 	    break;
 	}
 	break;
+    }
     }
     return 1;
 }
