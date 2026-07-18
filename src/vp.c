@@ -172,6 +172,7 @@ signal_handler (int sig)
  * surfaces, and release the image table. Every exit path that runs after
  * the download loop must come through here or downloads are stranded in
  * /tmp. (Local files share the resource pointer and must be left alone.)
+ * With -K the temp files are kept, and named so they can be found.
  */
 static void
 free_image_table (void)
@@ -182,7 +183,11 @@ free_image_table (void)
 	if (image_table.image[n].surface)
 	    SDL_FreeSurface (image_table.image[n].surface);
 	if (image_table.image[n].file != image_table.image[n].resource) {
-	    net_purge (image_table.image[n].file);
+	    if (get_state_int (KEEP))
+		printf ("kept %s (%s)\n", image_table.image[n].file,
+		    image_table.image[n].resource);
+	    else
+		net_purge (image_table.image[n].file);
 	    free (image_table.image[n].file);
 	}
     }
@@ -240,11 +245,13 @@ static void
 show_help (char *name)
 {
     printf ("Usage:\n\
-\t%s [-fhklvz] [-s <seconds>] [-r [<width>][x<height>][@<depth>]]\n\
+\t%s [-fhkKlvz] [-s <seconds>] [-r [<width>][x<height>][@<depth>]]\n\
 \n\
 \t-f		--fullscreen	set fullscreen mode.\n\
 \t-k		--insecure	accept https certificates that fail\n\
 \t				verification.\n\
+\t-K		--keep		keep downloaded files instead of\n\
+\t				deleting them on exit.\n\
 \t-l		--loud		print file name to stdout.\n\
 \t-h		--help		show help.\n\
 \t-v		--version	show version.\n\
@@ -272,6 +279,7 @@ main (int argc, char **argv)
 	{"fullscreen", 0, NULL, 'f'},
 	{"help", 0, NULL, 'h'},
 	{"insecure", 0, NULL, 'k'},
+	{"keep", 0, NULL, 'K'},
 	{"loud", 0, NULL, 'l'},
 	{"sleep", 1, NULL, 's'},
 	{"version", 0, NULL, 'v'},
@@ -280,7 +288,7 @@ main (int argc, char **argv)
 	{0, 0, 0, 0}
     };
 
-    while ((c = getopt_long (argc, argv, "vhklzfs:r:", optlist, &i)) != -1)
+    while ((c = getopt_long (argc, argv, "vhkKlzfs:r:", optlist, &i)) != -1)
     {
 	switch (c)
 	{
@@ -289,6 +297,9 @@ main (int argc, char **argv)
 	    break;
 	case 'k':
 	    net_allow_bad_certs ();
+	    break;
+	case 'K':
+	    set_state_int (KEEP);
 	    break;
 	case 'l':
 	    set_state_int (LOUD);
@@ -462,7 +473,8 @@ main (int argc, char **argv)
 		/* Check bounds before accessing array */
 		if (image_table.count >= argc) {
 		    fprintf (stderr, "Internal error: image_table overflow\n");
-		    net_purge (downloaded_file);
+		    if (!get_state_int (KEEP))
+			net_purge (downloaded_file);
 		    free (downloaded_file);
 		    free_image_table ();
 		    exit (EXIT_FAILURE);

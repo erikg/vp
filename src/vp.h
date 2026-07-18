@@ -24,6 +24,7 @@
 #define ZOOM		1
 #define FULLSCREEN	2
 #define LOUD		4
+#define KEEP		8
 #define GRAB_FOCUS	8
 #define OSD		16
 

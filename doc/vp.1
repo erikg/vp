@@ -6,7 +6,7 @@
 .Nd view image files 
 .Sh SYNOPSIS
 .Nm
-.Op Fl fhklsvz
+.Op Fl fhkKlsvz
 .Op Ar
 .Sh DESCRIPTION
 .Nm
@@ -45,6 +45,12 @@ expired, wrong hostname). The failure reason is still printed as a warning.
 Only meaningful when
 .Nm
 was built with OpenSSL.
+.It Fl K, -keep
+Keep downloaded files instead of deleting them on exit. Each kept file's
+path is printed at exit, alongside the URL it came from. Without this
+flag, files downloaded from URLs are removed when
+.Nm
+exits, including exits triggered by SIGINT, SIGTERM, or SIGHUP.
 .It Fl l, -loud
 Loud behavior. Print out file names as it displays
 .It Fl s, -sleep
