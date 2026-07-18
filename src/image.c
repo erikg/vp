@@ -508,6 +508,20 @@ show_image ()
  * 2   vp				0x00003284 image_freshen + 212
  * 3   vp				0x00003310 image_prev + 80
  */
+/*
+ * Ensure a table entry has its decoded surface resident, without touching
+ * (or building) the zoom-scaled cache - that is only ever needed for the
+ * currently displayed image and is (re)built by image_freshen_sub() when the
+ * entry becomes current.
+ */
+static void
+image_load_surface (struct image_s *i)
+{
+    if (i->surface == NULL)
+	i->surface = IMG_Load (i->file);
+    return;
+}
+
 void
 image_freshen_sub (struct image_s *i)
 {
@@ -574,7 +588,7 @@ int
 image_freshen ()
 {
     struct image_table_s *it = get_image_table ();
-    int c;
+    int c, lo, hi, idx;
 
     SDL_LockMutex (mutex);
 
@@ -587,25 +601,31 @@ image_freshen ()
 	return 0;
     }
 
-    if (c > 0)
-    {
-	struct image_s *i = &it->image[c - 1];
+    /* Sliding-window cache: keep the current image plus up to 2 before and
+     * 2 after it decoded in memory (clamped to the ends of the list), so
+     * paging back and forth across the same handful of images doesn't
+     * re-decode from disk every time. Anything outside that window gets its
+     * surfaces freed. */
+    lo = c - 2;
+    if (lo < 0)
+	lo = 0;
+    hi = c + 2;
+    if (hi > it->count - 1)
+	hi = it->count - 1;
 
-	if (i->surface)
-	    SDL_FreeSurface (i->surface);
-	if (i->scaled)
-	    SDL_FreeSurface (i->scaled);
-	i->surface = i->scaled = NULL;
-    }
-    if (c < (it->count - 1))
+    for (idx = 0; idx < it->count; idx++)
     {
-	struct image_s *i = &it->image[c + 1];
+	struct image_s *i = &it->image[idx];
 
-	if (i->surface)
-	    SDL_FreeSurface (i->surface);
-	if (i->scaled)
-	    SDL_FreeSurface (i->scaled);
-	i->surface = i->scaled = NULL;
+	if (idx < lo || idx > hi)
+	{
+	    if (i->surface)
+		SDL_FreeSurface (i->surface);
+	    if (i->scaled)
+		SDL_FreeSurface (i->scaled);
+	    i->surface = i->scaled = NULL;
+	} else if (idx != c)
+	    image_load_surface (i);
     }
 
     image_freshen_sub (&it->image[c]);
