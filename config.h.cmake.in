@@ -5,8 +5,6 @@
 #define PACKAGE "@PROJECT_NAME@"
 #define VERSION "@PROJECT_VERSION@"
 
-#cmakedefine HAVE_UNISTD_H
-#cmakedefine HAVE_TIME_H
 #cmakedefine HAVE_MKSTEMPS
 #cmakedefine HAVE_OPENSSL
 

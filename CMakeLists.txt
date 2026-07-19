@@ -51,14 +51,17 @@ endif()
 # Find math library
 find_library(MATH_LIBRARY m)
 
-# Check for required headers
-include(CheckIncludeFile)
-check_include_file(unistd.h HAVE_UNISTD_H)
-check_include_file(time.h HAVE_TIME_H)
-
 # Check for required functions
 include(CheckFunctionExists)
 check_function_exists(mkstemps HAVE_MKSTEMPS)
+
+# getopt_long is a hard requirement (see configure.ac) - fail fast instead
+# of a raw link error.
+include(CheckSymbolExists)
+check_symbol_exists(getopt_long "getopt.h" HAVE_GETOPT_LONG)
+if(NOT HAVE_GETOPT_LONG)
+    message(FATAL_ERROR "getopt_long not found; vp requires a system getopt_long implementation")
+endif()
 
 # Generate config header
 configure_file(

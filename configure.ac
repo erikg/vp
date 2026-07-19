@@ -26,7 +26,6 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CC
 AC_PROG_INSTALL
 
-AC_CHECK_HEADERS(unistd.h stdio.h stdlib.h string.h time.h)
 AC_CHECK_FUNCS(mkstemps)
 AC_CHECK_FUNC([ceil],[],[AC_CHECK_LIB([m],[ceil],[LIBS="$LIBS -lm"])])
 

@@ -16,6 +16,11 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.    #
 #############################################################################
 
+# autoconf >= 2.72 bakes its newest dialect (gnu23) into CC; pin gnu11 to
+# match CMake's C_STANDARD 11. AM_CFLAGS survives a make-time CFLAGS
+# override, and a user -std in CFLAGS still wins by coming later.
+AM_CFLAGS = -std=gnu11
+
 bin_PROGRAMS = vp
 
 vp_SOURCES = http.c image.c input.c vp.c net.c timer.c
