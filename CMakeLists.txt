@@ -59,7 +59,6 @@ check_include_file(time.h HAVE_TIME_H)
 # Check for required functions
 include(CheckFunctionExists)
 check_function_exists(mkstemps HAVE_MKSTEMPS)
-check_function_exists(getopt_long HAVE_GETOPT_LONG)
 
 # Generate config header
 configure_file(
@@ -71,24 +70,8 @@ configure_file(
 add_subdirectory(src)
 add_subdirectory(doc)
 
-# Install documentation files if they exist
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
-    install(FILES README.md
-        DESTINATION ${CMAKE_INSTALL_DOCDIR}
-        COMPONENT documentation)
-endif()
-
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/COPYING)
-    install(FILES COPYING
-        DESTINATION ${CMAKE_INSTALL_DOCDIR}
-        COMPONENT documentation)
-endif()
-
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ChangeLog)
-    install(FILES ChangeLog
-        DESTINATION ${CMAKE_INSTALL_DOCDIR}
-        COMPONENT documentation)
-endif()
+# Docs are handled by the real packaging paths (rpm %doc, dh_installdocs),
+# not by this build system - see doc/CMakeLists.txt for the man page.
 
 # CPack configuration for packaging
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "SDL-based image viewer for Linux and FreeBSD")
@@ -100,7 +83,7 @@ set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
 
 # RPM specific
 set(CPACK_RPM_PACKAGE_GROUP "Applications/Graphics")
-set(CPACK_RPM_PACKAGE_LICENSE "GPL")
+set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0-or-later")
 
 # DEB specific
 set(CPACK_DEBIAN_PACKAGE_SECTION "graphics")

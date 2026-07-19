@@ -13,8 +13,7 @@
 # GNU General Public License for more details.                              #
 #                                                                           #
 # You should have received a copy of the GNU General Public License         #
-# along with this program; if not, write to the Free Software               #
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA #
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.    #
 #############################################################################
 
 Name:           @PACKAGE@
@@ -59,7 +58,7 @@ http and (when built with OpenSSL) https, with redirect following.
 %{_mandir}/man1/vp.1*
 
 %changelog
-* Sun Jul 19 2026 Erik Greenwald <erik@elfga.com> - 1.9-1
+* Sat Jul 18 2026 Erik Greenwald <erik@elfga.com> - 1.9-1
 - SDL2 port and CMake build alongside autotools
 - Optional https support via OpenSSL (certificate verification, -k), IPv6,
   HTTP redirect following, correct HTTP/1.1 framing, -K to keep downloads

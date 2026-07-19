@@ -21,17 +21,18 @@ your images fast, with no fuss.
 ## Usage
 
 ```
-vp [-fhkKlsvz] [-r WxH@bpp] [-s seconds] file-or-url ...
+vp [-fhkKlvz] [-r WxH@bpp] [-s seconds] file-or-url ...
 ```
 
 | Key | Action |
 |-----|--------|
-| q / esc | quit |
+| q / esc / x | quit |
 | f | toggle fullscreen |
 | z | fit-to-screen / 1:1 |
 | left / right | previous / next image |
 | shift+arrows | pan |
 | + / - | zoom |
+| enter | redisplay current image, stop slideshow |
 | space | toggle slideshow |
 | n / N | filename display / cycle its position |
 

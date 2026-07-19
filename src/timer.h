@@ -14,15 +14,17 @@
  * GNU General Public License for more details.                              *
  *                                                                           *
  * You should have received a copy of the GNU General Public License         *
- * along with this program; if not, write to the Free Software               *
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.    *
  ****************************************************************************/
 
-#ifndef __TIMER_H_
-#define __TIMER_H_
+#ifndef TIMER_H
+#define TIMER_H
 
-#define SHOW_IMAGE 0x01
 #define NEXT_IMAGE 0x02
+
+/* Default slideshow interval, milliseconds (2.5s), shared with vp.c's -s
+ * option default. */
+#define DEFAULT_SLIDESHOW_MS 2500
 
 void timer_toggle (void);
 void timer_stop (void);

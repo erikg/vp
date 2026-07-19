@@ -14,8 +14,7 @@
  * GNU General Public License for more details.                              *
  *                                                                           *
  * You should have received a copy of the GNU General Public License         *
- * along with this program; if not, write to the Free Software               *
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.    *
  ****************************************************************************/
 
 #include <math.h>
@@ -24,12 +23,6 @@
 #include "input.h"
 #include "vp.h"
 #include "timer.h"
-
-	/*
-	 * these are ugly and shouldn't be here. Must redesign.
-	 */
-extern SDL_Window *window;
-extern SDL_Renderer *renderer;
 
 	/*
 	 * mouse state for pan/zoom dragging. The chord check treats
@@ -69,12 +62,11 @@ pan_step (int dim)
 	/*
 	 * instead of actually exiting, we just fake the escape key
 	 */
-void
+static void
 throw_exit (void)
 {
     SDL_Event thrower;
 
-    printf ("Throwing ext\n");
     SDL_zero (thrower);		/* no garbage in the fields we don't set */
     thrower.type = SDL_KEYDOWN;
     thrower.key.keysym.sym = SDLK_ESCAPE;
@@ -102,9 +94,7 @@ handle_input (void)
 	 * Async request errors
 	 */
     case SDL_USEREVENT:
-	if (e.user.code == SHOW_IMAGE)
-	    image_freshen ();
-	else if (e.user.code == NEXT_IMAGE) {
+	if (e.user.code == NEXT_IMAGE) {
 	    /* A queued tick can outlive timer_stop() - by queue ordering, or
 	     * because SDL_RemoveTimer doesn't wait out a callback already in
 	     * flight. Drop it, so pausing on the last image pauses instead of

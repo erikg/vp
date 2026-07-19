@@ -14,8 +14,7 @@
  * GNU General Public License for more details.                              *
  *                                                                           *
  * You should have received a copy of the GNU General Public License         *
- * along with this program; if not, write to the Free Software               *
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.    *
  ****************************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -35,16 +34,11 @@
 #include <limits.h>
 #include <time.h>
 
-#ifdef WIN32
-# include <winsock.h>
-# include <winsock2.h>
-#else
-# include <sys/socket.h>
-# include <sys/uio.h>
-# include <netinet/in.h>
-# include <arpa/inet.h>
-# include <netdb.h>
-#endif
+#include <sys/socket.h>
+#include <sys/uio.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
 #ifdef HAVE_OPENSSL
 # include <openssl/ssl.h>
@@ -156,7 +150,6 @@ net_free_url (url_t *u)
 	if (u->server) free (u->server);
 	if (u->filename) free (u->filename);
 	if (u->ext) free (u->ext);
-	if (u->mimetype) free (u->mimetype);
 	if (u->redirect) free (u->redirect);
 	if (u->file >= 0) close (u->file);
 	if (u->conn >= 0) close (u->conn);
@@ -175,7 +168,7 @@ net_read (url_t * u, void *buf, size_t len)
      * server dripping one byte per timeout window cannot hold the
      * viewer hostage indefinitely. */
     if (u->deadline && time (NULL) > u->deadline) {
-	fprintf (stderr, "Transfer taking too long, giving up\n");
+	fprintf (stderr, "vp: Transfer taking too long, giving up\n");
 	return -1;
     }
 #ifdef HAVE_OPENSSL
@@ -277,7 +270,6 @@ net_url (char *name)
      * on the error path below never frees or closes garbage. */
     u->port = tls ? 443 : 80;
     u->proto = tls ? HTTPS : HTTP;
-    u->mimetype = NULL;
     u->redirect = NULL;
     u->ssl = NULL;
     u->ssl_ctx = NULL;
@@ -339,7 +331,7 @@ net_url (char *name)
 	    char *rb = strchr (u->server, ']');
 
 	    if (rb == NULL || (rb[1] != '\0' && rb[1] != ':')) {
-		fprintf (stderr, "Invalid IPv6 literal in URL: %s\n", name);
+		fprintf (stderr, "vp: Invalid IPv6 literal in URL: %s\n", name);
 		net_free_url (u);
 		return NULL;
 	    }
@@ -358,7 +350,7 @@ net_url (char *name)
 	    long p = strtol (colon + 1, &end, 10);
 
 	    if (end == colon + 1 || *end != '\0' || p < 1 || p > 65535) {
-		fprintf (stderr, "Invalid port in URL: %s\n", name);
+		fprintf (stderr, "vp: Invalid port in URL: %s\n", name);
 		net_free_url (u);
 		return NULL;
 	    }
@@ -370,7 +362,7 @@ net_url (char *name)
     /* An empty host must fail here, not later: SSL_set1_host("") would
      * silently CLEAR the hostname check rather than fail it. */
     if (u->server[0] == '\0') {
-	fprintf (stderr, "Invalid URL (empty host): %s\n", name);
+	fprintf (stderr, "vp: Invalid URL (empty host): %s\n", name);
 	net_free_url (u);
 	return NULL;
     }
@@ -516,7 +508,7 @@ net_connect (url_t * u)
 	/* Set socket timeouts before connecting; not critical for basic
 	 * functionality, so continue even if it fails. */
 	if (set_socket_timeout (u->conn, 30) == -1)
-	    perror ("vp:net.c:net_connect:set_socket_timeout");
+	    perror ("vp: set_socket_timeout failed");
 	if (connect (u->conn, ai->ai_addr, ai->ai_addrlen) == 0)
 	    break;
 	close (u->conn);
@@ -598,7 +590,7 @@ sink_write (url_t * u, const unsigned char *data, size_t len, size_t *total)
 {
     *total += len;
     if (*total > MAX_DOWNLOAD_SIZE) {
-	fprintf (stderr, "Download size limit exceeded (%zu bytes)\n",
+	fprintf (stderr, "vp: Download size limit exceeded (%zu bytes)\n",
 	    MAX_DOWNLOAD_SIZE);
 	return -1;
     }
@@ -721,14 +713,14 @@ resolve_location (const url_t *base, const char *loc)
 
 #ifndef HAVE_OPENSSL
     if (strncasecmp (loc, "https://", 8) == 0) {
-	fprintf (stderr, "Redirected to %s - this vp was built without "
+	fprintf (stderr, "vp: Redirected to %s - this vp was built without "
 	    "https support, stopping\n", loc);
 	return NULL;
     }
 #endif
     if (base->proto == HTTPS && strncasecmp (loc, "http://", 7) == 0)
 	fprintf (stderr,
-	    "Warning: redirect downgrades https to plain http (%s)\n", loc);
+	    "vp: Warning: redirect downgrades https to plain http (%s)\n", loc);
     if (strncasecmp (loc, "http://", 7) == 0 ||
 	strncasecmp (loc, "https://", 8) == 0) {
 	out = strdup (loc);
@@ -780,7 +772,7 @@ resolve_location (const url_t *base, const char *loc)
     /* Every earlier refusal printed its own message and returned; NULL
      * here means allocation failure. */
     if (out == NULL)
-	fprintf (stderr, "Cannot resolve redirect Location: %s\n", loc);
+	fprintf (stderr, "vp: Cannot resolve redirect Location: %s\n", loc);
     return out;
 }
 
@@ -817,9 +809,9 @@ net_download (char *name)
 	    return NULL;	/* resolve_location said why */
 	}
 	if (r == 1)
-	    fprintf (stderr, "Too many redirects (%d)\n", MAX_REDIRECTS);
+	    fprintf (stderr, "vp: Too many redirects (%d)\n", MAX_REDIRECTS);
 	else
-	    fprintf (stderr, "HTTP initialization failed\n");
+	    fprintf (stderr, "vp: HTTP initialization failed\n");
 	net_free_url (url);
 	free (loc);
 	return NULL;
@@ -836,14 +828,14 @@ net_download (char *name)
     snprintf (filename, len, "/tmp/vp.XXXXXX.%s", url->ext);
     url->file = mkstemps (filename, (int) strlen (url->ext) + 1);
     if (url->file == -1) {
-	perror ("mkstemps failed");
+	perror ("vp: mkstemps failed");
 	free (filename);
 	net_free_url (url);
 	return NULL;
     }
 
     if (net_suck (url) == -1) {
-	fprintf (stderr, "Download failed\n");
+	fprintf (stderr, "vp: Download failed\n");
 	unlink (filename);  /* Remove partial file */
 	free (filename);
 	net_free_url (url);

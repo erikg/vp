@@ -14,8 +14,7 @@
  * GNU General Public License for more details.                              *
  *                                                                           *
  * You should have received a copy of the GNU General Public License         *
- * along with this program; if not, write to the Free Software               *
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.    *
  ****************************************************************************/
 
 #include <SDL.h>
@@ -25,9 +24,9 @@
 #include "vp.h"
 #include "timer.h"
 
-static int wait_time = 2500;
+static int wait_time = DEFAULT_SLIDESHOW_MS;
 
-SDL_TimerID timer_id = 0;
+static SDL_TimerID timer_id = 0;
 
 static Uint32
 timer_stub (Uint32 interval, void *param)
@@ -69,15 +68,15 @@ timer_stop (void)
 {
     if (timer_id != 0)
 	if (SDL_RemoveTimer (timer_id) == SDL_FALSE)
-	    oops ("SDL_RemoveTimer() failed\n");
+	    oops ("SDL_RemoveTimer() failed");
     timer_id = 0;
     return;
 }
 
 void
-timer_start (int MILLIS)
+timer_start (int millis)
 {
-    wait_time = MILLIS;
+    wait_time = millis;
     if (timer_id == 0)
 	timer_id =
 	    SDL_AddTimer (wait_time, timer_stub, NULL);

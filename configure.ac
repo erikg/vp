@@ -13,8 +13,7 @@
 # GNU General Public License for more details.                              #
 #                                                                           #
 # You should have received a copy of the GNU General Public License         #
-# along with this program; if not, write to the Free Software               #
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA #
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.    #
 #############################################################################
 
 AC_INIT([vp], [1.9])
@@ -22,7 +21,7 @@ AC_CONFIG_SRCDIR([src/vp.c])
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([foreign])
-AM_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 AC_PROG_CC
 AC_PROG_INSTALL
@@ -68,14 +67,8 @@ AS_IF([test "x$with_ssl" != xno], [
 	    [AC_MSG_NOTICE([OpenSSL not found - https support disabled])])])
 ])
 
-GETOPT_LONG_DIR=
-AC_CHECK_FUNCS(getopt_long , [GETOPT_LONG_DIR=""], [
-    AC_CHECK_LIB(gnugetopt, getopt_long, LIBS="$LIBS -lgnugetopt", [
-        GETOPT_LONG_DIR="getopt_long"
-        CFLAGS="$CFLAGS -I../getopt_long"
-        LIBS="$LIBS ../getopt_long/libgetopt_long.a"
-        AC_DEFINE(NO_GETOPT_LONG,,[Missing getopt_long])])])
-AC_SUBST(GETOPT_LONG_DIR)
+AC_CHECK_FUNC([getopt_long], [],
+    [AC_MSG_ERROR([getopt_long not found; vp requires a system getopt_long implementation])])
 
 AC_CONFIG_FILES([Makefile doc/Makefile src/Makefile vp.spec])
 AC_OUTPUT

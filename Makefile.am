@@ -13,18 +13,22 @@
 # GNU General Public License for more details.                              #
 #                                                                           #
 # You should have received a copy of the GNU General Public License         #
-# along with this program; if not, write to the Free Software               #
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA #
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.    #
 #############################################################################
 
-SUBDIRS = @GETOPT_LONG_DIR@ doc src
+SUBDIRS = doc src
 
-# Ship the CMake build system and the test suite in the dist tarball too,
-# so a release tarball is not autotools-only (CMake is the preferred build).
+# Ship the CMake build system, the debian/ packaging, and the test suite in
+# the dist tarball too, so a release tarball is not autotools-only (CMake is
+# the preferred build) and `dpkg-buildpackage -b` works straight out of an
+# unpacked tarball.
 EXTRA_DIST = README.md ChangeLog $(PACKAGE).spec TODO \
 	CMakeLists.txt config.h.cmake.in \
+	cmake/FindSDL2.cmake cmake/FindSDL2_image.cmake \
 	src/CMakeLists.txt doc/CMakeLists.txt \
-	tests/net-tests.sh tests/testserv.py
+	tests/net-tests.sh tests/testserv.py \
+	debian/changelog debian/compat debian/control debian/copyright \
+	debian/rules debian/source/format
 
 .PHONY : rpm
 rpm: dist

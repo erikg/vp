@@ -14,8 +14,7 @@
  * GNU General Public License for more details.                              *
  *                                                                           *
  * You should have received a copy of the GNU General Public License         *
- * along with this program; if not, write to the Free Software               *
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.    *
  ****************************************************************************/
 
 #include <stdlib.h>
@@ -32,7 +31,9 @@
 #include <SDL_image.h>
 #include <SDL_syswm.h>
 
-#include "config.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include "input.h"
 #include "image.h"
@@ -40,7 +41,7 @@
 #include "timer.h"
 #include "net.h"
 
-#include "getopt.h"
+#include <getopt.h>
 
 SDL_Window *window;
 SDL_Renderer *renderer;
@@ -48,32 +49,6 @@ SDL_mutex *mutex;
 static int state = 0;
 int swidth = 640, sheight = 480, sdepth = 8;
 struct image_table_s image_table = {0, 0, NULL};
-
-unsigned int
-vid_width (void)
-{
-    int w;
-    if (window) {
-	SDL_GetWindowSize(window, &w, NULL);
-	return w;
-    }
-    return swidth;
-}
-unsigned int
-vid_height (void)
-{
-    int h;
-    if (window) {
-	SDL_GetWindowSize(window, NULL, &h);
-	return h;
-    }
-    return sheight;
-}
-unsigned int
-vid_depth (void)
-{
-    return sdepth;
-}
 
 int
 get_state_int (int name)
@@ -199,7 +174,7 @@ free_image_table (void)
 void
 oops (const char *msg)
 {
-    fprintf (stderr, "%s\n", msg);
+    fprintf (stderr, "vp: %s\n", msg);
     free_image_table ();
     if (mutex) {
 	SDL_DestroyMutex (mutex);
@@ -231,7 +206,7 @@ create_renderer (SDL_Window * w)
 
     if (mode && strcasecmp (mode, "auto") != 0)
 	fprintf (stderr,
-	    "Unknown VP_RENDERER \"%s\" (use auto|accelerated|software); using auto\n",
+	    "vp: Unknown VP_RENDERER \"%s\" (use auto|accelerated|software); using auto\n",
 	    mode);
 
     /* auto: best available, with software as the safety net */
@@ -245,7 +220,7 @@ static void
 show_help (char *name)
 {
     printf ("Usage:\n\
-\t%s [-fhkKlvz] [-s <seconds>] [-r <width>x<height>[@<depth>]]\n\
+\t%s [-fhkKlvz] [-s <seconds>] [-r <width>x<height>[@<depth>]] file-or-url ...\n\
 \n\
 \t-f		--fullscreen	set fullscreen mode.\n\
 \t-h		--help		show help.\n\
@@ -255,7 +230,7 @@ show_help (char *name)
 \t				deleting them on exit.\n\
 \t-l		--loud		print file name to stdout.\n\
 \t-s <seconds>	--sleep		seconds between image change in slideshow\n\
-\t				(0.1-60, fractions ok, e.g. 2.5).\n\
+\t				(0.1-60, fractions ok, e.g. 2.5); default 2.5.\n\
 \t-r <res>	--resolution	fullscreen resolution, <width>x<height>\n\
 \t				with optional @<depth>. See man page.\n\
 \t-v		--version	show version.\n\
@@ -267,14 +242,14 @@ show_help (char *name)
 int
 main (int argc, char **argv)
 {
-    int i, count, c, wait = 2500, width = 0, height = 0, depth = 0;
+    int i, count, c, wait = DEFAULT_SLIDESHOW_MS, width = 0, height = 0, depth = 0;
 
     /* The state accessors lock this, and getopt handlers below already use
      * them, so create it before anything else can touch it. (SDL mutexes
      * don't need SDL_Init.) */
     mutex = SDL_CreateMutex ();
     if (mutex == NULL)
-	oops ("SDL_CreateMutex() failed\n");
+	oops ("SDL_CreateMutex() failed");
 
     static struct option optlist[] = {
 	{"fullscreen", 0, NULL, 'f'},
@@ -315,7 +290,7 @@ main (int argc, char **argv)
 		if (end == optarg || *end != '\0' ||
 		    !(secs >= 0.1 && secs <= 60.0)) {
 		    fprintf (stderr,
-			"Invalid sleep time: %s (seconds, 0.1-60)\n", optarg);
+			"vp: Invalid sleep time: %s (seconds, 0.1-60)\n", optarg);
 		    exit (EXIT_FAILURE);
 		}
 		wait = (int) (secs * 1000.0 + 0.5);
@@ -334,7 +309,7 @@ main (int argc, char **argv)
 		char *p, *x_pos, *at_pos;
 
 		if (!optarg || strlen(optarg) == 0) {
-		    fprintf (stderr, "Resolution cannot be empty\n");
+		    fprintf (stderr, "vp: Resolution cannot be empty\n");
 		    exit (EXIT_FAILURE);
 		}
 
@@ -344,7 +319,7 @@ main (int argc, char **argv)
 
 		/* Validate format - must have at least width and height */
 		if (!x_pos) {
-		    fprintf (stderr, "Invalid resolution format: %s (expected WIDTHxHEIGHT[@DEPTH])\n", optarg);
+		    fprintf (stderr, "vp: Invalid resolution format: %s (expected WIDTHxHEIGHT[@DEPTH])\n", optarg);
 		    exit (EXIT_FAILURE);
 		}
 
@@ -353,17 +328,17 @@ main (int argc, char **argv)
 		    char width_str[16];
 		    int len = (int)(x_pos - p);
 		    if (len <= 0 || (size_t)len >= sizeof(width_str)) {
-			fprintf (stderr, "Invalid resolution format: %s\n", optarg);
+			fprintf (stderr, "vp: Invalid resolution format: %s\n", optarg);
 			exit (EXIT_FAILURE);
 		    }
 		    strncpy(width_str, p, len);
 		    width_str[len] = '\0';
 		    if (safe_atoi (width_str, &width, 64, 16384) != 0) {
-			fprintf (stderr, "Invalid width: %s (must be 64-16384)\n", width_str);
+			fprintf (stderr, "vp: Invalid width: %s (must be 64-16384)\n", width_str);
 			exit (EXIT_FAILURE);
 		    }
 		} else {
-		    fprintf (stderr, "Width must start with a digit: %s\n", optarg);
+		    fprintf (stderr, "vp: Width must start with a digit: %s\n", optarg);
 		    exit (EXIT_FAILURE);
 		}
 
@@ -373,17 +348,17 @@ main (int argc, char **argv)
 		    char *h_start = x_pos + 1;
 		    int len = at_pos ? (int)(at_pos - h_start) : (int)strlen(h_start);
 		    if (len <= 0 || (size_t)len >= sizeof(height_str)) {
-			fprintf (stderr, "Invalid resolution format: %s\n", optarg);
+			fprintf (stderr, "vp: Invalid resolution format: %s\n", optarg);
 			exit (EXIT_FAILURE);
 		    }
 		    if (!isdigit (*h_start)) {
-			fprintf (stderr, "Height must start with a digit: %s\n", optarg);
+			fprintf (stderr, "vp: Height must start with a digit: %s\n", optarg);
 			exit (EXIT_FAILURE);
 		    }
 		    strncpy(height_str, h_start, len);
 		    height_str[len] = '\0';
 		    if (safe_atoi (height_str, &height, 64, 16384) != 0) {
-			fprintf (stderr, "Invalid height: %s (must be 64-16384)\n", height_str);
+			fprintf (stderr, "vp: Invalid height: %s (must be 64-16384)\n", height_str);
 			exit (EXIT_FAILURE);
 		    }
 		}
@@ -391,16 +366,16 @@ main (int argc, char **argv)
 		/* Parse depth (optional) */
 		if (at_pos) {
 		    if (!isdigit (*(at_pos + 1))) {
-			fprintf (stderr, "Depth must be a number: %s\n", at_pos + 1);
+			fprintf (stderr, "vp: Depth must be a number: %s\n", at_pos + 1);
 			exit (EXIT_FAILURE);
 		    }
 		    if (safe_atoi (at_pos + 1, &depth, 8, 32) != 0) {
-			fprintf (stderr, "Invalid depth: %s (must be 8, 16, 24, or 32)\n", at_pos + 1);
+			fprintf (stderr, "vp: Invalid depth: %s (must be 8, 16, 24, or 32)\n", at_pos + 1);
 			exit (EXIT_FAILURE);
 		    }
 		    /* Validate common depths */
 		    if (depth != 8 && depth != 16 && depth != 24 && depth != 32) {
-			fprintf (stderr, "Invalid depth: %d (must be 8, 16, 24, or 32)\n", depth);
+			fprintf (stderr, "vp: Invalid depth: %d (must be 8, 16, 24, or 32)\n", depth);
 			exit (EXIT_FAILURE);
 		    }
 		}
@@ -408,7 +383,7 @@ main (int argc, char **argv)
 		/* Validate aspect ratio */
 		double aspect_ratio = (double)width / (double)height;
 		if (aspect_ratio < 0.1 || aspect_ratio > 10.0) {
-		    fprintf (stderr, "Invalid aspect ratio: %dx%d (ratio %.2f is unrealistic)\n",
+		    fprintf (stderr, "vp: Invalid aspect ratio: %dx%d (ratio %.2f is unrealistic)\n",
 			     width, height, aspect_ratio);
 		    exit (EXIT_FAILURE);
 		}
@@ -426,13 +401,13 @@ main (int argc, char **argv)
 
     /* Check for integer overflow in allocation size */
     if ((size_t)argc > SIZE_MAX / sizeof(struct image_s)) {
-	fprintf (stderr, "Too many arguments\n");
+	fprintf (stderr, "vp: Too many arguments\n");
 	exit (EXIT_FAILURE);
     }
 
     image_table.image = malloc (sizeof (struct image_s) * argc);
     if (image_table.image == NULL) {
-	fprintf (stderr, "Out of memory\n");
+	fprintf (stderr, "vp: Out of memory\n");
 	exit (EXIT_FAILURE);
     }
     memset (image_table.image, 0, sizeof (struct image_s) * argc);
@@ -461,7 +436,7 @@ main (int argc, char **argv)
 	{
 	    /* Check bounds before accessing array */
 	    if (image_table.count >= argc) {
-		fprintf (stderr, "Internal error: image_table overflow\n");
+		fprintf (stderr, "vp: Internal error: image_table overflow\n");
 		free_image_table ();
 		exit (EXIT_FAILURE);
 	    }
@@ -473,7 +448,7 @@ main (int argc, char **argv)
 	    if (downloaded_file) {
 		/* Check bounds before accessing array */
 		if (image_table.count >= argc) {
-		    fprintf (stderr, "Internal error: image_table overflow\n");
+		    fprintf (stderr, "vp: Internal error: image_table overflow\n");
 		    if (!get_state_int (KEEP))
 			net_purge (downloaded_file);
 		    free (downloaded_file);
@@ -484,16 +459,16 @@ main (int argc, char **argv)
 		image_table.image[image_table.count].file = downloaded_file;
 		image_table.count++;
 	    } else
-		fprintf (stderr, "%s: fetch failed, skipping\n", argv[count]);
+		fprintf (stderr, "vp: %s: fetch failed, skipping\n", argv[count]);
 	} else
-	    fprintf (stderr, "%s: not a readable file, skipping\n", argv[count]);
+	    fprintf (stderr, "vp: %s: not a readable file, skipping\n", argv[count]);
     }
 
     if (shutdown_requested)
-	oops ("Interrupted.\n");
+	oops ("Interrupted.");
 
     if (image_table.count == 0)
-	oops ("No images selected... aborting.\n");
+	oops ("No images selected... aborting.");
 
     SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
     atexit (SDL_Quit);
@@ -528,7 +503,7 @@ main (int argc, char **argv)
 
     if (window == NULL)
     {
-	printf ("Unable to create window: %s\n", SDL_GetError ());
+	fprintf (stderr, "vp: Unable to create window: %s\n", SDL_GetError ());
 	free_image_table ();
 	return EXIT_FAILURE;
     }
@@ -542,7 +517,7 @@ main (int argc, char **argv)
     renderer = create_renderer (window);
     if (renderer == NULL) {
 	SDL_DestroyWindow (window);
-	printf ("Unable to create renderer: %s\n", SDL_GetError ());
+	fprintf (stderr, "vp: Unable to create renderer: %s\n", SDL_GetError ());
 	free_image_table ();
 	return EXIT_FAILURE;
     }

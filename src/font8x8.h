@@ -14,8 +14,7 @@
  * GNU General Public License for more details.                              *
  *                                                                           *
  * You should have received a copy of the GNU General Public License         *
- * along with this program; if not, write to the Free Software               *
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.    *
  ****************************************************************************/
 
 /*
@@ -32,8 +31,8 @@
  * when (font8x8_basic[c][row] & (1 << col)) is nonzero.
  */
 
-#ifndef __FONT8X8_H_
-#define __FONT8X8_H_
+#ifndef FONT8X8_H
+#define FONT8X8_H
 
 static const unsigned char font8x8_basic[128][8] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},	/* 0x00 */

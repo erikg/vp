@@ -14,8 +14,7 @@
  * GNU General Public License for more details.                              *
  *                                                                           *
  * You should have received a copy of the GNU General Public License         *
- * along with this program; if not, write to the Free Software               *
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.    *
  ****************************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -56,7 +55,7 @@ http_init (url_t * u)
     ssize_t off;
 
     if (has_ctrl (u->filename) || has_ctrl (u->server)) {
-	fprintf (stderr, "Invalid URL (control character in path or host)\n");
+	fprintf (stderr, "vp: Invalid URL (control character in path or host)\n");
 	return -1;
     }
 
@@ -81,7 +80,7 @@ http_init (url_t * u)
 	    PACKAGE, VERSION);
     if (rlen < 0 || (size_t) rlen >= sizeof (req)) {
 	/* Truncated request would just stall the server; fail fast. */
-	fprintf (stderr, "URL too long\n");
+	fprintf (stderr, "vp: URL too long\n");
 	return -1;
     }
     if (net_write (u, req, (size_t) rlen) != (ssize_t) rlen)
@@ -111,7 +110,7 @@ http_init (url_t * u)
     if (sscanf (hdr, "HTTP/%*d.%*d %d", &status) != 1)
 	return -1;
     if ((status < 200 || status >= 300) && !(status >= 300 && status < 400)) {
-	fprintf (stderr, "HTTP request failed: %d\n", status);
+	fprintf (stderr, "vp: HTTP request failed: %d\n", status);
 	return -1;
     }
 
@@ -155,7 +154,7 @@ http_init (url_t * u)
 
     if (status >= 300) {
 	if (u->redirect == NULL || u->redirect[0] == '\0') {
-	    fprintf (stderr, "HTTP %d without a usable Location\n", status);
+	    fprintf (stderr, "vp: HTTP %d without a usable Location\n", status);
 	    return -1;
 	}
 	return 1;		/* caller follows u->redirect */

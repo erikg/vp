@@ -7,4 +7,4 @@ vp (1.9) unstable; urgency=medium
     handling.
   * Security hardening of the download path; dropped unimplemented FTP.
 
- -- Erik Greenwald <erik@elfga.com>  Sun, 19 Jul 2026 00:00:00 -0400
+ -- Erik Greenwald <erik@elfga.com>  Sat, 18 Jul 2026 00:00:00 -0400

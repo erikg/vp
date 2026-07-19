@@ -14,8 +14,7 @@
  * GNU General Public License for more details.                              *
  *                                                                           *
  * You should have received a copy of the GNU General Public License         *
- * along with this program; if not, write to the Free Software               *
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.    *
  ****************************************************************************/
 
 #include <stdio.h>
@@ -30,8 +29,6 @@
 #include "image.h"
 #include "font8x8.h"
 
-extern SDL_Window *window;
-extern SDL_Renderer *renderer;
 extern SDL_mutex *mutex;
 
 /* On-screen-display anchor. Cycled by the shift-N key (osd_cycle_position). */
@@ -338,14 +335,9 @@ window_max_content (int *max_w, int *max_h)
     return;
 }
 
-	/*
-	 * ripped from the libsdl faq, 'gtv' code
-	 */
 static void
 center_window (void)
 {
-    int w, h;
-    SDL_GetWindowSize(window, &w, &h);
     SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     return;
 }
@@ -372,7 +364,7 @@ show_image (void)
     s = it->image[it->current].surface;
     if (s == NULL || s->format == NULL)
     {
-	printf ("Image \"%s\" failed\n", it->image[it->current].resource);
+	fprintf (stderr, "vp: Image \"%s\" failed\n", it->image[it->current].resource);
 	return;
     }
 

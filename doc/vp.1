@@ -9,24 +9,26 @@
 .Op Fl fhkKlvz
 .Op Fl s Ar seconds
 .Op Fl r Ar resolution
-.Op Ar
+.Op Ar file-or-url ...
 .Sh DESCRIPTION
 .Nm
 View Picture
 .Ar files
-using SDL. Supported file types include jpeg, gif, png, bmp, ppm, xpm, pcx,
-tga, and anything else your install of sdl_image supports. Keyboard controls
-are escape or q to quit, f to toggle fullscreen, z to toggle scale-to-fit,
+using SDL2. Supported file types include jpeg, gif, png, bmp, ppm, xpm, pcx,
+tga, and anything else your install of SDL2_image supports. Keyboard controls
+are escape, q, or x to quit, f to toggle fullscreen, z to toggle scale-to-fit,
 left arrow to go to the previous image, right arrow to go to the next image,
-and space to toggle slideshow. n toggles the on-screen display of the current
-file name, and N (shift-n) cycles its position through the corners, edge
-centers, and screen center. The view can be zoomed with + and - (or the
-keypad equivalents), or in larger steps with page up and page down; = returns
-to 1:1, and shifted arrow keys pan a zoomed image. The mouse also controls
-the view: dragging with the left button pans, the scroll wheel zooms at the
-pointer, and dragging the middle button up or down zooms in or out (holding
-the left and right buttons together works as the middle button). Zooming,
-panning, or toggling fullscreen disables slideshow mode. File names starting
+enter to redisplay the current image and stop slideshow, and space to toggle
+slideshow. n toggles
+the on-screen display of the current file name, and N (shift-n) cycles its
+position through the corners, edge centers, and screen center. The view can
+be zoomed with + and - (or the keypad equivalents), or in larger steps with
+page up and page down; = returns to 1:1, and shifted arrow keys pan a zoomed
+image. The mouse also controls the view: dragging with the left button pans,
+the scroll wheel zooms at the pointer, and dragging the middle button up or
+down zooms in or out (holding the left and right buttons together works as
+the middle button). Zooming, panning, or toggling fullscreen disables
+slideshow mode. File names starting
 with http:// or https:// are interpreted as URL's and downloaded; HTTP
 redirects are followed, up to five hops. Both IPv4 and IPv6 are supported;
 a literal IPv6 address in a URL is written in brackets, as in
@@ -60,6 +62,7 @@ Loud behavior. Print out file names as it displays
 .It Fl s , -sleep
 Sleep time between images, in seconds. Fractions are accepted
 (2.5 means two and a half seconds); the range is 0.1 to 60.
+The default is 2.5 seconds.
 .It Fl r , -resolution
 Screen resolution (for fullscreen), as <width>x<height> with an optional
 @<depth>, e.g. 1024x768 or 1920x1080@32
@@ -92,5 +95,3 @@ startup.
 .\"Filenames are sent to stderr.
 .Sh AUTHORS
 .An Erik Greenwald Aq Mt erik@elfga.com
-.Sh BUGS
-This manpage is inadequate.

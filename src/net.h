@@ -14,12 +14,11 @@
  * GNU General Public License for more details.                              *
  *                                                                           *
  * You should have received a copy of the GNU General Public License         *
- * along with this program; if not, write to the Free Software               *
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.    *
  ****************************************************************************/
 
-#ifndef __NET_H_
-#define __NET_H_
+#ifndef NET_H
+#define NET_H
 
 #include <sys/types.h>		/* ssize_t */
 #include <time.h>		/* time_t */
@@ -36,14 +35,13 @@ typedef struct {
     /*
      * connection info 
      */
-    int proto;			/* uh */
+    int proto;
     char *server;		/* DNS name of server */
     int port;			/* numeric port value */
     char *filename;		/* file on server to get... */
     /*
      * mime info
      */
-    char *mimetype;
     char *ext;
     /*
      * HTTP response framing (set by http_init, consumed by net_suck)

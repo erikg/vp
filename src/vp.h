@@ -14,12 +14,11 @@
  * GNU General Public License for more details.                              *
  *                                                                           *
  * You should have received a copy of the GNU General Public License         *
- * along with this program; if not, write to the Free Software               *
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.    *
  ****************************************************************************/
 
-#ifndef __VP_H_
-#define __VP_H_
+#ifndef VP_H
+#define VP_H
 
 #define ZOOM		1
 #define FULLSCREEN	2
@@ -47,9 +46,6 @@ int toggle_state (int);
 int set_state_int (int);
 int unset_state_int (int);
 struct image_table_s *get_image_table (void);
-unsigned int vid_width (void);
-unsigned int vid_height (void);
-unsigned int vid_depth (void);
 
 extern SDL_Window *window;
 extern SDL_Renderer *renderer;

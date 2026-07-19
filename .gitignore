@@ -1,6 +1,6 @@
 aclocal.m4
 autom4te.cache/
-build/
+/build*/
 compile
 config.guess
 config.h.in
