@@ -29,6 +29,7 @@
 void timer_toggle (void);
 void timer_stop (void);
 void timer_start (int millis);
+void timer_set_interval (int millis);
 int timer_running (void);
 
 #endif

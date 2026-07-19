@@ -420,7 +420,9 @@ main (int argc, char **argv)
     {
 	struct stat sb[1];
 
-	if (stat (argv[count], sb) != -1 && !(sb->st_mode & S_IFDIR))
+	/* Regular files only: directories obviously, but also fifos (a
+	 * writer-less fifo hangs IMG_Load) and device nodes. */
+	if (stat (argv[count], sb) != -1 && S_ISREG (sb->st_mode))
 	{
 	    /* Check bounds before accessing array */
 	    if (image_table.count >= argc) {
@@ -521,11 +523,13 @@ main (int argc, char **argv)
      * cooperative activation (macOS 14+) leaves the new window behind
      * the terminal it was launched from. Cocoa ignores a raise before
      * the window is actually on screen, and may drop the first request
-     * outright, so pump and re-ask briefly. Harmless where the window
-     * manager already focused us. */
+     * outright, so pump and re-ask until focus lands (or we give up).
+     * Costs nothing where the window manager already focused us. */
     for (i = 0; i < 10; i++) {
 	SDL_PumpEvents ();
 	SDL_RaiseWindow (window);
+	if (SDL_GetWindowFlags (window) & SDL_WINDOW_INPUT_FOCUS)
+	    break;
 	SDL_Delay (30);
     }
 
@@ -551,6 +555,9 @@ main (int argc, char **argv)
 
     image_freshen ();
 
+    /* -s must stick even when the show doesn't auto-start (single image),
+     * so a later space uses it instead of the default. */
+    timer_set_interval (wait);
     if (image_table.count > 1)
 	timer_start (wait);
 

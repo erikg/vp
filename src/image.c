@@ -357,8 +357,16 @@ show_image (void)
 
     if (get_state_int (LOUD))
     {
-	fprintf (stdout, "%s\n", it->image[it->current].resource);
-	fflush (stdout);
+	/* Log image changes only - pan/zoom redraw the same image per
+	 * mouse-motion event and would spam a line per frame. */
+	static int last_loud = -1;
+
+	if (it->current != last_loud)
+	{
+	    fprintf (stdout, "%s\n", it->image[it->current].resource);
+	    fflush (stdout);
+	    last_loud = it->current;
+	}
     }
 
     s = it->image[it->current].surface;

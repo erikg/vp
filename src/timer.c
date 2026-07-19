@@ -74,6 +74,13 @@ timer_stop (void)
 }
 
 void
+timer_set_interval (int millis)
+{
+    wait_time = millis;
+    return;
+}
+
+void
 timer_start (int millis)
 {
     wait_time = millis;

@@ -99,9 +99,25 @@ handle_input (void)
 	     * because SDL_RemoveTimer doesn't wait out a callback already in
 	     * flight. Drop it, so pausing on the last image pauses instead of
 	     * falling through to exit. */
-	    if (timer_running () && image_next () == 0)
-		throw_exit ();
+	    if (timer_running () && image_next () == 0) {
+		/* End of the show. A one-image "show" has no next to run out
+		 * of; just stop the timer and stay up. */
+		if (get_image_table ()->count > 1)
+		    throw_exit ();
+		else
+		    timer_stop ();
+	    }
 	}
+	break;
+    case SDL_WINDOWEVENT:
+	/* Repaint on expose/restore - some backends don't preserve the
+	 * framebuffer, leaving stale content until the next keypress. */
+	if (e.window.event == SDL_WINDOWEVENT_EXPOSED ||
+	    e.window.event == SDL_WINDOWEVENT_RESTORED)
+	    image_freshen ();
+	break;
+    case SDL_RENDER_TARGETS_RESET:
+	image_freshen ();
 	break;
     case SDL_MOUSEBUTTONDOWN:
 	timer_stop ();
