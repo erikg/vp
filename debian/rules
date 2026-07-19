@@ -1,0 +1,8 @@
+#!/usr/bin/make -f
+# vp Debian packaging. The default dh sequence with the autoconf
+# buildsystem covers configure/build/install; dh_autoreconf (default from
+# compat 10) regenerates configure from configure.ac first. OpenSSL is
+# feature-detected, so libssl-dev in Build-Depends gives an https build.
+
+%:
+	dh $@

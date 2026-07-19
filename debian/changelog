@@ -1,0 +1,10 @@
+vp (1.9) unstable; urgency=medium
+
+  * SDL2 port and CMake build alongside autotools.
+  * Optional https via OpenSSL (certificate verification, -k), IPv6, HTTP
+    redirect following, correct HTTP/1.1 framing, -K to keep downloads.
+  * Arbitrary pan and zoom, on-screen filename display, oversized-image
+    handling.
+  * Security hardening of the download path; dropped unimplemented FTP.
+
+ -- Erik Greenwald <erik@elfga.com>  Sun, 19 Jul 2026 00:00:00 -0400
