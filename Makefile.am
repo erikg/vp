@@ -19,7 +19,12 @@
 
 SUBDIRS = @GETOPT_LONG_DIR@ doc src
 
-EXTRA_DIST=ChangeLog $(PACKAGE).spec TODO
+# Ship the CMake build system and the test suite in the dist tarball too,
+# so a release tarball is not autotools-only (CMake is the preferred build).
+EXTRA_DIST = ChangeLog $(PACKAGE).spec TODO \
+	CMakeLists.txt config.h.cmake.in \
+	src/CMakeLists.txt doc/CMakeLists.txt \
+	tests/net-tests.sh tests/testserv.py
 
 .PHONY : rpm
 rpm: dist
