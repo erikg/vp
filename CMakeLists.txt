@@ -72,8 +72,8 @@ add_subdirectory(src)
 add_subdirectory(doc)
 
 # Install documentation files if they exist
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/README)
-    install(FILES README
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+    install(FILES README.md
         DESTINATION ${CMAKE_INSTALL_DOCDIR}
         COMPONENT documentation)
 endif()

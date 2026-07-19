@@ -4,7 +4,7 @@
 # 									    #
 # This program is free software; you can redistribute it and/or modify      #
 # it under the terms of the GNU General Public License as published by	    #
-# the Free Software Foundation; either version 2 of the License, or         #
+# the Free Software Foundation; either version 3 of the License, or         #
 # (at your option) any later version.                                       #
 #                                                                           #
 # This program is distributed in the hope that it will be useful,           #
@@ -21,7 +21,7 @@ SUBDIRS = @GETOPT_LONG_DIR@ doc src
 
 # Ship the CMake build system and the test suite in the dist tarball too,
 # so a release tarball is not autotools-only (CMake is the preferred build).
-EXTRA_DIST = ChangeLog $(PACKAGE).spec TODO \
+EXTRA_DIST = README.md ChangeLog $(PACKAGE).spec TODO \
 	CMakeLists.txt config.h.cmake.in \
 	src/CMakeLists.txt doc/CMakeLists.txt \
 	tests/net-tests.sh tests/testserv.py

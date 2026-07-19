@@ -4,7 +4,7 @@
 # 									    #
 # This program is free software; you can redistribute it and/or modify      #
 # it under the terms of the GNU General Public License as published by	    #
-# the Free Software Foundation; either version 2 of the License, or         #
+# the Free Software Foundation; either version 3 of the License, or         #
 # (at your option) any later version.                                       #
 #                                                                           #
 # This program is distributed in the hope that it will be useful,           #
@@ -22,7 +22,7 @@ Version:        @VERSION@
 Release:        1%{?dist}
 Summary:        SDL-based image viewer for X and console
 
-License:        GPL-2.0-or-later
+License:        GPL-3.0-or-later
 URL:            https://www.elfga.com/~erik/
 Source0:        https://www.elfga.com/~erik/files/%{name}-%{version}.tar.gz
 
@@ -54,7 +54,7 @@ http and (when built with OpenSSL) https, with redirect following.
 
 %files
 %license COPYING
-%doc README ChangeLog NEWS AUTHORS
+%doc README.md ChangeLog NEWS AUTHORS
 %{_bindir}/vp
 %{_mandir}/man1/vp.1*
 
