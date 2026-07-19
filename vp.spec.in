@@ -17,39 +17,52 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA #
 #############################################################################
 
-Summary: View image files.
-Name: @PACKAGE@
-Version: @VERSION@
-Release: 1
-License: GPL
-Vendor: Erik Greenwald
-Url: http://www.elfga.com/~erik/
-Group: Amusements/Graphics
-Source0: http://www.elfga.com/~erik/files/@PACKAGE@-@VERSION@.tar.gz
-Buildroot: /var/tmp/@PACKAGE@
+Name:           @PACKAGE@
+Version:        @VERSION@
+Release:        1%{?dist}
+Summary:        SDL-based image viewer for X and console
+
+License:        GPL-2.0-or-later
+URL:            https://www.elfga.com/~erik/
+Source0:        https://www.elfga.com/~erik/files/%{name}-%{version}.tar.gz
+
+BuildRequires:  gcc
+BuildRequires:  make
+BuildRequires:  pkgconfig
+BuildRequires:  pkgconfig(sdl2)
+BuildRequires:  pkgconfig(SDL2_image)
+BuildRequires:  openssl-devel
+# Runtime library dependencies (libSDL2, libSDL2_image, libssl, libcrypto)
+# are picked up automatically from the linked ELF; do not list them here.
 
 %description
-Image viewer based on SDL that can read and display a wide variety of formats.
-Features include both fullscreen and windowed mode, rescaling images to fill
-the screen, ability to navigate the images, slideshow, full functionality
-both in X and in console, and the ability to load images from web servers.
+Image viewer based on SDL that reads and displays a wide variety of formats.
+Features include fullscreen and windowed modes, arbitrary pan and zoom,
+slideshow, an on-screen filename display, navigation through a list of
+images, operation in both X and the console, and fetching images over
+http and (when built with OpenSSL) https, with redirect following.
 
 %prep
 %setup -q
-%build
-CFLAGS="$RPM_OPT_FLAGS" ./configure --prefix=/usr
 
-make
+%build
+%configure
+%make_build
 
 %install
-rm -rf $RPM_BUILD_ROOT
-make DESTDIR=$RPM_BUILD_ROOT install
-
-%clean
-rm -rf $RPM_BUILD_ROOT
+%make_install
 
 %files
-/usr/*
+%license COPYING
+%doc README ChangeLog NEWS AUTHORS
+%{_bindir}/vp
+%{_mandir}/man1/vp.1*
 
 %changelog
-
+* Sun Jul 19 2026 Erik Greenwald <erik@elfga.com> - 1.9-1
+- SDL2 port and CMake build alongside autotools
+- Optional https support via OpenSSL (certificate verification, -k), IPv6,
+  HTTP redirect following, correct HTTP/1.1 framing, -K to keep downloads
+- Arbitrary pan/zoom, on-screen filename display, oversized-image handling
+- Security hardening of the download path; dropped unimplemented FTP
+- See the bundled ChangeLog for the full list
