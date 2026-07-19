@@ -10,3 +10,16 @@ depcomp
 install-sh
 Makefile.in
 missing
+
+/config.h
+/config.log
+/config.status
+/stamp-h1
+/Makefile
+/src/Makefile
+/doc/Makefile
+/vp.spec
+/src/vp
+/src/*.o
+/src/.deps/
+/vp-*.tar.gz

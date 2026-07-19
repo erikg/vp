@@ -21,7 +21,7 @@ your images fast, with no fuss.
 ## Usage
 
 ```
-vp [-fhkKlvz] [-r WxH] [-s seconds] file-or-url ...
+vp [-fhkKlvz] [-s <seconds>] [-r <width>x<height>] file-or-url ...
 ```
 
 | Key | Action |

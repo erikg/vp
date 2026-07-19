@@ -6,6 +6,14 @@ Files: *
 Copyright: 2001-2026 Erik Greenwald <erik@elfga.com>
 License: GPL-3+
 
+Files: src/font8x8.h
+Copyright: Public domain (Marcel Sondaar; packaged by Daniel Hepper)
+License: public-domain
+ This is public-domain code: the classic IBM-PC-style 8x8 glyph set from
+ Marcel Sondaar's public-domain font8_8.asm (VGA fonts credited to Sondaar
+ and IBM), packaged as font8x8_basic by Daniel Hepper's font8x8 project
+ <https://github.com/dhepper/font8x8>. No copyright is claimed upstream.
+
 License: GPL-3+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
