@@ -70,7 +70,9 @@ Fractions are accepted (2.5 means two and a half seconds); the range is
 The default is 2.5 seconds.
 .It Fl r , -resolution
 Fullscreen display resolution, as <width>x<height>, e.g. 1920x1080.
-Width and height are each clamped to the range 64-16384.
+Width and height must each be in the range 64-16384, and the
+width:height ratio between 0.1 and 10; values outside these are
+rejected.
 The closest display mode the hardware offers is selected: a real mode
 switch under X11, the KMS/DRM console, and macOS; Wayland compositors
 scale instead of switching.

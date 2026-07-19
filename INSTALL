@@ -80,7 +80,7 @@ command-line tool:
 
     sh tests/net-tests.sh <path-to-vp-binary>
 
-15 checks on an OpenSSL build, 12 without; the ipv6 check is skipped on
+16 checks on an OpenSSL build, 13 without; the ipv6 check is skipped on
 hosts without a ::1 loopback.
 
 Packages

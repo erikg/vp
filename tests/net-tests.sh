@@ -126,6 +126,7 @@ check_shows "redirect chain"          "http://127.0.0.1:$HP/r1"
 check_shows "relative redirect"       "http://127.0.0.1:$HP/rel"
 check_shows "protocol-relative"       "http://127.0.0.1:$HP/proto"
 check_shows "chunked body"            "http://127.0.0.1:$HP/chunked"
+check_shows "1xx interim skipped"     "http://127.0.0.1:$HP/early"
 check_shows "bare host"               "http://127.0.0.1:$HP"
 if grep -q "V6 ok" "$TMP/srv.out"; then
     check_shows "ipv6 literal"        "http://[::1]:$V6/test1.ppm"

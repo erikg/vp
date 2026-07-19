@@ -35,7 +35,9 @@ dnl modules separately yields sdl2's libs twice; a single pkg-config call
 dnl dedupes them.
 PKG_CHECK_MODULES([SDL], [sdl2 >= 2.0.0 SDL2_image >= 2.0.0])
 
-CFLAGS="$CFLAGS $SDL_CFLAGS $X_CFLAGS"
+dnl SDL_CFLAGS/X_CFLAGS ride AM_CFLAGS in src/Makefile.am, not CFLAGS,
+dnl so a make-time CFLAGS override (the CI warning pass) keeps the
+dnl include paths.
 LIBS="$LIBS $SDL_LIBS $X_LIBS"
 
 AC_SEARCH_LIBS(socket,socket wsock32)
@@ -52,7 +54,6 @@ have_ssl=no
 AS_IF([test "x$with_ssl" != xno], [
     PKG_CHECK_MODULES([OPENSSL], [openssl >= 1.1],
 	[have_ssl=yes
-	 CFLAGS="$CFLAGS $OPENSSL_CFLAGS"
 	 LIBS="$LIBS $OPENSSL_LIBS"],
 	[AC_CHECK_HEADER([openssl/ssl.h],
 	    [AC_CHECK_LIB([ssl], [TLS_client_method],

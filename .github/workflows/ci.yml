@@ -59,14 +59,14 @@ jobs:
           CC: ${{ matrix.cc }}
         # configure runs with clean CFLAGS: -Werror + -Wstrict-prototypes
         # breaks autoconf's conftest programs and silently mis-detects
-        # mkstemps/getopt_long. Warnings are injected at make time instead
-        # (DEFS carries -DHAVE_CONFIG_H; SDL cflags re-added by hand since
-        # overriding CFLAGS drops what configure put there).
+        # mkstemps/getopt_long. Warnings are injected at make time instead;
+        # the pkg-config include paths survive the override because they
+        # ride AM_CFLAGS, not CFLAGS.
         run: |
           autoreconf -fi
           mkdir build-ac && cd build-ac
           ../configure ${{ matrix.ssl == 'off' && '--without-ssl' || '' }}
-          make CFLAGS="$WFLAGS $(pkg-config --cflags sdl2 SDL2_image)"
+          make CFLAGS="$WFLAGS"
           echo "VP_BIN=build-ac/src/vp" >> "$GITHUB_ENV"
       - name: ssl support matches the matrix
         run: |

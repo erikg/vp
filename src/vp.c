@@ -406,13 +406,24 @@ main (int argc, char **argv)
     /* Install signal handlers before the download phase, not after: a
      * Ctrl+C during a slow fetch should still reach the cleanup path
      * below instead of stranding temp files via default disposition.
-     * SIGPIPE is ignored outright - a server resetting the connection
-     * mid-write must surface as a write error, not kill the viewer. */
-    signal (SIGINT, signal_handler);   /* Ctrl+C */
-    signal (SIGTERM, signal_handler);  /* Termination request */
+     * sigaction without SA_RESTART, not signal(): BSD signal() semantics
+     * restart slow syscalls, deferring Ctrl+C for the full socket timeout
+     * during a stalled transfer; without it the read returns EINTR, which
+     * the net paths already handle. SIGPIPE is ignored outright - a server
+     * resetting the connection mid-write must surface as a write error,
+     * not kill the viewer. */
+    {
+	struct sigaction sa;
+
+	memset (&sa, 0, sizeof (sa));
+	sa.sa_handler = signal_handler;
+	sigemptyset (&sa.sa_mask);
+	sigaction (SIGINT, &sa, NULL);   /* Ctrl+C */
+	sigaction (SIGTERM, &sa, NULL);  /* Termination request */
 #ifdef SIGHUP
-    signal (SIGHUP, signal_handler);   /* Hangup */
+	sigaction (SIGHUP, &sa, NULL);   /* Hangup */
 #endif
+    }
 #ifdef SIGPIPE
     signal (SIGPIPE, SIG_IGN);
 #endif

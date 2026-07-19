@@ -120,29 +120,38 @@ http_init (url_t * u)
     if (net_write (u, req, (size_t) rlen) != (ssize_t) rlen)
 	return -1;
 
-    /* Read the header block byte-by-byte up to the blank line, leaving the
+    /* Read a header block byte-by-byte up to the blank line, leaving the
      * socket positioned exactly at the first body byte. Count newlines and
      * let CR ride along ignored, so CRLFCRLF, bare LFLF, and mixed endings
-     * all terminate correctly without eating into the body. */
-    while (nl < 2 && hlen < (int) sizeof (hdr) - 1)
-    {
-	if (net_read (u, hdr + hlen, 1) != 1)
-	    return -1;		/* connection error or premature EOF */
-	if (hdr[hlen] == '\n')
-	    nl++;
-	else if (hdr[hlen] != '\r')
-	    nl = 0;
-	hlen++;
-    }
-    if (nl < 2)
-	return -1;		/* headers too large or malformed */
-    hdr[hlen] = '\0';
+     * all terminate correctly without eating into the body. Interim 1xx
+     * blocks (100 Continue, 103 Early Hints) precede the real response and
+     * have no body; discard them and read on (RFC 9110), with a cap so a
+     * 1xx-spamming server cannot spin us forever. */
+    for (int interim = 0; ; interim++) {
+	hlen = 0;
+	nl = 0;
+	while (nl < 2 && hlen < (int) sizeof (hdr) - 1)
+	{
+	    if (net_read (u, hdr + hlen, 1) != 1)
+		return -1;	/* connection error or premature EOF */
+	    if (hdr[hlen] == '\n')
+		nl++;
+	    else if (hdr[hlen] != '\r')
+		nl = 0;
+	    hlen++;
+	}
+	if (nl < 2)
+	    return -1;		/* headers too large or malformed */
+	hdr[hlen] = '\0';
 
-    /* Status line: 2xx proceeds, 3xx is a redirect to chase (Location is
-     * picked up below), anything else fails so an error page (404/500) is
-     * never saved and rendered as if it were the image. */
-    if (sscanf (hdr, "HTTP/%*d.%*d %d", &status) != 1)
-	return -1;
+	/* Status line: 2xx proceeds, 3xx is a redirect to chase (Location
+	 * is picked up below), anything else fails so an error page
+	 * (404/500) is never saved and rendered as if it were the image. */
+	if (sscanf (hdr, "HTTP/%*d.%*d %d", &status) != 1)
+	    return -1;
+	if (status < 100 || status >= 200 || interim >= 5)
+	    break;
+    }
     if ((status < 200 || status >= 300) && !(status >= 300 && status < 400)) {
 	fprintf (stderr, "vp: HTTP request failed: %d\n", status);
 	return -1;

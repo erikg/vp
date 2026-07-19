@@ -75,6 +75,13 @@ def make_handler(docroot, http_port, https_port):
                     piece = body[i:i + 7]
                     self.wfile.write(b'%x\r\n%s\r\n' % (len(piece), piece))
                 self.wfile.write(b'0\r\n\r\n')
+            elif self.path == '/early':
+                # interim 1xx block before the real response (RFC 9110);
+                # written raw so send_response bookkeeping stays untouched
+                self.wfile.write(b'HTTP/1.1 103 Early Hints\r\n'
+                                 b'Link: </style.css>; rel=preload\r\n\r\n')
+                self.path = '/test1.ppm'
+                super().do_GET()
             elif self.path == '/':
                 # bare-host fetch lands here; serve the image directly
                 self.path = '/test1.ppm'

@@ -18,8 +18,10 @@
 
 # autoconf >= 2.72 bakes its newest dialect (gnu23) into CC; pin gnu11 to
 # match CMake's C_STANDARD 11. AM_CFLAGS survives a make-time CFLAGS
-# override, and a user -std in CFLAGS still wins by coming later.
-AM_CFLAGS = -std=gnu11
+# override, and a user -std in CFLAGS still wins by coming later. The
+# pkg-config include paths live here for the same reason: a CFLAGS
+# override must not lose them.
+AM_CFLAGS = -std=gnu11 $(SDL_CFLAGS) $(X_CFLAGS) $(OPENSSL_CFLAGS)
 
 bin_PROGRAMS = vp
 
