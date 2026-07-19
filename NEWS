@@ -11,6 +11,7 @@ Jul 18, 2026 - Version 1.9
 * dropped FTP (advertised but never implemented)
 * CMake build alongside autotools; CI and a network test suite
 * security hardening of the download path
+* relicensed GPL-2+ -> GPL-3+
 
 Sep 30 2012 - Version 1.8
 * RPM building is back

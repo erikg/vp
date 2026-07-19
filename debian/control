@@ -2,7 +2,7 @@ Source: vp
 Section: graphics
 Priority: optional
 Maintainer: Erik Greenwald <erik@elfga.com>
-Build-Depends: debhelper (>= 10),
+Build-Depends: debhelper-compat (= 13),
                autoconf,
                automake,
                pkg-config,
@@ -10,6 +10,7 @@ Build-Depends: debhelper (>= 10),
                libsdl2-image-dev,
                libssl-dev
 Standards-Version: 4.7.0
+Rules-Requires-Root: no
 Homepage: https://www.elfga.com/~erik/
 
 Package: vp

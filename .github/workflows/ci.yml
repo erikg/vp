@@ -4,7 +4,11 @@ on:
   push:
     branches: [master]
   pull_request:
+    branches: [master]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -29,10 +33,12 @@ jobs:
           - { cc: gcc,   build: autotools, ssl: on }
           - { cc: clang, build: autotools, ssl: on }
           - { cc: gcc,   build: cmake,     ssl: off }
+          - { cc: clang, build: cmake,     ssl: off }
+          - { cc: gcc,   build: autotools, ssl: off }
           - { cc: clang, build: autotools, ssl: off }
     name: linux ${{ matrix.cc }} ${{ matrix.build }} ssl=${{ matrix.ssl }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: deps
         run: |
           sudo apt-get update
@@ -66,9 +72,15 @@ jobs:
         run: |
           set -x
           if [ "${{ matrix.ssl }}" = on ]; then
-            grep -q '#define HAVE_OPENSSL' build*/config.h
+            if ! grep -q '#define HAVE_OPENSSL' build*/config.h; then
+              echo "expected HAVE_OPENSSL defined, but it was not"
+              exit 1
+            fi
           else
-            ! grep -q '^#define HAVE_OPENSSL' build*/config.h
+            if grep -q '^#define HAVE_OPENSSL' build*/config.h; then
+              echo "expected HAVE_OPENSSL undefined, but it was defined"
+              exit 1
+            fi
           fi
       - name: network tests
         run: sh tests/net-tests.sh "$VP_BIN"
@@ -76,7 +88,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: deps
         run: |
           sudo apt-get update
@@ -103,7 +115,7 @@ jobs:
   macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: deps
         run: brew install sdl2 sdl2_image openssl@3
       - name: build
@@ -120,7 +132,7 @@ jobs:
   freebsd:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: build and test in a FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:

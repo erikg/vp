@@ -8,17 +8,6 @@ set(VP_SOURCES
     timer.c
 )
 
-# Headers
-set(VP_HEADERS
-    vp.h
-    image.h
-    input.h
-    net.h
-    http.h
-    timer.h
-    font8x8.h
-)
-
 # pkg-config reports bare library names in *_LIBRARIES; the matching -L
 # paths are in *_LIBRARY_DIRS and must be passed too, or the link fails
 # anywhere SDL2 is off the default linker path (/usr/local/lib on FreeBSD).
@@ -66,9 +55,4 @@ list(REMOVE_DUPLICATES VP_LINK_LIBRARIES)
 target_link_libraries(vp ${VP_LINK_LIBRARIES})
 
 # Install executable
-install(TARGETS vp DESTINATION bin)
-
-# Install headers (optional - for development)
-if(INSTALL_HEADERS)
-    install(FILES ${VP_HEADERS} DESTINATION include/vp)
-endif()
+install(TARGETS vp DESTINATION ${CMAKE_INSTALL_BINDIR})

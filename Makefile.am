@@ -27,7 +27,7 @@ EXTRA_DIST = README.md ChangeLog $(PACKAGE).spec TODO \
 	cmake/FindSDL2.cmake cmake/FindSDL2_image.cmake \
 	src/CMakeLists.txt doc/CMakeLists.txt \
 	tests/net-tests.sh tests/testserv.py \
-	debian/changelog debian/compat debian/control debian/copyright \
+	debian/changelog debian/control debian/copyright \
 	debian/rules debian/source/format
 
 .PHONY : rpm

@@ -334,8 +334,9 @@ main (int argc, char **argv)
 		    exit (EXIT_FAILURE);
 		}
 
-		/* Parse width */
-		if (isdigit (*p)) {
+		/* Parse width. (ctype on a plain char is UB for high-bit
+		 * bytes; cast keeps it defined.) */
+		if (isdigit ((unsigned char) *p)) {
 		    char width_str[16];
 		    int len = (int)(x_pos - p);
 		    if (len <= 0 || (size_t)len >= sizeof(width_str)) {
@@ -358,7 +359,7 @@ main (int argc, char **argv)
 		{
 		    char *h_start = x_pos + 1;
 
-		    if (!isdigit (*h_start)) {
+		    if (!isdigit ((unsigned char) *h_start)) {
 			fprintf (stderr, "vp: Height must start with a digit: %s\n", optarg);
 			exit (EXIT_FAILURE);
 		    }
@@ -460,7 +461,11 @@ main (int argc, char **argv)
     if (image_table.count == 0)
 	oops ("No images selected... aborting.");
 
-    SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER);
+    if (SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
+	fprintf (stderr, "vp: Unable to initialize SDL: %s\n", SDL_GetError ());
+	free_image_table ();
+	return EXIT_FAILURE;
+    }
     atexit (SDL_Quit);
 
     /* Get desktop display mode for fullscreen */

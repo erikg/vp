@@ -24,7 +24,9 @@
 #include "vp.h"
 #include "timer.h"
 
-static int wait_time = DEFAULT_SLIDESHOW_MS;
+/* Written on the main thread, read back in timer_stub on SDL's timer
+ * thread - hence the atomic. */
+static SDL_atomic_t wait_time = { DEFAULT_SLIDESHOW_MS };
 
 static SDL_TimerID timer_id = 0;
 
@@ -44,7 +46,7 @@ timer_stub (Uint32 interval, void *param)
     ev.type = SDL_USEREVENT;
     ev.user.code = NEXT_IMAGE;
     SDL_PushEvent (&ev);
-    return wait_time;
+    return (Uint32) SDL_AtomicGet (&wait_time);
 }
 
 int
@@ -57,7 +59,7 @@ void
 timer_toggle (void)
 {
     if (timer_id == 0)
-	timer_start (wait_time);
+	timer_start (SDL_AtomicGet (&wait_time));
     else
 	timer_stop ();
     return;
@@ -76,16 +78,16 @@ timer_stop (void)
 void
 timer_set_interval (int millis)
 {
-    wait_time = millis;
+    SDL_AtomicSet (&wait_time, millis);
     return;
 }
 
 void
 timer_start (int millis)
 {
-    wait_time = millis;
+    SDL_AtomicSet (&wait_time, millis);
     if (timer_id == 0)
 	timer_id =
-	    SDL_AddTimer (wait_time, timer_stub, NULL);
+	    SDL_AddTimer ((Uint32) millis, timer_stub, NULL);
     return;
 }

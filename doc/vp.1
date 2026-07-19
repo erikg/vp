@@ -14,25 +14,28 @@
 .Nm
 View Picture
 .Ar files
-using SDL2. Supported file types include jpeg, gif, png, bmp, ppm, xpm, pcx,
-tga, and anything else your install of SDL2_image supports. Keyboard controls
-are escape, q, or x to quit, f to toggle fullscreen, z to toggle scale-to-fit,
-left arrow to go to the previous image, right arrow to go to the next image,
-enter to redisplay the current image and stop slideshow, and space to toggle
-slideshow. n toggles
-the on-screen display of the current file name, and N (shift-n) cycles its
-position through the corners, edge centers, and screen center. The view can
-be zoomed with + and - (or the keypad equivalents), or in larger steps with
-page up and page down; = returns to 1:1, and shifted arrow keys pan a zoomed
-image. The mouse also controls the view: dragging with the left button pans,
-the scroll wheel zooms at the pointer, and dragging the middle button up or
-down zooms in or out (holding the left and right buttons together works as
-the middle button). Zooming, panning, or toggling fullscreen disables
-slideshow mode. File names starting
-with http:// or https:// are interpreted as URL's and downloaded; HTTP
-redirects are followed, up to five hops. Both IPv4 and IPv6 are supported;
-a literal IPv6 address in a URL is written in brackets, as in
-http://[::1]:8080/image.png. https support requires
+using SDL2.
+Supported file types include jpeg, gif, png, bmp, ppm, xpm, pcx, tga, and
+anything else your install of SDL2_image supports.
+Keyboard controls are escape, q, or x to quit, f to toggle fullscreen, z to
+toggle scale-to-fit, left arrow to go to the previous image, right arrow to
+go to the next image, enter to redisplay the current image and stop
+slideshow, and space to toggle slideshow.
+n toggles the on-screen display of the current file name, and N (shift-n)
+cycles its position through the corners, edge centers, and screen center.
+The view can be zoomed with + and - (or the keypad equivalents), or in
+larger steps with page up and page down; = returns to 1:1, and shifted
+arrow keys pan a zoomed image.
+The mouse also controls the view: dragging with the left button pans, the
+scroll wheel zooms at the pointer, and dragging the middle button up or
+down zooms in or out (holding the left and right buttons together works
+as the middle button).
+Zooming, panning, or toggling fullscreen disables slideshow mode.
+File names starting with http:// or https:// are interpreted as URL's and
+downloaded; HTTP redirects are followed, up to five hops.
+Both IPv4 and IPv6 are supported; a literal IPv6 address in a URL is
+written in brackets, as in http://[::1]:8080/image.png.
+https support requires
 .Nm
 to have been built with OpenSSL, in which case server certificates are
 verified against the system trust store unless
@@ -52,24 +55,28 @@ Only meaningful when
 .Nm
 was built with OpenSSL.
 .It Fl K , -keep
-Keep downloaded files instead of deleting them on exit. Each kept file's
-path is printed at exit, alongside the URL it came from. Without this
-flag, files downloaded from URLs are removed when
+Keep downloaded files instead of deleting them on exit.
+Each kept file's path is printed at exit, alongside the URL it came from.
+Without this flag, files downloaded from URLs are removed when
 .Nm
 exits, including exits triggered by SIGINT, SIGTERM, or SIGHUP.
 .It Fl l , -loud
-Loud behavior. Print out file names as it displays
+Loud behavior.
+Print out file names as it displays
 .It Fl s , -sleep
-Sleep time between images, in seconds. Fractions are accepted
-(2.5 means two and a half seconds); the range is 0.1 to 60.
+Sleep time between images, in seconds.
+Fractions are accepted (2.5 means two and a half seconds); the range is
+0.1 to 60.
 The default is 2.5 seconds.
 .It Fl r , -resolution
 Fullscreen display resolution, as <width>x<height>, e.g. 1920x1080.
+Width and height are each clamped to the range 64-16384.
 The closest display mode the hardware offers is selected: a real mode
 switch under X11, the KMS/DRM console, and macOS; Wayland compositors
-scale instead of switching. Without this flag, fullscreen uses the
-desktop resolution. The @<depth> suffix of older releases is gone;
-display depth is not a thing SDL2 renderers control.
+scale instead of switching.
+Without this flag, fullscreen uses the desktop resolution.
+The @<depth> suffix of older releases is gone; display depth is not a
+thing SDL2 renderers control.
 .It Fl v , -version
 Print the version and exit
 .It Fl z , -zoom
@@ -78,8 +85,9 @@ Scale images to fit the screen (zoom)
 .Sh ENVIRONMENT
 .Bl -tag -width VP_RENDERER
 .It Ev VP_RENDERER
-Force the rendering backend, mainly for debugging or testing on machines with
-or without 3D acceleration. Accepted values are
+Force the rendering backend, mainly for debugging or testing on machines
+with or without 3D acceleration.
+Accepted values are
 .Ar auto
 (the default: use hardware acceleration if available, otherwise fall back to
 the software renderer),

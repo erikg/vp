@@ -42,10 +42,40 @@ has_ctrl (const char *s)
     return 0;
 }
 
+/* Percent-encode bytes that are illegal raw in a request-target (space,
+ * control chars, high-bit bytes). A literal '%' passes through, so
+ * already-encoded %XX sequences are not double-encoded. Returns -1 if the
+ * result would not fit. */
+static int
+enc_target (const char *in, char *out, size_t outlen)
+{
+    static const char hex[] = "0123456789ABCDEF";
+    size_t o = 0;
+
+    for (; *in; in++) {
+	unsigned char c = (unsigned char) *in;
+
+	if (c <= 0x20 || c == 0x7f || c >= 0x80) {
+	    if (o + 3 >= outlen)
+		return -1;
+	    out[o++] = '%';
+	    out[o++] = hex[c >> 4];
+	    out[o++] = hex[c & 0xf];
+	} else {
+	    if (o + 1 >= outlen)
+		return -1;
+	    out[o++] = (char) c;
+	}
+    }
+    out[o] = '\0';
+    return 0;
+}
+
 int
 http_init (url_t * u)
 {
     char req[BUFSIZ];
+    char target[BUFSIZ];
     char hdr[MAX_HEADER_SIZE];
     int rlen, hlen = 0, nl = 0, status = 0;
     int defport = (u->proto == HTTPS) ? 443 : 80;
@@ -56,6 +86,10 @@ http_init (url_t * u)
 
     if (has_ctrl (u->filename) || has_ctrl (u->server)) {
 	fprintf (stderr, "vp: Invalid URL (control character in path or host)\n");
+	return -1;
+    }
+    if (enc_target (u->filename, target, sizeof (target)) == -1) {
+	fprintf (stderr, "vp: URL too long\n");
 	return -1;
     }
 
@@ -69,14 +103,14 @@ http_init (url_t * u)
 	    "Host: %s%s%s\r\n"
 	    "User-Agent: %s/%s\r\n"
 	    "Connection: close\r\n"
-	    "\r\n", u->filename, ob, u->server, cb, PACKAGE, VERSION);
+	    "\r\n", target, ob, u->server, cb, PACKAGE, VERSION);
     else
 	rlen = snprintf (req, sizeof (req),
 	    "GET /%s HTTP/1.1\r\n"
 	    "Host: %s%s%s:%d\r\n"
 	    "User-Agent: %s/%s\r\n"
 	    "Connection: close\r\n"
-	    "\r\n", u->filename, ob, u->server, cb, u->port,
+	    "\r\n", target, ob, u->server, cb, u->port,
 	    PACKAGE, VERSION);
     if (rlen < 0 || (size_t) rlen >= sizeof (req)) {
 	/* Truncated request would just stall the server; fail fast. */

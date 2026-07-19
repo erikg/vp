@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -250,19 +251,27 @@ net_url (char *name)
     schemelen = tls ? strlen ("https://") : strlen ("http://");
     n = name + schemelen;
 
-    /* The path may be absent entirely (http://host) - that is GET /. */
-    char *slash = strchr (n, '/');
+    /* The path may be absent entirely (http://host) - that is GET /. The
+     * authority ends at the first '/' or '?': a query with no path
+     * (http://host?q) still belongs in the request-target, as /?q. */
+    char *cut = n + strcspn (n, "/?");
+    char saved = *cut;
     const char *path = "";
+    char *pathdup = NULL;
 
-    if (slash) {
+    if (saved) {
+	/* the GET line supplies the leading '/'; a '?' must be kept */
+	pathdup = strdup (saved == '/' ? cut + 1 : cut);
+	if (pathdup == NULL)
+	    return NULL;
+	path = pathdup;
 	/* Temporarily null-terminate the server part */
-	*slash = 0;
-	path = slash + 1;
+	*cut = 0;
     }
     u = (url_t *) malloc (sizeof (url_t));
     if (u == NULL) {
-	if (slash)
-	    *slash = '/';
+	*cut = saved;
+	free (pathdup);
 	return NULL;
     }
 
@@ -280,7 +289,7 @@ net_url (char *name)
     u->deadline = 0;
 
     u->server = strdup (n);
-    u->filename = strdup (path);
+    u->filename = pathdup ? pathdup : strdup ("");	/* owns pathdup now */
 
     /* Extension hint for the temp file (SDL_image sniffs content, but the
      * suffix helps): everything after the last '.' of the path's basename,
@@ -308,10 +317,9 @@ net_url (char *name)
 	    u->ext = strdup ("");
     }
 
-    /* Put the '/' back: the caller's string is argv, and it is displayed
-     * (window title, OSD, -l output) after we return. */
-    if (slash)
-	*slash = '/';
+    /* Put the separator back: the caller's string is argv, and it is
+     * displayed (window title, OSD, -l output) after we return. */
+    *cut = saved;
 
     /* Check for strdup failures */
     if (!u->server || !u->filename || !u->ext) {
@@ -479,7 +487,7 @@ net_connect (url_t * u)
 {
     struct addrinfo hints, *res, *ai;
     char portstr[6];
-    int err;
+    int err, conn_errno = 0;
 
 #ifndef HAVE_OPENSSL
     if (u->proto == HTTPS) {
@@ -503,21 +511,24 @@ net_connect (url_t * u)
     u->conn = -1;
     for (ai = res; ai != NULL; ai = ai->ai_next) {
 	u->conn = socket (ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-	if (u->conn == -1)
+	if (u->conn == -1) {
+	    conn_errno = errno;
 	    continue;
+	}
 	/* Set socket timeouts before connecting; not critical for basic
 	 * functionality, so continue even if it fails. */
 	if (set_socket_timeout (u->conn, 30) == -1)
 	    perror ("vp: set_socket_timeout failed");
 	if (connect (u->conn, ai->ai_addr, ai->ai_addrlen) == 0)
 	    break;
+	conn_errno = errno;	/* before close() can clobber it */
 	close (u->conn);
 	u->conn = -1;
     }
     freeaddrinfo (res);
     if (u->conn == -1) {
 	fprintf (stderr, "vp: cannot connect to %s port %d: %s\n",
-	    u->server, u->port, strerror (errno));
+	    u->server, u->port, strerror (conn_errno));
 	return -1;
     }
     /* Overall transfer budget; per-read stalls are caught by SO_RCVTIMEO,
@@ -711,6 +722,25 @@ resolve_location (const url_t *base, const char *loc)
     char *out = NULL;
     size_t n;
 
+    /* A Location can carry any scheme (ftp:, mailto:, data:); vp only
+     * speaks http(s), and gluing a foreign absolute URL onto the base as
+     * if it were relative produces garbage. RFC 3986 scheme syntax: ALPHA
+     * then alnum/+/-/., ':' before any '/', '?' or '#'. (Casts: ctype on
+     * plain char is UB for high-bit bytes.) */
+    if (isalpha ((unsigned char) loc[0])) {
+	const char *p = loc + 1;
+
+	while (isalnum ((unsigned char) *p) ||
+	    *p == '+' || *p == '-' || *p == '.')
+	    p++;
+	if (*p == ':' &&
+	    !(p - loc == 4 && strncasecmp (loc, "http", 4) == 0) &&
+	    !(p - loc == 5 && strncasecmp (loc, "https", 5) == 0)) {
+	    fprintf (stderr,
+		"vp: Redirect to unsupported scheme, stopping: %s\n", loc);
+	    return NULL;
+	}
+    }
 #ifndef HAVE_OPENSSL
     if (strncasecmp (loc, "https://", 8) == 0) {
 	fprintf (stderr, "vp: Redirected to %s - this vp was built without "

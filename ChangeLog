@@ -1,3 +1,7 @@
+20260719:
+	* Relicense from GPL-2+ to GPL-3+, matching the GPLv3 text COPYING
+	  has carried since 2012
+
 20260718:
 	* Release 1.9
 	* Ported from SDL 1.x to SDL2; added a CMake build alongside autotools
