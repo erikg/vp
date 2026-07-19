@@ -1,6 +1,6 @@
 vp release notes. See the ChangeLog for more details.
 
-Jul 18, 2026 - Version 1.9
+Jul 19, 2026 - Version 1.9
 * ported from SDL 1.x to SDL2; GPU scaling, arbitrary pan/zoom
 * https support via OpenSSL: certificate verification, -k/--insecure
 * IPv6 support; HTTP/1.1 framing, redirects, chunked transfer

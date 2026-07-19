@@ -1,9 +1,7 @@
 20260719:
-	* Relicense from GPL-2+ to GPL-3+, matching the GPLv3 text COPYING
-	  has carried since 2012
-
-20260718:
 	* Release 1.9
+	* Relicensed from GPL-2+ to GPL-3+, matching the GPLv3 text COPYING
+	  has carried since 2012
 	* Ported from SDL 1.x to SDL2; added a CMake build alongside autotools
 	* https support via OpenSSL (optional, feature-detected in both build
 	  systems): certificate verification against the system trust store,
@@ -24,6 +22,9 @@
 	* Security hardening of the download path; async-signal-safe shutdown
 	* GitHub Actions CI (Linux/macOS/FreeBSD) and a self-contained network
 	  test suite
+	* Pre-release audit fixes: skip HTTP 1xx interim responses, prompt
+	  Ctrl+C during stalled transfers, redraw on window expose, honor -s
+	  with a single image, refuse redirects to unsupported schemes
 
 20080615:
 	* Copyright update

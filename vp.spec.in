@@ -58,7 +58,7 @@ http and (when built with OpenSSL) https, with redirect following.
 %{_mandir}/man1/vp.1*
 
 %changelog
-* Sat Jul 18 2026 Erik Greenwald <erik@elfga.com> - 1.9-1
+* Sun Jul 19 2026 Erik Greenwald <erik@elfga.com> - 1.9-1
 - SDL2 port and CMake build alongside autotools
 - Optional https support via OpenSSL (certificate verification, -k), IPv6,
   HTTP redirect following, correct HTTP/1.1 framing, -K to keep downloads
