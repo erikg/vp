@@ -517,6 +517,18 @@ main (int argc, char **argv)
     if (fullscreen_flag == SDL_WINDOW_FULLSCREEN)
 	SDL_SetWindowDisplayMode (window, &fs_mode);
 
+    /* A terminal-launched process is not the active app on macOS, and
+     * cooperative activation (macOS 14+) leaves the new window behind
+     * the terminal it was launched from. Cocoa ignores a raise before
+     * the window is actually on screen, and may drop the first request
+     * outright, so pump and re-ask briefly. Harmless where the window
+     * manager already focused us. */
+    for (i = 0; i < 10; i++) {
+	SDL_PumpEvents ();
+	SDL_RaiseWindow (window);
+	SDL_Delay (30);
+    }
+
     /* Linear filtering so downscaling oversized images to fit the window
      * looks smooth rather than aliased. Must be set before any texture is
      * created. */
