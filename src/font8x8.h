@@ -21,10 +21,11 @@
 /*
  * 8x8 monochrome bitmap font for ASCII 0x00-0x7F.
  *
- * Public domain 8x8 font (the classic IBM-PC-style glyph set, as collected by
- * Daniel Hepper's font8x8, itself derived from a 1980s public-domain ROM font).
- * Embedded here so the on-screen-display needs no font file and no extra
- * library on stripped-down/semi-embedded targets.
+ * Public domain 8x8 font (the classic IBM-PC-style glyph set), from Daniel
+ * Hepper's font8x8 <https://github.com/dhepper/font8x8>, itself derived from
+ * Marcel Sondaar's public-domain font8_8.asm (VGA fonts credited to Sondaar
+ * and IBM). Embedded here so the on-screen-display needs no font file and no
+ * extra library on stripped-down/semi-embedded targets.
  *
  * Layout: font8x8_basic[c] is 8 rows, top to bottom. Within a row byte the
  * least-significant bit (0x01) is the leftmost column: pixel (col,row) is lit
