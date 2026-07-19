@@ -32,7 +32,7 @@ jobs:
           - { cc: clang, build: autotools, ssl: off }
     name: linux ${{ matrix.cc }} ${{ matrix.build }} ssl=${{ matrix.ssl }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: deps
         run: |
           sudo apt-get update
@@ -76,7 +76,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: deps
         run: |
           sudo apt-get update
@@ -103,7 +103,7 @@ jobs:
   macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: deps
         run: brew install sdl2 sdl2_image
       - name: build
@@ -117,7 +117,7 @@ jobs:
   freebsd:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: build and test in a FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
