@@ -105,12 +105,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: deps
-        run: brew install sdl2 sdl2_image
+        run: brew install sdl2 sdl2_image openssl@3
       - name: build
         run: |
-          export OPENSSL_ROOT_DIR="$(brew --prefix openssl@3)"
+          OPENSSL_ROOT_DIR="$(brew --prefix openssl@3)"
+          export OPENSSL_ROOT_DIR
           CFLAGS="$WFLAGS" cmake -B build .
           cmake --build build
+      - name: ssl support present
+        run: grep -q '#define HAVE_OPENSSL' build/config.h
       - name: network tests
         run: sh tests/net-tests.sh build/src/vp
 
@@ -121,11 +124,12 @@ jobs:
       - name: build and test in a FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
-          release: "14.3"
+          release: "14.4"
           usesh: true
+          envs: 'WFLAGS'
           prepare: |
             pkg install -y cmake pkgconf sdl2 sdl2_image python3
           run: |
-            CFLAGS="-O2 -Wall -Wextra -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wcast-qual -Wwrite-strings -Wvla -Wformat=2 -Wnull-dereference -Wdouble-promotion -Werror" cmake -B build .
+            CFLAGS="$WFLAGS" cmake -B build .
             cmake --build build
             sh tests/net-tests.sh build/src/vp
