@@ -237,7 +237,7 @@ handle_input (void)
 	    timer_stop ();
 	    toggle_state (FULLSCREEN);
 	    if (get_state_int (FULLSCREEN)) {
-		SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+		SDL_SetWindowFullscreen(window, fullscreen_flag);
 		SDL_ShowCursor (0);
 	    } else {
 		SDL_SetWindowFullscreen(window, 0);

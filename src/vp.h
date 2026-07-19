@@ -49,5 +49,6 @@ struct image_table_s *get_image_table (void);
 
 extern SDL_Window *window;
 extern SDL_Renderer *renderer;
+extern Uint32 fullscreen_flag;
 
 #endif

@@ -47,7 +47,11 @@ SDL_Window *window;
 SDL_Renderer *renderer;
 SDL_mutex *mutex;
 static int state = 0;
-int swidth = 640, sheight = 480, sdepth = 8;
+int swidth = 640, sheight = 480;
+
+/* Which flavor of fullscreen 'f' toggles into: desktop fullscreen by
+ * default; -r upgrades it to a real mode-switching fullscreen. */
+Uint32 fullscreen_flag = SDL_WINDOW_FULLSCREEN_DESKTOP;
 struct image_table_s image_table = {0, 0, NULL};
 
 int
@@ -220,7 +224,7 @@ static void
 show_help (char *name)
 {
     printf ("Usage:\n\
-\t%s [-fhkKlvz] [-s <seconds>] [-r <width>x<height>[@<depth>]] file-or-url ...\n\
+\t%s [-fhkKlvz] [-s <seconds>] [-r <width>x<height>] file-or-url ...\n\
 \n\
 \t-f		--fullscreen	set fullscreen mode.\n\
 \t-h		--help		show help.\n\
@@ -231,8 +235,8 @@ show_help (char *name)
 \t-l		--loud		print file name to stdout.\n\
 \t-s <seconds>	--sleep		seconds between image change in slideshow\n\
 \t				(0.1-60, fractions ok, e.g. 2.5); default 2.5.\n\
-\t-r <res>	--resolution	fullscreen resolution, <width>x<height>\n\
-\t				with optional @<depth>. See man page.\n\
+\t-r <res>	--resolution	fullscreen resolution, <width>x<height>;\n\
+\t				closest available mode is used.\n\
 \t-v		--version	show version.\n\
 \t-z		--zoom		scale images to fit the screen.\n\
 \n", name);
@@ -242,7 +246,7 @@ show_help (char *name)
 int
 main (int argc, char **argv)
 {
-    int i, count, c, wait = DEFAULT_SLIDESHOW_MS, width = 0, height = 0, depth = 0;
+    int i, count, c, wait = DEFAULT_SLIDESHOW_MS, width = 0, height = 0;
 
     /* The state accessors lock this, and getopt handlers below already use
      * them, so create it before anything else can touch it. (SDL mutexes
@@ -306,7 +310,7 @@ main (int argc, char **argv)
 	    break;
 	case 'r':
 	    {
-		char *p, *x_pos, *at_pos;
+		char *p, *x_pos;
 
 		if (!optarg || strlen(optarg) == 0) {
 		    fprintf (stderr, "vp: Resolution cannot be empty\n");
@@ -315,11 +319,18 @@ main (int argc, char **argv)
 
 		p = optarg;
 		x_pos = strchr(p, 'x');
-		at_pos = strchr(p, '@');
+
+		/* @depth was an svgalib-era knob; SDL2 renderers have no
+		 * notion of display depth, so reject it loudly rather than
+		 * silently ignoring it. */
+		if (strchr (p, '@')) {
+		    fprintf (stderr, "vp: @depth is no longer supported: %s (expected WIDTHxHEIGHT)\n", optarg);
+		    exit (EXIT_FAILURE);
+		}
 
 		/* Validate format - must have at least width and height */
 		if (!x_pos) {
-		    fprintf (stderr, "vp: Invalid resolution format: %s (expected WIDTHxHEIGHT[@DEPTH])\n", optarg);
+		    fprintf (stderr, "vp: Invalid resolution format: %s (expected WIDTHxHEIGHT)\n", optarg);
 		    exit (EXIT_FAILURE);
 		}
 
@@ -346,7 +357,7 @@ main (int argc, char **argv)
 		{
 		    char height_str[16];
 		    char *h_start = x_pos + 1;
-		    int len = at_pos ? (int)(at_pos - h_start) : (int)strlen(h_start);
+		    int len = (int)strlen(h_start);
 		    if (len <= 0 || (size_t)len >= sizeof(height_str)) {
 			fprintf (stderr, "vp: Invalid resolution format: %s\n", optarg);
 			exit (EXIT_FAILURE);
@@ -359,23 +370,6 @@ main (int argc, char **argv)
 		    height_str[len] = '\0';
 		    if (safe_atoi (height_str, &height, 64, 16384) != 0) {
 			fprintf (stderr, "vp: Invalid height: %s (must be 64-16384)\n", height_str);
-			exit (EXIT_FAILURE);
-		    }
-		}
-
-		/* Parse depth (optional) */
-		if (at_pos) {
-		    if (!isdigit (*(at_pos + 1))) {
-			fprintf (stderr, "vp: Depth must be a number: %s\n", at_pos + 1);
-			exit (EXIT_FAILURE);
-		    }
-		    if (safe_atoi (at_pos + 1, &depth, 8, 32) != 0) {
-			fprintf (stderr, "vp: Invalid depth: %s (must be 8, 16, 24, or 32)\n", at_pos + 1);
-			exit (EXIT_FAILURE);
-		    }
-		    /* Validate common depths */
-		    if (depth != 8 && depth != 16 && depth != 24 && depth != 32) {
-			fprintf (stderr, "vp: Invalid depth: %d (must be 8, 16, 24, or 32)\n", depth);
 			exit (EXIT_FAILURE);
 		    }
 		}
@@ -478,20 +472,36 @@ main (int argc, char **argv)
     if (SDL_GetDesktopDisplayMode (0, &desktop_mode) == 0) {
 	swidth = desktop_mode.w;
 	sheight = desktop_mode.h;
-	sdepth = SDL_BITSPERPIXEL (desktop_mode.format);
     }
 
-    if (width)
-	swidth = width;
-    if (height)
-	sheight = height;
-    if (depth)
-	sdepth = depth;
+    /* -r asks for a real display mode: find the closest one the display
+     * offers and switch fullscreen behavior from desktop-sized to
+     * mode-setting. X11, the KMS/DRM console, and macOS switch the
+     * actual mode; Wayland compositors emulate it by scaling. */
+    SDL_DisplayMode fs_mode;
+    if (width && height) {
+	SDL_DisplayMode want;
+
+	SDL_zero (want);
+	want.w = width;
+	want.h = height;
+	if (SDL_GetClosestDisplayMode (0, &want, &fs_mode) != NULL) {
+	    fullscreen_flag = SDL_WINDOW_FULLSCREEN;
+	    swidth = fs_mode.w;
+	    sheight = fs_mode.h;
+	    if (fs_mode.w != width || fs_mode.h != height)
+		fprintf (stderr, "vp: no %dx%d display mode, using %dx%d\n",
+		    width, height, fs_mode.w, fs_mode.h);
+	} else
+	    fprintf (stderr,
+		"vp: no display mode near %dx%d, using the desktop mode\n",
+		width, height);
+    }
 
     /* Create window */
     Uint32 window_flags = 0;
     if (get_state_int (FULLSCREEN)) {
-	window_flags = SDL_WINDOW_FULLSCREEN_DESKTOP;
+	window_flags = fullscreen_flag;
 	SDL_ShowCursor (0);
     }
 
@@ -507,6 +517,11 @@ main (int argc, char **argv)
 	free_image_table ();
 	return EXIT_FAILURE;
     }
+
+    /* Pin the chosen mode to the window even when starting windowed, so a
+     * later 'f' toggle into SDL_WINDOW_FULLSCREEN honors -r too. */
+    if (fullscreen_flag == SDL_WINDOW_FULLSCREEN)
+	SDL_SetWindowDisplayMode (window, &fs_mode);
 
     /* Linear filtering so downscaling oversized images to fit the window
      * looks smooth rather than aliased. Must be set before any texture is

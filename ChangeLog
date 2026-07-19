@@ -13,6 +13,8 @@
 	  single GPU transform
 	* On-screen filename display (n toggles, N cycles position), with an
 	  embedded 8x8 font
+	* -r now does a real fullscreen mode switch (closest available mode,
+	  via SDL_SetWindowDisplayMode); the svgalib-era @depth suffix is gone
 	* Handle oversized images (clamp window to display, downscale to fit)
 	* Decoded-image cache; software-renderer fallback when no acceleration
 	* Security hardening of the download path; async-signal-safe shutdown

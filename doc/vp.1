@@ -64,8 +64,12 @@ Sleep time between images, in seconds. Fractions are accepted
 (2.5 means two and a half seconds); the range is 0.1 to 60.
 The default is 2.5 seconds.
 .It Fl r , -resolution
-Screen resolution (for fullscreen), as <width>x<height> with an optional
-@<depth>, e.g. 1024x768 or 1920x1080@32
+Fullscreen display resolution, as <width>x<height>, e.g. 1920x1080.
+The closest display mode the hardware offers is selected: a real mode
+switch under X11, the KMS/DRM console, and macOS; Wayland compositors
+scale instead of switching. Without this flag, fullscreen uses the
+desktop resolution. The @<depth> suffix of older releases is gone;
+display depth is not a thing SDL2 renderers control.
 .It Fl v , -version
 Print the version and exit
 .It Fl z , -zoom

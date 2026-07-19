@@ -5,6 +5,7 @@ Jul 18, 2026 - Version 1.9
 * https support via OpenSSL: certificate verification, -k/--insecure
 * IPv6 support; HTTP/1.1 framing, redirects, chunked transfer
 * -K/--keep retains downloaded files
+* -r does a real fullscreen mode switch; @depth suffix dropped
 * on-screen filename display
 * oversized-image handling, decoded-image cache
 * dropped FTP (advertised but never implemented)
