@@ -353,23 +353,17 @@ main (int argc, char **argv)
 		    exit (EXIT_FAILURE);
 		}
 
-		/* Parse height */
+		/* Parse height: with @depth gone it runs to end of string,
+		 * so no substring copy is needed. */
 		{
-		    char height_str[16];
 		    char *h_start = x_pos + 1;
-		    int len = (int)strlen(h_start);
-		    if (len <= 0 || (size_t)len >= sizeof(height_str)) {
-			fprintf (stderr, "vp: Invalid resolution format: %s\n", optarg);
-			exit (EXIT_FAILURE);
-		    }
+
 		    if (!isdigit (*h_start)) {
 			fprintf (stderr, "vp: Height must start with a digit: %s\n", optarg);
 			exit (EXIT_FAILURE);
 		    }
-		    strncpy(height_str, h_start, len);
-		    height_str[len] = '\0';
-		    if (safe_atoi (height_str, &height, 64, 16384) != 0) {
-			fprintf (stderr, "vp: Invalid height: %s (must be 64-16384)\n", height_str);
+		    if (safe_atoi (h_start, &height, 64, 16384) != 0) {
+			fprintf (stderr, "vp: Invalid height: %s (must be 64-16384)\n", h_start);
 			exit (EXIT_FAILURE);
 		    }
 		}
