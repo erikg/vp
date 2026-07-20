@@ -1,1 +1,6 @@
 general:
+	animation support (gif/apng/webp): IMG_LoadAnimation (SDL2_image
+	>= 2.6) gives frames + per-frame delays; needs its own timer
+	(slideshow tick means next file, not next frame) and a frame-count
+	or memory cap - a long 1080p gif decodes to gigabytes. Currently
+	IMG_Load shows frame 1, static.
